@@ -219,7 +219,7 @@ const Home = () => {
                     Recent Performance
                   </h3>
                   <Link
-                    to="/viewcourses"
+                    to="/performance/overall"
                     className="text-indigo-600 text-sm font-semibold hover:underline"
                   >
                     View all
@@ -233,7 +233,11 @@ const Home = () => {
                         key={idx}
                         className="p-5 border border-slate-100 rounded-2xl bg-white hover:border-indigo-100 hover:bg-slate-50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                       >
-                        <div className="flex items-center gap-4">
+                        <button
+                          type="button"
+                          
+                          className="w-full flex items-center gap-4 text-left focus:outline-none hover:bg-indigo-50/50 rounded-xl p-1 transition"
+                        >
                           <div className="text-3xl bg-white w-14 h-14 rounded-xl flex items-center justify-center shadow-sm border border-slate-50">
                             {getScoreEmoji(result.score)}
                           </div>
@@ -245,7 +249,7 @@ const Home = () => {
                               Attempted recently
                             </p>
                           </div>
-                        </div>
+                        </button>
 
                         <div className="flex items-center gap-6">
                           <div className="text-right">
@@ -266,7 +270,7 @@ const Home = () => {
                           </div>
                           <div className="h-10 w-[2px] bg-slate-100 hidden sm:block"></div>
                           <button
-                            onClick={() => navigate("/viewcourses")}
+                          onClick={() => navigate(`/performance/${encodeURIComponent(result.courseId)}`)}
                             className="p-2 hover:bg-white rounded-lg transition-colors text-slate-400 hover:text-indigo-600"
                           >
                             <svg

@@ -8,6 +8,7 @@ import { CoursesWithExam } from "./Courses/coursesvideos";
 import Navbar from "./Components/Navbar";
 import Home from "./Components/Home";
 import Viewcourses from "./Courses/Viewcourses";
+import Performance from "./Components/Performance";
 
 const App = () => {
   return (
@@ -31,6 +32,8 @@ const App = () => {
         <Route path="/home" element={<Home />} />
         <Route path="/viewcourses" element={<Viewcourses />} />
         <Route path="/courses/:category/*" element={<CoursesWithExam />} />
+        <Route path="/performance/:category" element={<Performance />} />
+        <Route path="/performance/overall" element={<Performance />} />
       </Routes>
     </>
   );

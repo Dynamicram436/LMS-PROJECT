@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -112,6 +112,11 @@ const Exam = () => {
       ? chaptersData.find((c) => c.id === chapterId && c.category === subject)
       : null;
   const navigate = useNavigate();
+  const courseId = useMemo(
+    () =>
+      chapter ? `${subject}-chapter-${chapter.id}` : subject || category,
+    [chapter, subject, category]
+  );
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [showScore, setShowScore] = useState(false);
@@ -127,10 +132,6 @@ const Exam = () => {
     if (!user?.userid || !chapterId || !subject) return null;
 
     try {
-      const courseId = chapter
-        ? `${subject}-chapter-${chapter.id}`
-        : subject || category;
-
       const response = await axios.post(
         "http://localhost:8000/api/exam/attempt-database",
         {
@@ -158,10 +159,6 @@ const Exam = () => {
   const fetchExamAttempts = async () => {
     if (user?.userid && chapterId && subject) {
       try {
-        const courseId = chapter
-          ? `${subject}-chapter-${chapter.id}`
-          : subject || category;
-
         const response = await axios.get(
           `http://localhost:8000/api/exam/results/${user.userid}`
         );
@@ -340,9 +337,7 @@ const Exam = () => {
             "http://localhost:8000/api/exam/results",
             {
               userId: user.userid,
-              courseId: chapter
-                ? `${subject}-chapter-${chapter.id}`
-                : subject || category,
+                courseId: courseId,
               score: newScore,
               totalQuestions: safeTotal,
               answers: answers,
@@ -573,9 +568,24 @@ const Exam = () => {
                 {/* Show exam attempts if user is logged in */}
                 {user && (
                   <div className="mt-8 p-4 rounded-2xl bg-slate-800/50 border border-white/10">
-                    <h4 className="text-indigo-300 font-bold tracking-widest uppercase text-[10px] mb-3">
-                      YOUR EXAM HISTORY
-                    </h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-indigo-300 font-bold tracking-widest uppercase text-[10px]">
+                        YOUR EXAM HISTORY
+                      </h4>
+                      {examAttempts && examAttempts.length > 0 && (
+                        <button
+                          onClick={() =>
+                            navigate(
+                              `/performance/${encodeURIComponent(courseId)}`
+                            )
+                          }
+                          className="text-xs font-bold px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-all flex items-center gap-1"
+                        >
+                          View All
+                          <FaArrowLeft className="rotate-180 text-[8px]" />
+                        </button>
+                      )}
+                    </div>
                     <div className="space-y-2">
                       {examAttempts && examAttempts.length > 0 ? (
                         examAttempts.slice(-3).map((attempt, idx) => (
