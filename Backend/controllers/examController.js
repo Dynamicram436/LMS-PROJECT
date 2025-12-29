@@ -1,0 +1,436 @@
+import User from "../models/userSchema.js";
+import ExamQuestion from "../models/examQuestionSchema.js";
+import ExamAttempt from "../models/examAttemptSchema.js";
+import ExamAttemptDatabase from "../models/examAttemptDatabaseSchema.js";
+
+export const saveExamResult = async (req, res) => {
+  try {
+    const { userId, courseId, score, totalQuestions, answers, attemptId } = req.body;
+
+    // Find the user by userid field (not MongoDB _id)
+    const user = await User.findOne({ userid: userId });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Validate required fields
+    if (!courseId || score === undefined || !totalQuestions) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Missing required fields: courseId, score, and totalQuestions are required' 
+      });
+    }
+
+    // Find or create course progress
+    let courseProgress = user.courseProgress.find(
+      progress => {
+        const progressCourseId = progress.courseId?.toString ? progress.courseId.toString() : String(progress.courseId);
+        return progressCourseId === String(courseId);
+      }
+    );
+
+    if (!courseProgress) {
+      courseProgress = {
+        courseId: courseId,
+        videos: [],
+        exam: {
+          score: 0,
+          passed: false,
+          attempts: 0,
+          answers: []
+        },
+        examAttempts: [],
+        completionPercentage: 0
+      };
+      user.courseProgress.push(courseProgress);
+      courseProgress = user.courseProgress[user.courseProgress.length - 1];
+    }
+
+    const percentageScore = Math.round((score / totalQuestions) * 100);
+    const passed = percentageScore >= 70;
+    const attemptNumber = (courseProgress.exam?.attempts || 0) + 1;
+    const finalAttemptId = attemptId || `${userId}_${courseId}_${Date.now()}`;
+
+    // Create separate ExamAttempt document
+    const examAttempt = new ExamAttempt({
+      userId: userId,
+      courseId: courseId,
+      attemptId: finalAttemptId,
+      attemptNumber: attemptNumber,
+      score: percentageScore,
+      totalQuestions: totalQuestions,
+      correctAnswers: score,
+      passed: passed,
+      answers: answers || [],
+      attemptDate: new Date()
+    });
+
+    await examAttempt.save();
+
+    // Update user's course progress (keep existing structure for compatibility)
+    courseProgress.examAttempts = courseProgress.examAttempts || [];
+    courseProgress.examAttempts.push({
+      examAttemptId: finalAttemptId,
+      score: percentageScore,
+      passed,
+      attemptNumber,
+      attemptDate: new Date(),
+      answers: answers || []
+    });
+
+    courseProgress.exam = {
+      score: percentageScore,
+      passed,
+      attempts: attemptNumber,
+      lastAttempt: new Date(),
+      answers: answers || []
+    };
+
+    const videoCompletion = courseProgress.videos.length > 0 
+      ? (courseProgress.videos.filter(v => v.isCompleted).length / courseProgress.videos.length) * 50 
+      : 0;
+    const examCompletion = passed ? 50 : 0;
+    courseProgress.completionPercentage = Math.min(100, videoCompletion + examCompletion);
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        score: percentageScore,
+        passed,
+        totalQuestions,
+        correctAnswers: score,
+        completionPercentage: courseProgress.completionPercentage,
+        attemptId: finalAttemptId
+      }
+    });
+  } catch (error) {
+    console.error('Error saving exam result:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+// Get all exam attempts for a user from the ExamAttempt collection
+export const getAllExamAttempts = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { courseId } = req.query;
+
+    let query = { userId: userId };
+    if (courseId) {
+      query.courseId = courseId;
+    }
+
+    const examAttempts = await ExamAttempt.find(query)
+      .sort({ attemptDate: -1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: examAttempts
+    });
+  } catch (error) {
+    console.error('Error fetching exam attempts:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+export const getExamResults = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Find user by userid field (not MongoDB _id)
+    // @ts-ignore - userid is a valid field in the User schema
+    const user = await User.findOne({ userid: userId });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Filter out courses with exam attempts and handle both ObjectId and string courseIds
+    const examResults = user.courseProgress
+      .filter(progress => progress.exam?.attempts > 0)
+      .map(progress => {
+        // Handle both ObjectId and string-based courseIds
+        const courseIdValue = progress.courseId;
+        let courseId, courseName;
+        
+        if (courseIdValue && typeof courseIdValue === 'object' && courseIdValue._id) {
+          // It's a populated ObjectId
+          courseId = courseIdValue._id.toString();
+          courseName = courseIdValue.name || courseIdValue.toString();
+        } else if (courseIdValue && typeof courseIdValue === 'object' && courseIdValue.toString) {
+          // It's an ObjectId that wasn't populated
+          courseId = courseIdValue.toString();
+          courseName = courseId; // Use the ID as name if not populated
+        } else {
+          // It's a string
+          courseId = String(courseIdValue);
+          courseName = courseId; // Use the string as the name
+        }
+
+        return {
+          courseId: courseId,
+          courseName: courseName,
+          score: progress.exam.score,
+          passed: progress.exam.passed,
+          attempts: progress.exam.attempts,
+          lastAttempt: progress.exam.lastAttempt,
+          completionPercentage: progress.completionPercentage,
+          // Include stored answers so they are visible from the API / DB view
+          answers: progress.exam.answers || [],
+          // Include all exam attempts
+          examAttempts: progress.examAttempts || []
+        };
+      });
+
+    res.status(200).json({
+      success: true,
+      data: examResults
+    });
+  } catch (error) {
+    console.error('Error fetching exam results:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+// Create exam questions for a chapter
+export const createExamQuestions = async (req, res) => {
+  try {
+    const { chapterId, category, chapterName, questions } = req.body;
+
+    // Validate required fields
+    if (!chapterId || !category || !chapterName || !questions || !Array.isArray(questions)) {
+      return res.status(400).json({
+        success: false,
+        message: 'chapterId, category, chapterName, and questions array are required',
+      });
+    }
+
+    // Validate chapterId is a number
+    const chapterIdNum = parseInt(chapterId);
+    if (isNaN(chapterIdNum)) {
+      return res.status(400).json({
+        success: false,
+        message: 'chapterId must be a valid number',
+      });
+    }
+
+    // Validate category
+    const validCategories = ["English", "Telugu", "Hindi", "Mathematics", "Science", "Social Studies"];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({
+        success: false,
+        message: `category must be one of: ${validCategories.join(', ')}`,
+      });
+    }
+
+    // Validate questions structure
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      if (!q.question || !Array.isArray(q.options) || q.options.length < 2 || 
+          typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer >= q.options.length) {
+        return res.status(400).json({
+          success: false,
+          message: `Question ${i + 1} is invalid. Each question must have: question (string), options (array of at least 2 strings), and correctAnswer (number between 0 and options.length - 1)`,
+        });
+      }
+    }
+
+    // Check if exam questions already exist for this chapterId and category
+    const existingExam = await ExamQuestion.findOne({
+      chapterId: chapterIdNum,
+      category: category,
+    });
+
+    if (existingExam) {
+      // Update existing exam questions
+      existingExam.chapterName = chapterName;
+      existingExam.questions = questions;
+      await existingExam.save();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Exam questions updated successfully',
+        data: existingExam,
+      });
+    }
+
+    // Create new exam questions
+    const examData = await ExamQuestion.create({
+      chapterId: chapterIdNum,
+      category: category,
+      chapterName: chapterName,
+      questions: questions,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Exam questions created successfully',
+      data: examData,
+    });
+  } catch (error) {
+    console.error('Error creating exam questions:', error);
+    
+    // Handle duplicate key error (from unique index)
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Exam questions already exist for this chapterId and category combination',
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};
+
+// Create a new exam attempt database
+export const createExamAttemptDatabase = async (req, res) => {
+  try {
+    const { userId, courseId, chapterId, category, chapterName } = req.body;
+
+    // Validate required fields
+    if (!userId || !courseId || !chapterId || !category || !chapterName) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId, courseId, chapterId, category, and chapterName are required',
+      });
+    }
+
+    // Validate chapterId is a number
+    const chapterIdNum = parseInt(chapterId);
+    if (isNaN(chapterIdNum)) {
+      return res.status(400).json({
+        success: false,
+        message: 'chapterId must be a valid number',
+      });
+    }
+
+    // Get the original questions from the main database
+    const originalExamData = await ExamQuestion.findOne({
+      chapterId: chapterIdNum,
+      category: category,
+    });
+
+    if (!originalExamData || !originalExamData.questions || originalExamData.questions.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No questions found for this chapter in the main database',
+      });
+    }
+
+    // Generate unique attempt ID
+    const attemptId = `${userId}_${courseId}_${Date.now()}`;
+
+    // Create new attempt-specific database with the same questions
+    const examAttemptDatabase = new ExamAttemptDatabase({
+      attemptId: attemptId,
+      userId: userId,
+      courseId: courseId,
+      chapterId: chapterIdNum,
+      category: category,
+      chapterName: chapterName,
+      questions: originalExamData.questions,
+      isActive: true
+    });
+
+    await examAttemptDatabase.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Exam attempt database created successfully',
+      data: {
+        attemptId: attemptId,
+        chapterId: chapterIdNum,
+        category: category,
+        chapterName: chapterName,
+        questions: originalExamData.questions,
+      },
+    });
+  } catch (error) {
+    console.error('Error creating exam attempt database:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};
+
+// Get exam questions by chapterId and category
+export const getExamQuestions = async (req, res) => {
+  try {
+    const { chapterId, category, numQuestions, attemptId } = req.query;
+
+    // Validate required parameters
+    if (!chapterId || !category) {
+      return res.status(400).json({
+        success: false,
+        message: 'chapterId and category are required',
+      });
+    }
+
+    const chapterIdNum = parseInt(chapterId);
+    if (isNaN(chapterIdNum)) {
+      return res.status(400).json({
+        success: false,
+        message: 'chapterId must be a valid number',
+      });
+    }
+
+    let examData;
+
+    // If attemptId is provided, try to get questions from attempt-specific database
+    if (attemptId) {
+      examData = await ExamAttemptDatabase.findOne({
+        attemptId: attemptId,
+        isActive: true
+      });
+    }
+
+    // If no attempt-specific data found, fall back to main database
+    if (!examData) {
+      examData = await ExamQuestion.findOne({
+        chapterId: chapterIdNum,
+        category: category,
+      });
+    }
+
+    if (!examData || !examData.questions || examData.questions.length === 0) {
+      return res.status(200).json({
+        success: false,
+        message: 'No questions found for this chapter. Please seed the database with exam questions.',
+        data: {
+          chapterId: chapterIdNum,
+          category: category,
+          questions: []
+        }
+      });
+    }
+
+    // Return questions in consistent order (no randomization)
+    const finalQuestions = examData.questions;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        chapterId: examData.chapterId,
+        category: examData.category,
+        chapterName: examData.chapterName,
+        questions: finalQuestions,
+        attemptId: examData.attemptId || null
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching exam questions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};
