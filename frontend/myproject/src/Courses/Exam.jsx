@@ -125,7 +125,7 @@ const Exam = () => {
 
   const createAttemptDatabase = async () => {
     if (!user?.userid || !chapterId || !subject) return null;
-    
+
     try {
       const courseId = chapter
         ? `${subject}-chapter-${chapter.id}`
@@ -138,7 +138,7 @@ const Exam = () => {
           courseId: courseId,
           chapterId: chapterId,
           category: subject,
-          chapterName: chapter?.name || subject || "Exam"
+          chapterName: chapter?.name || subject || "Exam",
         }
       );
 
@@ -185,11 +185,11 @@ const Exam = () => {
     const fetchQuestions = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         // Create a new attempt database for this exam attempt
         const newAttemptId = await createAttemptDatabase();
-        
+
         if (chapterId && subject) {
           const response = await axios.get(
             "http://localhost:8000/api/exam/questions",
@@ -411,11 +411,11 @@ const Exam = () => {
     setScore(0);
     setLoading(true);
     setError(null);
-    
+
     try {
       // Create a new attempt database for this retake
       const newAttemptId = await createAttemptDatabase();
-      
+
       if (chapterId && subject) {
         const response = await axios.get(
           "http://localhost:8000/api/exam/questions",
@@ -441,7 +441,7 @@ const Exam = () => {
           return;
         }
       }
-      
+
       // Fallback to existing questions if server fails
       setLoading(false);
     } catch (err) {
