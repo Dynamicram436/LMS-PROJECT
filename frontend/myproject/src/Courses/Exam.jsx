@@ -403,12 +403,52 @@ const Exam = () => {
     }
   };
 
-  const handleRetakeSameQuestions = () => {
-    // Reset the exam but keep the same questions
+  const handleRetakeExam = async () => {
+    // Reset the exam and fetch fresh random questions
     setCurrentQuestion(0);
-    setSelectedOptions(Array(safeTotal).fill(null));
+    setSelectedOptions([]);
     setShowScore(false);
     setScore(0);
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Create a new attempt database for this retake
+      const newAttemptId = await createAttemptDatabase();
+      
+      if (chapterId && subject) {
+        const response = await axios.get(
+          "http://localhost:8000/api/exam/questions",
+          {
+            params: {
+              chapterId,
+              category: subject,
+              attemptId: newAttemptId,
+            },
+          }
+        );
+        if (
+          response.data.success &&
+          response.data.data?.questions?.length > 0
+        ) {
+          setQuestions(
+            normalizeQuestions(
+              response.data.data.questions,
+              chapter?.name || subject || "Exam"
+            )
+          );
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Fallback to existing questions if server fails
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching fresh questions for retake:", err);
+      setLoading(false);
+      setError("Using existing questions. Server connection failed.");
+    }
   };
 
   const getResultFeedback = (percentage) => {
@@ -515,7 +555,7 @@ const Exam = () => {
 
                 <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
                   <button
-                    onClick={handleRetakeSameQuestions}
+                    onClick={handleRetakeExam}
                     className="flex items-center cursor-pointer justify-center gap-2 px-8 py-3 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-500 transition-all duration-300 shadow-xl shadow-indigo-500/20 active:scale-95"
                   >
                     <FaRedo className="text-sm" />

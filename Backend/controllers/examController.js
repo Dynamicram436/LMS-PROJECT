@@ -412,8 +412,17 @@ export const getExamQuestions = async (req, res) => {
       });
     }
 
-    // Return questions in consistent order (no randomization)
-    const finalQuestions = examData.questions;
+    // Randomize questions order for each exam attempt
+    const shuffledQuestions = [...examData.questions].sort(() => Math.random() - 0.5);
+    
+    // If numQuestions is specified and valid, return only that many questions
+    let finalQuestions = shuffledQuestions;
+    if (numQuestions && !isNaN(parseInt(numQuestions))) {
+      const requestedCount = parseInt(numQuestions);
+      if (requestedCount > 0 && requestedCount < shuffledQuestions.length) {
+        finalQuestions = shuffledQuestions.slice(0, requestedCount);
+      }
+    }
 
     res.status(200).json({
       success: true,
