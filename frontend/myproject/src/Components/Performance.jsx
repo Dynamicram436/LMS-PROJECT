@@ -66,17 +66,28 @@ const Performance = () => {
         if (response.data.success && Array.isArray(response.data.data)) {
           console.log("Exam data array:", response.data.data);
           console.log("Array length:", response.data.data.length);
-          
-          // Log each item in the array
+
+          // Log each item in the array with detailed answer structure
           response.data.data.forEach((item, index) => {
             console.log(`Item ${index}:`, item);
             console.log(`Item ${index} courseId:`, item.courseId);
             console.log(`Item ${index} courseName:`, item.courseName);
             console.log(`Item ${index} examAttempts:`, item.examAttempts);
+            
+            // Log detailed answer structure for first attempt
+            if (item.examAttempts && item.examAttempts.length > 0) {
+              const firstAttempt = item.examAttempts[0];
+              console.log(`Item ${index} First attempt answers:`, firstAttempt.answers);
+              if (firstAttempt.answers && firstAttempt.answers.length > 0) {
+                console.log(`Item ${index} First answer structure:`, firstAttempt.answers[0]);
+                console.log(`Item ${index} First answer options:`, firstAttempt.answers[0].options);
+                console.log(`Item ${index} First answer question:`, firstAttempt.answers[0].question);
+              }
+            }
           });
-          
+
           setAllExamData(response.data.data);
-          
+
           if (isOverallView) {
             // For overall view, show all courses
             if (response.data.data.length > 0) {
@@ -84,7 +95,10 @@ const Performance = () => {
               setSelectedCourse(response.data.data[0]);
               setExamData(response.data.data[0]);
               // Set first attempt if available
-              if (response.data.data[0].examAttempts && response.data.data[0].examAttempts.length > 0) {
+              if (
+                response.data.data[0].examAttempts &&
+                response.data.data[0].examAttempts.length > 0
+              ) {
                 setSelectedAttempt(response.data.data[0].examAttempts[0]);
               }
             } else {
@@ -94,51 +108,74 @@ const Performance = () => {
             // For specific course view
             // Match courses where courseId starts with subject (for chapter-based courses)
             // or exact match, or courseName matches
-            const subjectStr = String(subject || '').trim();
-            
+            const subjectStr = String(subject || "").trim();
+
             console.log("Looking for course with ID/Name:", subjectStr);
-            console.log("All available courses:", response.data.data.map(r => ({ 
-              courseId: r.courseId, 
-              courseName: r.courseName,
-              examAttemptsCount: r.examAttempts?.length || 0
-            })));
-            
-            const courseData = response.data.data.find(
-              (result) => {
-                const courseIdStr = String(result.courseId || '').trim();
-                const courseNameStr = String(result.courseName || '').trim();
-                
-                // Exact match (case-insensitive)
-                if (courseIdStr.toLowerCase() === subjectStr.toLowerCase() || 
-                    courseNameStr.toLowerCase() === subjectStr.toLowerCase()) {
-                  console.log("Exact match found:", { courseIdStr, courseNameStr, subjectStr });
-                  return true;
-                }
-                
-                // Check if courseId starts with subject (for chapter-based courses like "Mathematics-chapter-1")
-                // Handle both "-chapter-" and "-" separators
-                if (courseIdStr.toLowerCase().startsWith(subjectStr.toLowerCase() + '-') || 
-                    courseIdStr.toLowerCase().startsWith(subjectStr.toLowerCase() + '_')) {
-                  console.log("Prefix match found:", { courseIdStr, subjectStr });
-                  return true;
-                }
-                
-                // Check if courseName contains the subject (case-insensitive)
-                if (courseNameStr.toLowerCase().includes(subjectStr.toLowerCase()) ||
-                    subjectStr.toLowerCase().includes(courseNameStr.toLowerCase())) {
-                  console.log("Name contains match found:", { courseNameStr, subjectStr });
-                  return true;
-                }
-                
-                return false;
-              }
+            console.log(
+              "All available courses:",
+              response.data.data.map((r) => ({
+                courseId: r.courseId,
+                courseName: r.courseName,
+                examAttemptsCount: r.examAttempts?.length || 0,
+              }))
             );
+
+            const courseData = response.data.data.find((result) => {
+              const courseIdStr = String(result.courseId || "").trim();
+              const courseNameStr = String(result.courseName || "").trim();
+
+              // Exact match (case-insensitive)
+              if (
+                courseIdStr.toLowerCase() === subjectStr.toLowerCase() ||
+                courseNameStr.toLowerCase() === subjectStr.toLowerCase()
+              ) {
+                console.log("Exact match found:", {
+                  courseIdStr,
+                  courseNameStr,
+                  subjectStr,
+                });
+                return true;
+              }
+
+              // Check if courseId starts with subject (for chapter-based courses like "Mathematics-chapter-1")
+              // Handle both "-chapter-" and "-" separators
+              if (
+                courseIdStr
+                  .toLowerCase()
+                  .startsWith(subjectStr.toLowerCase() + "-") ||
+                courseIdStr
+                  .toLowerCase()
+                  .startsWith(subjectStr.toLowerCase() + "_")
+              ) {
+                console.log("Prefix match found:", { courseIdStr, subjectStr });
+                return true;
+              }
+
+              // Check if courseName contains the subject (case-insensitive)
+              if (
+                courseNameStr
+                  .toLowerCase()
+                  .includes(subjectStr.toLowerCase()) ||
+                subjectStr.toLowerCase().includes(courseNameStr.toLowerCase())
+              ) {
+                console.log("Name contains match found:", {
+                  courseNameStr,
+                  subjectStr,
+                });
+                return true;
+              }
+
+              return false;
+            });
 
             console.log("Found course data:", courseData);
 
             if (courseData) {
               setExamData(courseData);
-              if (courseData.examAttempts && courseData.examAttempts.length > 0) {
+              if (
+                courseData.examAttempts &&
+                courseData.examAttempts.length > 0
+              ) {
                 setSelectedAttempt(courseData.examAttempts[0]);
               }
             } else {
@@ -245,7 +282,8 @@ const Performance = () => {
     const firstAvg =
       firstHalf.reduce((sum, a) => sum + (a.score || 0), 0) / firstHalf.length;
     const secondAvg =
-      secondHalf.reduce((sum, a) => sum + (a.score || 0), 0) / secondHalf.length;
+      secondHalf.reduce((sum, a) => sum + (a.score || 0), 0) /
+      secondHalf.length;
 
     const change = secondAvg - firstAvg;
 
@@ -275,7 +313,7 @@ const Performance = () => {
     console.log("examData value:", examData);
     console.log("allExamData:", allExamData);
     console.log("isOverallView:", isOverallView);
-    
+
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="text-center p-8">
@@ -284,10 +322,9 @@ const Performance = () => {
             No Performance Data
           </h2>
           <p className="text-indigo-200/60 mb-6">
-            {isOverallView 
-              ? "You haven't attempted any exams yet." 
-              : "You haven't attempted any exams for this course yet."
-            }
+            {isOverallView
+              ? "You haven't attempted any exams yet."
+              : "You haven't attempted any exams for this course yet."}
           </p>
           <button
             onClick={() => navigate(-1)}
@@ -322,14 +359,16 @@ const Performance = () => {
         <span className="font-bold text-sm">Back</span>
       </button>
 
-      <div className="max-w-6xl mx-auto relative z-10">
+      <div className="max-w-6xl mx-auto relative z-10 mt-12">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-white mb-4">
             {isOverallView ? "Overall Performance" : "Performance Analytics"}
           </h1>
           <p className="text-indigo-200/60 text-lg">
-            {isOverallView ? "All Courses Performance" : `${subject} - Detailed Exam Results`}
+            {isOverallView
+              ? "All Courses Performance"
+              : `${subject} - Detailed Exam Results`}
           </p>
         </div>
 
@@ -356,9 +395,12 @@ const Performance = () => {
                       : "bg-slate-800/50 border-white/10 hover:border-white/20"
                   }`}
                 >
-                  <div className="text-white font-bold mb-2">{course.courseName || course.courseId || 'Unknown Course'}</div>
+                  <div className="text-white font-bold mb-2">
+                    {course.courseName || course.courseId || "Unknown Course"}
+                  </div>
                   <div className="text-indigo-200/60 text-sm">
-                    {course.examAttempts ? course.examAttempts.length : 0} attempts • {course.score || 0}% avg
+                    {course.examAttempts ? course.examAttempts.length : 0}{" "}
+                    attempts • {course.score || 0}% avg
                   </div>
                 </button>
               ))}
@@ -486,49 +528,52 @@ const Performance = () => {
             Attempt History
           </h3>
           <div className="space-y-3">
-            {examData.examAttempts && examData.examAttempts.map((attempt, index) => (
-              <div
-                key={index}
-                onClick={() => setSelectedAttempt(attempt)}
-                className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  selectedAttempt === attempt
-                    ? "bg-indigo-600/20 border-indigo-400"
-                    : "bg-slate-800/50 border-white/10 hover:border-white/20"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
-                      <span className="text-indigo-300 font-bold">
-                        #{attempt.attemptNumber || index + 1}
+            {examData.examAttempts &&
+              examData.examAttempts.map((attempt, index) => (
+                <div
+                  key={index}
+                  onClick={() => setSelectedAttempt(attempt)}
+                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    selectedAttempt === attempt
+                      ? "bg-indigo-600/20 border-indigo-400"
+                      : "bg-slate-800/50 border-white/10 hover:border-white/20"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                        <span className="text-indigo-300 font-bold">
+                          #{attempt.attemptNumber || index + 1}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="text-white font-bold">
+                          {attempt.score || 0}%
+                        </div>
+                        <div className="text-indigo-200/60 text-sm">
+                          {attempt.attemptDate
+                            ? new Date(attempt.attemptDate).toLocaleDateString()
+                            : "Recent"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          attempt.passed
+                            ? "bg-green-500/10 border border-green-500/20 text-green-400"
+                            : "bg-red-500/10 border border-red-500/20 text-red-400"
+                        }`}
+                      >
+                        {attempt.passed ? "PASSED" : "FAILED"}
                       </span>
+                      {selectedAttempt === attempt && (
+                        <FaCheckCircle className="text-indigo-400" />
+                      )}
                     </div>
-                    <div>
-                      <div className="text-white font-bold">
-                        {attempt.score || 0}%
-                      </div>
-                      <div className="text-indigo-200/60 text-sm">
-                        {attempt.attemptDate ? new Date(attempt.attemptDate).toLocaleDateString() : 'Recent'}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        attempt.passed
-                          ? "bg-green-500/10 border border-green-500/20 text-green-400"
-                          : "bg-red-500/10 border border-red-500/20 text-red-400"
-                      }`}
-                    >
-                      {attempt.passed ? "PASSED" : "FAILED"}
-                    </span>
-                    {selectedAttempt === attempt && (
-                      <FaCheckCircle className="text-indigo-400" />
-                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
 
@@ -551,7 +596,13 @@ const Performance = () => {
                     </span>
                   </div>
                   <div className="text-3xl font-bold text-white">
-                    {selectedAttempt.answers ? selectedAttempt.answers.filter((a) => a.isCorrect).length : 0}
+                    {selectedAttempt.answers
+                      ? selectedAttempt.answers.filter((a) => a.isCorrect)
+                          .length
+                      : 0}
+                  </div>
+                  <div className="text-sm text-indigo-200/60 mt-2">
+                    of {selectedAttempt.answers ? selectedAttempt.answers.length : 0} total
                   </div>
                 </div>
                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
@@ -562,128 +613,181 @@ const Performance = () => {
                     </span>
                   </div>
                   <div className="text-3xl font-bold text-white">
-                    {selectedAttempt.answers ? selectedAttempt.answers.filter((a) => !a.isCorrect).length : 0}
+                    {selectedAttempt.answers
+                      ? selectedAttempt.answers.filter((a) => !a.isCorrect)
+                          .length
+                      : 0}
+                  </div>
+                  <div className="text-sm text-indigo-200/60 mt-2">
+                    of {selectedAttempt.answers ? selectedAttempt.answers.length : 0} total
                   </div>
                 </div>
               </div>
 
               <div className="space-y-4">
-                {selectedAttempt.answers && selectedAttempt.answers.map((answer, index) => (
-                  <div
-                    key={index}
-                    className="bg-slate-800/50 border border-white/10 rounded-xl overflow-hidden"
-                  >
+                {selectedAttempt.answers &&
+                  selectedAttempt.answers.map((answer, index) => {
+                    console.log(`Rendering answer ${index}:`, answer);
+                    console.log(`Answer ${index} options:`, answer.options);
+                    console.log(`Answer ${index} selectedOption:`, answer.selectedOption);
+                    console.log(`Answer ${index} correctAnswer:`, answer.correctAnswer);
+                    
+                    return (
                     <div
-                      onClick={() => toggleQuestionExpansion(index)}
-                      className="p-4 cursor-pointer hover:bg-slate-800/70 transition-all"
+                      key={index}
+                      className="bg-slate-800/50 border border-white/10 rounded-2xl overflow-hidden"
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              answer.isCorrect
-                                ? "bg-green-500/20"
-                                : "bg-red-500/20"
-                            }`}
-                          >
-                            {answer.isCorrect ? (
-                              <FaCheckCircle className="text-green-400 text-sm" />
-                            ) : (
-                              <FaTimesCircle className="text-red-400 text-sm" />
-                            )}
+                      <div
+                        onClick={() => toggleQuestionExpansion(index)}
+                        className="p-4 cursor-pointer hover:bg-slate-800/70 transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                answer.isCorrect
+                                  ? "bg-green-500/20"
+                                  : "bg-red-500/20"
+                              }`}
+                            >
+                              {answer.isCorrect ? (
+                                <FaCheckCircle className="text-green-400 text-sm" />
+                              ) : (
+                                <FaTimesCircle className="text-red-400 text-sm" />
+                              )}
+                            </div>
+                            <span className="text-white font-medium">
+                              Question {index + 1}
+                            </span>
                           </div>
-                          <span className="text-white font-medium">
-                            Question {index + 1}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`text-sm font-bold ${
+                                answer.isCorrect
+                                  ? "text-green-400"
+                                  : "text-red-400"
+                              }`}
+                            >
+                              {answer.isCorrect ? "Correct" : "Incorrect"}
+                            </span>
+                            <span className="text-indigo-200/40">
+                              {expandedQuestions.has(index) ? "−" : "+"}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`text-sm font-bold ${
-                              answer.isCorrect
-                                ? "text-green-400"
-                                : "text-red-400"
-                            }`}
-                          >
-                            {answer.isCorrect ? "Correct" : "Incorrect"}
-                          </span>
-                          <span className="text-indigo-200/40">
-                            {expandedQuestions.has(index) ? "−" : "+"}
-                          </span>
-                        </div>
+                        {/* Show question preview when collapsed */}
+                        {!expandedQuestions.has(index) && (
+                          <div className="mt-3 text-sm text-indigo-200/70 pl-12">
+                            <p className="truncate max-w-2xl">{answer.question}</p>
+                          </div>
+                        )}
                       </div>
-                    </div>
 
-                    {expandedQuestions.has(index) && (
-                      <div className="px-4 pb-4 border-t border-white/5">
-                        <div className="pt-4 space-y-3">
-                          <div>
-                            <p className="text-indigo-200/60 text-sm mb-2">
-                              Question:
-                            </p>
-                            <p className="text-white">{answer.question}</p>
-                          </div>
-
-                          {/* Answer summary */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div className={`p-3 rounded-lg border ${answer.isCorrect ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"}`}>
-                              <p className="text-xs uppercase font-bold text-indigo-200/60 mb-1">
-                                Your Answer
+                      {expandedQuestions.has(index) && (
+                        <div className="px-4 pb-4 border-t border-white/5">
+                          <div className="pt-4 space-y-4">
+                            <div>
+                              <p className="text-indigo-200/60 text-sm mb-2 font-medium">
+                                Question:
                               </p>
-                              <p className="text-white font-semibold">
-                                {answer.selectedOption !== null && answer.selectedOption !== undefined
-                                  ? answer.options?.[answer.selectedOption]
-                                  : "Not answered"}
-                              </p>
-                              <p className={`text-xs mt-1 font-bold ${answer.isCorrect ? "text-green-400" : "text-red-400"}`}>
-                                {answer.isCorrect ? "Correct" : "Incorrect"}
+                              <p className="text-white bg-slate-800/30 p-3 rounded-lg">
+                                {answer.question}
                               </p>
                             </div>
-                            <div className="p-3 rounded-lg border bg-green-500/10 border-green-500/30">
-                              <p className="text-xs uppercase font-bold text-indigo-200/60 mb-1">
-                                Correct Answer
-                              </p>
-                              <p className="text-white font-semibold">
-                                {answer.options?.[answer.correctAnswer]}
-                              </p>
-                            </div>
-                          </div>
 
-                          <div className="grid grid-cols-1 gap-2">
-                            {answer.options && answer.options.map((option, optIndex) => (
+                            {/* Answer summary */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div
-                                key={optIndex}
-                                className={`p-3 rounded-lg border ${
-                                  optIndex === answer.correctAnswer
+                                className={`p-4 rounded-lg border ${
+                                  answer.isCorrect
                                     ? "bg-green-500/10 border-green-500/30"
-                                    : optIndex === answer.selectedOption
-                                    ? "bg-red-500/10 border-red-500/30"
-                                    : "bg-slate-700/50 border-white/10"
+                                    : "bg-red-500/10 border-red-500/30"
                                 }`}
                               >
-                                <div className="flex items-center justify-between">
-                                  <span className="text-white">{option}</span>
-                                  <div className="flex items-center gap-2">
-                                    {optIndex === answer.correctAnswer && (
-                                      <span className="text-green-400 text-xs font-bold">
-                                        CORRECT
-                                      </span>
-                                    )}
-                                    {optIndex === answer.selectedOption &&
-                                      optIndex !== answer.correctAnswer && (
-                                        <span className="text-red-400 text-xs font-bold">
-                                          YOUR ANSWER
-                                        </span>
-                                      )}
-                                  </div>
-                                </div>
+                                <p className="text-xs uppercase font-bold text-indigo-200/60 mb-2">
+                                  Your Answer
+                                </p>
+                                <p className="text-white font-semibold text-lg">
+                                  {answer.selectedOption !== null &&
+                                  answer.selectedOption !== undefined
+                                    ? answer.options && answer.options[answer.selectedOption]
+                                      ? `${String.fromCharCode(65 + answer.selectedOption)}. ${answer.options[answer.selectedOption]}`
+                                      : `Option ${String.fromCharCode(65 + answer.selectedOption)}`
+                                    : "Not answered"}
+                                </p>
+                                <p
+                                  className={`text-sm mt-2 font-bold ${
+                                    answer.isCorrect
+                                      ? "text-green-400"
+                                      : "text-red-400"
+                                  }`}
+                                >
+                                  {answer.isCorrect ? "✓ Correct" : "✗ Incorrect"}
+                                </p>
                               </div>
-                            ))}
+                              <div className="p-4 rounded-lg border bg-green-500/10 border-green-500/30">
+                                <p className="text-xs uppercase font-bold text-indigo-200/60 mb-2">
+                                  Correct Answer
+                                </p>
+                                <p className="text-white font-semibold text-lg">
+                                  {answer.options && answer.options[answer.correctAnswer] !== undefined
+                                    ? `${String.fromCharCode(65 + answer.correctAnswer)}. ${answer.options[answer.correctAnswer]}`
+                                    : `Option ${String.fromCharCode(65 + answer.correctAnswer)}`}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <p className="text-indigo-200/60 text-sm font-medium">All Options:</p>
+                              <div className="space-y-2">
+                                {answer.options && answer.options.length > 0 ? (
+                                  answer.options.map((option, optIndex) => (
+                                    <div
+                                      key={optIndex}
+                                      className={`p-3 rounded-lg border ${
+                                        optIndex === answer.correctAnswer
+                                          ? "bg-green-500/10 border-green-500/30"
+                                          : optIndex === answer.selectedOption
+                                          ? "bg-red-500/10 border-red-500/30"
+                                          : "bg-slate-700/50 border-white/10"
+                                      }`}
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-white">{String.fromCharCode(65 + optIndex)}. {option}</span>
+                                        <div className="flex items-center gap-2">
+                                          {optIndex === answer.correctAnswer && (
+                                            <span className="text-green-400 text-xs font-bold bg-green-500/20 px-2 py-1 rounded">
+                                              CORRECT
+                                            </span>
+                                          )}
+                                          {optIndex === answer.selectedOption &&
+                                            optIndex !== answer.correctAnswer && (
+                                            <span className="text-red-400 text-xs font-bold bg-red-500/20 px-2 py-1 rounded">
+                                              YOUR ANSWER
+                                            </span>
+                                          )}
+                                          {optIndex === answer.selectedOption && optIndex === answer.correctAnswer && (
+                                            <span className="text-green-400 text-xs font-bold bg-green-500/20 px-2 py-1 rounded">
+                                              CORRECT & SELECTED
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="text-indigo-200/60 text-sm p-4 bg-slate-700/30 rounded-lg border border-white/10">
+                                    Options not available for this question
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      )}
+                    </div>
+                  );
+                  })}
               </div>
             </div>
           )}

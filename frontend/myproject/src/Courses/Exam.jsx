@@ -113,8 +113,7 @@ const Exam = () => {
       : null;
   const navigate = useNavigate();
   const courseId = useMemo(
-    () =>
-      chapter ? `${subject}-chapter-${chapter.id}` : subject || category,
+    () => (chapter ? `${subject}-chapter-${chapter.id}` : subject || category),
     [chapter, subject, category]
   );
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -337,7 +336,7 @@ const Exam = () => {
             "http://localhost:8000/api/exam/results",
             {
               userId: user.userid,
-                courseId: courseId,
+              courseId: courseId,
               score: newScore,
               totalQuestions: safeTotal,
               answers: answers,

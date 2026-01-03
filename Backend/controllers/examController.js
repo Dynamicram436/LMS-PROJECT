@@ -5,29 +5,33 @@ import ExamAttemptDatabase from "../models/examAttemptDatabaseSchema.js";
 
 export const saveExamResult = async (req, res) => {
   try {
-    const { userId, courseId, score, totalQuestions, answers, attemptId } = req.body;
+    const { userId, courseId, score, totalQuestions, answers, attemptId } =
+      req.body;
 
     // Find the user by userid field (not MongoDB _id)
     const user = await User.findOne({ userid: userId });
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     // Validate required fields
     if (!courseId || score === undefined || !totalQuestions) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Missing required fields: courseId, score, and totalQuestions are required' 
+      return res.status(400).json({
+        success: false,
+        message:
+          "Missing required fields: courseId, score, and totalQuestions are required",
       });
     }
 
     // Find or create course progress
-    let courseProgress = user.courseProgress.find(
-      progress => {
-        const progressCourseId = progress.courseId?.toString ? progress.courseId.toString() : String(progress.courseId);
-        return progressCourseId === String(courseId);
-      }
-    );
+    let courseProgress = user.courseProgress.find((progress) => {
+      const progressCourseId = progress.courseId?.toString
+        ? progress.courseId.toString()
+        : String(progress.courseId);
+      return progressCourseId === String(courseId);
+    });
 
     if (!courseProgress) {
       courseProgress = {
@@ -37,10 +41,10 @@ export const saveExamResult = async (req, res) => {
           score: 0,
           passed: false,
           attempts: 0,
-          answers: []
+          answers: [],
         },
         examAttempts: [],
-        completionPercentage: 0
+        completionPercentage: 0,
       };
       user.courseProgress.push(courseProgress);
       courseProgress = user.courseProgress[user.courseProgress.length - 1];
@@ -62,7 +66,7 @@ export const saveExamResult = async (req, res) => {
       correctAnswers: score,
       passed: passed,
       answers: answers || [],
-      attemptDate: new Date()
+      attemptDate: new Date(),
     });
 
     await examAttempt.save();
@@ -75,7 +79,7 @@ export const saveExamResult = async (req, res) => {
       passed,
       attemptNumber,
       attemptDate: new Date(),
-      answers: answers || []
+      answers: answers || [],
     });
 
     courseProgress.exam = {
@@ -83,14 +87,20 @@ export const saveExamResult = async (req, res) => {
       passed,
       attempts: attemptNumber,
       lastAttempt: new Date(),
-      answers: answers || []
+      answers: answers || [],
     };
 
-    const videoCompletion = courseProgress.videos.length > 0 
-      ? (courseProgress.videos.filter(v => v.isCompleted).length / courseProgress.videos.length) * 50 
-      : 0;
+    const videoCompletion =
+      courseProgress.videos.length > 0
+        ? (courseProgress.videos.filter((v) => v.isCompleted).length /
+            courseProgress.videos.length) *
+          50
+        : 0;
     const examCompletion = passed ? 50 : 0;
-    courseProgress.completionPercentage = Math.min(100, videoCompletion + examCompletion);
+    courseProgress.completionPercentage = Math.min(
+      100,
+      videoCompletion + examCompletion
+    );
 
     await user.save();
 
@@ -102,12 +112,14 @@ export const saveExamResult = async (req, res) => {
         totalQuestions,
         correctAnswers: score,
         completionPercentage: courseProgress.completionPercentage,
-        attemptId: finalAttemptId
-      }
+        attemptId: finalAttemptId,
+      },
     });
   } catch (error) {
-    console.error('Error saving exam result:', error);
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    console.error("Error saving exam result:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
@@ -128,11 +140,13 @@ export const getAllExamAttempts = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: examAttempts
+      data: examAttempts,
     });
   } catch (error) {
-    console.error('Error fetching exam attempts:', error);
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    console.error("Error fetching exam attempts:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
@@ -140,57 +154,85 @@ export const getExamResults = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Find user by userid field (not MongoDB _id)
-    // @ts-ignore - userid is a valid field in the User schema
+    // Find user by userid field
     const user = await User.findOne({ userid: userId });
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
-    // Filter out courses with exam attempts and handle both ObjectId and string courseIds
-    const examResults = user.courseProgress
-      .filter(progress => progress.exam?.attempts > 0)
-      .map(progress => {
-        // Handle both ObjectId and string-based courseIds
-        const courseIdValue = progress.courseId;
-        let courseId, courseName;
-        
-        if (courseIdValue && typeof courseIdValue === 'object' && courseIdValue._id) {
-          // It's a populated ObjectId
-          courseId = courseIdValue._id.toString();
-          courseName = courseIdValue.name || courseIdValue.toString();
-        } else if (courseIdValue && typeof courseIdValue === 'object' && courseIdValue.toString) {
-          // It's an ObjectId that wasn't populated
-          courseId = courseIdValue.toString();
-          courseName = courseId; // Use the ID as name if not populated
-        } else {
-          // It's a string
-          courseId = String(courseIdValue);
-          courseName = courseId; // Use the string as the name
-        }
+    // Filter courses that have at least one attempt recorded in courseProgress
+    const attemptedCourses = user.courseProgress.filter(
+      (progress) =>
+        progress.exam?.attempts > 0 ||
+        (progress.examAttempts && progress.examAttempts.length > 0)
+    );
+
+    const examResults = await Promise.all(
+      attemptedCourses.map(async (progress) => {
+        const courseId = progress.courseId?.toString
+          ? progress.courseId.toString()
+          : String(progress.courseId);
+
+        // Fetch full attempt details from ExamAttempt collection
+        const detailedAttempts = await ExamAttempt.find({
+          userId: userId,
+          courseId: courseId,
+        })
+          .sort({ attemptNumber: 1 })
+          .lean();
+
+        // Map attempts to the format expected by the frontend
+        const enrichedExamAttempts = detailedAttempts.map((attempt) => ({
+          ...attempt,
+          // Ensure attemptDate is a Date object for the frontend
+          attemptDate: attempt.attemptDate || attempt.createdAt,
+          // The answers are already in the ExamAttempt document
+          answers: (attempt.answers || []).map((answer) => ({
+            ...answer,
+            // Ensure fallback values if for some reason question text is missing
+            question: answer.question || `Question ${answer.questionIndex + 1}`,
+            options: answer.options || [],
+          })),
+        }));
+
+        // Get the latest attempt to represent the overall course result
+        const latestAttempt =
+          enrichedExamAttempts.length > 0
+            ? enrichedExamAttempts[enrichedExamAttempts.length - 1]
+            : null;
 
         return {
           courseId: courseId,
-          courseName: courseName,
-          score: progress.exam.score,
-          passed: progress.exam.passed,
-          attempts: progress.exam.attempts,
-          lastAttempt: progress.exam.lastAttempt,
+          courseName: progress.courseName || courseId, // Fallback to courseId if name missing
+          score: latestAttempt
+            ? latestAttempt.score
+            : progress.exam?.score || 0,
+          passed: latestAttempt
+            ? latestAttempt.passed
+            : progress.exam?.passed || false,
+          attempts: enrichedExamAttempts.length,
+          lastAttempt: latestAttempt
+            ? latestAttempt.attemptDate
+            : progress.exam?.lastAttempt,
           completionPercentage: progress.completionPercentage,
-          // Include stored answers so they are visible from the API / DB view
-          answers: progress.exam.answers || [],
-          // Include all exam attempts
-          examAttempts: progress.examAttempts || []
+          // Use answers from the latest attempt or the enriched ones
+          answers: latestAttempt ? latestAttempt.answers : [],
+          examAttempts: enrichedExamAttempts,
         };
-      });
+      })
+    );
 
     res.status(200).json({
       success: true,
-      data: examResults
+      data: examResults,
     });
   } catch (error) {
-    console.error('Error fetching exam results:', error);
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    console.error("Error fetching exam results:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
@@ -200,10 +242,17 @@ export const createExamQuestions = async (req, res) => {
     const { chapterId, category, chapterName, questions } = req.body;
 
     // Validate required fields
-    if (!chapterId || !category || !chapterName || !questions || !Array.isArray(questions)) {
+    if (
+      !chapterId ||
+      !category ||
+      !chapterName ||
+      !questions ||
+      !Array.isArray(questions)
+    ) {
       return res.status(400).json({
         success: false,
-        message: 'chapterId, category, chapterName, and questions array are required',
+        message:
+          "chapterId, category, chapterName, and questions array are required",
       });
     }
 
@@ -212,27 +261,42 @@ export const createExamQuestions = async (req, res) => {
     if (isNaN(chapterIdNum)) {
       return res.status(400).json({
         success: false,
-        message: 'chapterId must be a valid number',
+        message: "chapterId must be a valid number",
       });
     }
 
     // Validate category
-    const validCategories = ["English", "Telugu", "Hindi", "Mathematics", "Science", "Social Studies"];
+    const validCategories = [
+      "English",
+      "Telugu",
+      "Hindi",
+      "Mathematics",
+      "Science",
+      "Social Studies",
+    ];
     if (!validCategories.includes(category)) {
       return res.status(400).json({
         success: false,
-        message: `category must be one of: ${validCategories.join(', ')}`,
+        message: `category must be one of: ${validCategories.join(", ")}`,
       });
     }
 
     // Validate questions structure
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
-      if (!q.question || !Array.isArray(q.options) || q.options.length < 2 || 
-          typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer >= q.options.length) {
+      if (
+        !q.question ||
+        !Array.isArray(q.options) ||
+        q.options.length < 2 ||
+        typeof q.correctAnswer !== "number" ||
+        q.correctAnswer < 0 ||
+        q.correctAnswer >= q.options.length
+      ) {
         return res.status(400).json({
           success: false,
-          message: `Question ${i + 1} is invalid. Each question must have: question (string), options (array of at least 2 strings), and correctAnswer (number between 0 and options.length - 1)`,
+          message: `Question ${
+            i + 1
+          } is invalid. Each question must have: question (string), options (array of at least 2 strings), and correctAnswer (number between 0 and options.length - 1)`,
         });
       }
     }
@@ -251,7 +315,7 @@ export const createExamQuestions = async (req, res) => {
 
       return res.status(200).json({
         success: true,
-        message: 'Exam questions updated successfully',
+        message: "Exam questions updated successfully",
         data: existingExam,
       });
     }
@@ -266,23 +330,24 @@ export const createExamQuestions = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Exam questions created successfully',
+      message: "Exam questions created successfully",
       data: examData,
     });
   } catch (error) {
-    console.error('Error creating exam questions:', error);
-    
+    console.error("Error creating exam questions:", error);
+
     // Handle duplicate key error (from unique index)
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
-        message: 'Exam questions already exist for this chapterId and category combination',
+        message:
+          "Exam questions already exist for this chapterId and category combination",
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Server error',
+      message: "Server error",
       error: error.message,
     });
   }
@@ -297,7 +362,8 @@ export const createExamAttemptDatabase = async (req, res) => {
     if (!userId || !courseId || !chapterId || !category || !chapterName) {
       return res.status(400).json({
         success: false,
-        message: 'userId, courseId, chapterId, category, and chapterName are required',
+        message:
+          "userId, courseId, chapterId, category, and chapterName are required",
       });
     }
 
@@ -306,7 +372,7 @@ export const createExamAttemptDatabase = async (req, res) => {
     if (isNaN(chapterIdNum)) {
       return res.status(400).json({
         success: false,
-        message: 'chapterId must be a valid number',
+        message: "chapterId must be a valid number",
       });
     }
 
@@ -316,10 +382,14 @@ export const createExamAttemptDatabase = async (req, res) => {
       category: category,
     });
 
-    if (!originalExamData || !originalExamData.questions || originalExamData.questions.length === 0) {
+    if (
+      !originalExamData ||
+      !originalExamData.questions ||
+      originalExamData.questions.length === 0
+    ) {
       return res.status(404).json({
         success: false,
-        message: 'No questions found for this chapter in the main database',
+        message: "No questions found for this chapter in the main database",
       });
     }
 
@@ -335,14 +405,14 @@ export const createExamAttemptDatabase = async (req, res) => {
       category: category,
       chapterName: chapterName,
       questions: originalExamData.questions,
-      isActive: true
+      isActive: true,
     });
 
     await examAttemptDatabase.save();
 
     res.status(201).json({
       success: true,
-      message: 'Exam attempt database created successfully',
+      message: "Exam attempt database created successfully",
       data: {
         attemptId: attemptId,
         chapterId: chapterIdNum,
@@ -352,10 +422,10 @@ export const createExamAttemptDatabase = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error creating exam attempt database:', error);
+    console.error("Error creating exam attempt database:", error);
     res.status(500).json({
       success: false,
-      message: 'Server error',
+      message: "Server error",
       error: error.message,
     });
   }
@@ -370,7 +440,7 @@ export const getExamQuestions = async (req, res) => {
     if (!chapterId || !category) {
       return res.status(400).json({
         success: false,
-        message: 'chapterId and category are required',
+        message: "chapterId and category are required",
       });
     }
 
@@ -378,7 +448,7 @@ export const getExamQuestions = async (req, res) => {
     if (isNaN(chapterIdNum)) {
       return res.status(400).json({
         success: false,
-        message: 'chapterId must be a valid number',
+        message: "chapterId must be a valid number",
       });
     }
 
@@ -388,7 +458,7 @@ export const getExamQuestions = async (req, res) => {
     if (attemptId) {
       examData = await ExamAttemptDatabase.findOne({
         attemptId: attemptId,
-        isActive: true
+        isActive: true,
       });
     }
 
@@ -403,18 +473,21 @@ export const getExamQuestions = async (req, res) => {
     if (!examData || !examData.questions || examData.questions.length === 0) {
       return res.status(200).json({
         success: false,
-        message: 'No questions found for this chapter. Please seed the database with exam questions.',
+        message:
+          "No questions found for this chapter. Please seed the database with exam questions.",
         data: {
           chapterId: chapterIdNum,
           category: category,
-          questions: []
-        }
+          questions: [],
+        },
       });
     }
 
     // Randomize questions order for each exam attempt
-    const shuffledQuestions = [...examData.questions].sort(() => Math.random() - 0.5);
-    
+    const shuffledQuestions = [...examData.questions].sort(
+      () => Math.random() - 0.5
+    );
+
     // If numQuestions is specified and valid, return only that many questions
     let finalQuestions = shuffledQuestions;
     if (numQuestions && !isNaN(parseInt(numQuestions))) {
@@ -431,14 +504,14 @@ export const getExamQuestions = async (req, res) => {
         category: examData.category,
         chapterName: examData.chapterName,
         questions: finalQuestions,
-        attemptId: examData.attemptId || null
+        attemptId: examData.attemptId || null,
       },
     });
   } catch (error) {
-    console.error('Error fetching exam questions:', error);
+    console.error("Error fetching exam questions:", error);
     res.status(500).json({
       success: false,
-      message: 'Server error',
+      message: "Server error",
       error: error.message,
     });
   }

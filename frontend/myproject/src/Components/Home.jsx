@@ -271,7 +271,7 @@ const Home = () => {
                           <div className="h-10 w-[2px] bg-slate-100 hidden sm:block"></div>
                           <button
                           onClick={() => navigate(`/performance/${encodeURIComponent(result.courseId)}`)}
-                            className="p-2 hover:bg-white rounded-lg transition-colors text-slate-400 hover:text-indigo-600"
+                            className="p-2 hover:bg-white cursor-pointer  rounded-lg transition-colors text-slate-400 hover:text-indigo-600"
                           >
                             <svg
                               className="w-6 h-6"
