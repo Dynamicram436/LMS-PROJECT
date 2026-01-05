@@ -2,28 +2,47 @@ import React, { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const registerSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  userid: z.string().min(3, "User ID must be at least 3 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  rollno: z.string().min(1, "Roll number is required"),
+  courseName: z.string().min(1, "Class name is required")
+});
 
 const Register = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleForm = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const Obj = Object.fromEntries(formData.entries());
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setError,
+    reset
+  } = useForm({
+    resolver: zodResolver(registerSchema)
+  });
 
+  const handleForm = async (data) => {
     try {
       setLoading(true);
-      await axios.post("http://localhost:8000/api/auth/register", Obj);
+      await axios.post("http://localhost:8000/api/auth/register", data);
       toast.success("Registration successful! Redirecting to login...");
-      e.target.reset();
+      reset();
       setTimeout(() => navigate("/login"), 2000);
     } catch (error) {
       const errorMessage =
         error.response?.data?.message ||
         "Registration failed. Please try again.";
       toast.error(errorMessage);
+      setError("root", { message: errorMessage });
       console.error("Registration error:", error);
     } finally {
       setLoading(false);
@@ -40,7 +59,7 @@ const Register = () => {
           </div>
 
           <div className="p-8">
-            <form onSubmit={handleForm} className="space-y-5">
+            <form onSubmit={handleSubmit(handleForm)} className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label
@@ -50,13 +69,17 @@ const Register = () => {
                     Full Name
                   </label>
                   <input
+                    {...register("name")}
                     id="name"
-                    name="name"
                     type="text"
-                    required
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
+                    className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ${
+                      errors.name ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholder="John Doe"
                   />
+                  {errors.name && (
+                    <p className="text-sm text-red-600">{errors.name.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1">
@@ -67,13 +90,17 @@ const Register = () => {
                     User ID
                   </label>
                   <input
+                    {...register("userid")}
                     id="userid"
-                    name="userid"
                     type="text"
-                    required
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
+                    className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ${
+                      errors.userid ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholder="johndoe123"
                   />
+                  {errors.userid && (
+                    <p className="text-sm text-red-600">{errors.userid.message}</p>
+                  )}
                 </div>
               </div>
 
@@ -85,13 +112,17 @@ const Register = () => {
                   Email
                 </label>
                 <input
+                  {...register("email")}
                   id="email"
-                  name="email"
                   type="email"
-                  required
-                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
+                  className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ${
+                    errors.email ? "border-red-500" : "border-gray-300"
+                  }`}
                   placeholder="john@example.com"
                 />
+                {errors.email && (
+                  <p className="text-sm text-red-600">{errors.email.message}</p>
+                )}
               </div>
 
               <div className="space-y-1">
@@ -103,13 +134,17 @@ const Register = () => {
                 </label>
                 <div className="relative">
                   <input
+                    {...register("password")}
                     id="password"
-                    name="password"
                     type={showPassword ? "text" : "password"}
-                    required
-                    className="w-full px-4 py-2.5 pr-10 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
+                    className={`w-full px-4 py-2.5 pr-10 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ${
+                      errors.password ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholder="••••••••"
                   />
+                  {errors.password && (
+                    <p className="text-sm text-red-600">{errors.password.message}</p>
+                  )}
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -163,13 +198,17 @@ const Register = () => {
                     Roll Number
                   </label>
                   <input
+                    {...register("rollno")}
                     id="rollno"
-                    name="rollno"
                     type="text"
-                    required
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
+                    className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ${
+                      errors.rollno ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholder="21BCE1234"
                   />
+                  {errors.rollno && (
+                    <p className="text-sm text-red-600">{errors.rollno.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1">
@@ -180,13 +219,17 @@ const Register = () => {
                     Class Name
                   </label>
                   <input
+                    {...register("courseName")}
                     id="courseName"
-                    name="courseName"
                     type="text"
-                    required
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
+                    className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ${
+                      errors.courseName ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholder="B.Tech CSE"
                   />
+                  {errors.courseName && (
+                    <p className="text-sm text-red-600">{errors.courseName.message}</p>
+                  )}
                 </div>
               </div>
 
@@ -208,6 +251,11 @@ const Register = () => {
                   "Create Account"
                 )}
               </button>
+              {errors.root && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                  {errors.root.message}
+                </div>
+              )}
 
               <p className="text-center text-sm text-gray-600 mt-4">
                 Already have an account?{" "}
