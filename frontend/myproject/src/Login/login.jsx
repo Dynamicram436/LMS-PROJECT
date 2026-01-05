@@ -2,6 +2,14 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  userid: z.string().min(1, "User ID is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
@@ -9,14 +17,20 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  const handleForm = (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const Obj = Object.fromEntries(formData.entries());
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setError,
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const handleForm = (data) => {
     setLoading(true);
 
     axios
-      .post("http://localhost:8000/api/auth/login", Obj)
+      .post("http://localhost:8000/api/auth/login", data)
       .then((res) => {
         toast.success("Login successful! Redirecting...");
         localStorage.setItem("user", JSON.stringify(res.data.data));
@@ -26,9 +40,10 @@ const Login = () => {
         }, 1500);
       })
       .catch((err) => {
-        toast.error(
-          err.response?.data?.message || "Login failed. Please try again."
-        );
+        const errorMessage =
+          err.response?.data?.message || "Login failed. Please try again.";
+        toast.error(errorMessage);
+        setError("root", { message: errorMessage });
         setLoading(false);
       });
   };
@@ -61,7 +76,7 @@ const Login = () => {
               </p>
             </div>
 
-            <form onSubmit={handleForm} className="space-y-6">
+            <form onSubmit={handleSubmit(handleForm)} className="space-y-6">
               <div className="space-y-4">
                 <div>
                   <label
@@ -87,14 +102,20 @@ const Login = () => {
                       </svg>
                     </div>
                     <input
+                      {...register("userid")}
                       id="userid"
-                      name="userid"
                       type="text"
                       autoComplete="username"
-                      required
-                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+                      className={`block w-full pl-10 pr-3 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 ${
+                        errors.userid ? "border-red-500" : "border-gray-300"
+                      }`}
                       placeholder="Enter your user ID"
                     />
+                    {errors.userid && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.userid.message}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -130,14 +151,20 @@ const Login = () => {
                       </svg>
                     </div>
                     <input
+                      {...register("password")}
                       id="password"
-                      name="password"
                       type={showPassword ? "text" : "password"}
                       autoComplete="current-password"
-                      required
-                      className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+                      className={`block w-full pl-10 pr-10 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 ${
+                        errors.password ? "border-red-500" : "border-gray-300"
+                      }`}
                       placeholder="••••••••"
                     />
+                    {errors.password && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.password.message}
+                      </p>
+                    )}
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
@@ -182,6 +209,11 @@ const Login = () => {
                   </div>
                 </div>
               </div>
+              {errors.root && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                  {errors.root.message}
+                </div>
+              )}
 
               <div>
                 <button
