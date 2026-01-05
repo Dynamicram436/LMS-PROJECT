@@ -695,46 +695,28 @@ const Performance = () => {
                               </p>
                             </div>
 
-                            {/* Answer summary */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div
-                                className={`p-4 rounded-lg border ${
+                            {/* Your answer only */}
+                            <div className="p-4 rounded-lg border bg-slate-800/30 border-white/10">
+                              <p className="text-xs uppercase font-bold text-indigo-200/60 mb-2">
+                                Your Answer
+                              </p>
+                              <p className="text-white font-semibold text-lg">
+                                {answer.selectedOption !== null &&
+                                answer.selectedOption !== undefined
+                                  ? answer.options && answer.options[answer.selectedOption]
+                                    ? `${String.fromCharCode(65 + answer.selectedOption)}. ${answer.options[answer.selectedOption]}`
+                                    : `Option ${String.fromCharCode(65 + answer.selectedOption)}`
+                                  : "Not answered"}
+                              </p>
+                              <p
+                                className={`text-sm mt-2 font-bold ${
                                   answer.isCorrect
-                                    ? "bg-green-500/10 border-green-500/30"
-                                    : "bg-red-500/10 border-red-500/30"
+                                    ? "text-green-400"
+                                    : "text-red-400"
                                 }`}
                               >
-                                <p className="text-xs uppercase font-bold text-indigo-200/60 mb-2">
-                                  Your Answer
-                                </p>
-                                <p className="text-white font-semibold text-lg">
-                                  {answer.selectedOption !== null &&
-                                  answer.selectedOption !== undefined
-                                    ? answer.options && answer.options[answer.selectedOption]
-                                      ? `${String.fromCharCode(65 + answer.selectedOption)}. ${answer.options[answer.selectedOption]}`
-                                      : `Option ${String.fromCharCode(65 + answer.selectedOption)}`
-                                    : "Not answered"}
-                                </p>
-                                <p
-                                  className={`text-sm mt-2 font-bold ${
-                                    answer.isCorrect
-                                      ? "text-green-400"
-                                      : "text-red-400"
-                                  }`}
-                                >
-                                  {answer.isCorrect ? "✓ Correct" : "✗ Incorrect"}
-                                </p>
-                              </div>
-                              <div className="p-4 rounded-lg border bg-green-500/10 border-green-500/30">
-                                <p className="text-xs uppercase font-bold text-indigo-200/60 mb-2">
-                                  Correct Answer
-                                </p>
-                                <p className="text-white font-semibold text-lg">
-                                  {answer.options && answer.options[answer.correctAnswer] !== undefined
-                                    ? `${String.fromCharCode(65 + answer.correctAnswer)}. ${answer.options[answer.correctAnswer]}`
-                                    : `Option ${String.fromCharCode(65 + answer.correctAnswer)}`}
-                                </p>
-                              </div>
+                                {answer.isCorrect ? "✓ Correct" : "✗ Incorrect"}
+                              </p>
                             </div>
 
                             <div className="space-y-2">
@@ -745,30 +727,17 @@ const Performance = () => {
                                     <div
                                       key={optIndex}
                                       className={`p-3 rounded-lg border ${
-                                        optIndex === answer.correctAnswer
-                                          ? "bg-green-500/10 border-green-500/30"
-                                          : optIndex === answer.selectedOption
-                                          ? "bg-red-500/10 border-red-500/30"
+                                        optIndex === answer.selectedOption
+                                          ? "bg-indigo-500/10 border-indigo-500/30"
                                           : "bg-slate-700/50 border-white/10"
                                       }`}
                                     >
                                       <div className="flex items-center justify-between">
                                         <span className="text-white">{String.fromCharCode(65 + optIndex)}. {option}</span>
                                         <div className="flex items-center gap-2">
-                                          {optIndex === answer.correctAnswer && (
-                                            <span className="text-green-400 text-xs font-bold bg-green-500/20 px-2 py-1 rounded">
-                                              CORRECT
-                                            </span>
-                                          )}
-                                          {optIndex === answer.selectedOption &&
-                                            optIndex !== answer.correctAnswer && (
-                                            <span className="text-red-400 text-xs font-bold bg-red-500/20 px-2 py-1 rounded">
+                                          {optIndex === answer.selectedOption && (
+                                            <span className="text-indigo-400 text-xs font-bold bg-indigo-500/20 px-2 py-1 rounded">
                                               YOUR ANSWER
-                                            </span>
-                                          )}
-                                          {optIndex === answer.selectedOption && optIndex === answer.correctAnswer && (
-                                            <span className="text-green-400 text-xs font-bold bg-green-500/20 px-2 py-1 rounded">
-                                              CORRECT & SELECTED
                                             </span>
                                           )}
                                         </div>
