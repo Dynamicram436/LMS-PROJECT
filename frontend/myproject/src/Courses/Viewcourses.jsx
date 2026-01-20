@@ -36,20 +36,20 @@ const Viewcourses = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto mt-20">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+          <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl md:text-6xl">
             10th Standard <span className="text-indigo-600">Subjects</span>
           </h1>
-          <p className="mt-4 max-w-2xl text-xl text-gray-500 mx-auto">
+          <p className="mt-4 max-w-2xl text-xl text-gray-600 mx-auto">
             Explore your curriculum and start learning with our comprehensive
             subject guides
           </p>
         </div>
 
         {/* Search and Filter Section */}
-        <div className="mb-12 bg-white rounded-2xl shadow-sm p-6">
+        <div className="mb-12 bg-white rounded-xl shadow-sm p-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -67,7 +67,7 @@ const Viewcourses = () => {
               </div>
               <input
                 type="text"
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 placeholder="Search subjects..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -96,9 +96,9 @@ const Viewcourses = () => {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 cursor-pointer rounded-full text-sm font-medium transition-all duration-200 ${
+                className={`px-4 py-2 cursor-pointer rounded-full text-sm font-medium transition-colors ${
                   selectedCategory === cat
-                    ? "bg-indigo-600 text-white shadow-md"
+                    ? "bg-indigo-600 text-white"
                     : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
                 }`}
               >
@@ -110,11 +110,11 @@ const Viewcourses = () => {
 
         {/* Courses Grid */}
         {filteredCourses.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {filteredCourses.map((course) => (
               <div
                 key={course.id}
-                className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
               >
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -125,7 +125,7 @@ const Viewcourses = () => {
                     >
                       {course.category}
                     </span>
-                    <div className="h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+                    <div className="h-10 w-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
                       <FiBook className="h-5 w-5" />
                     </div>
                   </div>
@@ -151,7 +151,7 @@ const Viewcourses = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
+          <div className="text-center py-12 bg-white rounded-xl shadow-sm">
             <svg
               className="mx-auto h-12 w-12 text-gray-400"
               fill="none"

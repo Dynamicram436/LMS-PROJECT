@@ -5,6 +5,14 @@ import axios from "axios";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import {
+  FaLock,
+  FaEye,
+  FaEyeSlash,
+  FaUserCircle,
+  FaIdCard,
+  FaSignInAlt
+} from "react-icons/fa";
 
 const loginSchema = z.object({
   userid: z.string().min(1, "User ID is required"),
@@ -49,257 +57,159 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="mt-20 bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 transform hover:shadow-2xl">
-          <div className="p-8">
-            <div className="text-center mb-8">
-              <div className="mx-auto w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-8 w-8 text-indigo-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Decorative Background Blobs */}
+      <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-indigo-500/10 rounded-full blur-[120px]" />
+      <div className="absolute top-[60%] -right-[10%] w-[50%] h-[50%] bg-cyan-500/10 rounded-full blur-[120px]" />
+
+      <div className="w-full max-w-2xl relative z-10">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden transition-all duration-500 hover:shadow-indigo-500/10">
+          <div className="grid grid-cols-1 md:grid-cols-5">
+            {/* Left Sidebar - Visual branding */}
+            <div className="md:col-span-2 bg-gradient-to-br from-indigo-600 to-blue-700 p-8 flex flex-col justify-center items-center text-center">
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md shadow-inner">
+                <FaUserCircle className="text-3xl text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-gray-800">Welcome Back</h1>
-              <p className="mt-2 text-gray-500">
-                Sign in to access your account
+              <h1 className="text-3xl font-bold text-white mb-2">Welcome</h1>
+              <p className="text-indigo-100/80 text-sm">
+                Sign in to continue your learning journey.
               </p>
+              <div className="mt-8 space-y-4 w-full">
+                <div className="flex items-center gap-3 text-white/70 text-sm">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-300" />
+                  <span>Personalized Learning</span>
+                </div>
+                <div className="flex items-center gap-3 text-white/70 text-sm">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-300" />
+                  <span>Real-time Progress</span>
+                </div>
+              </div>
             </div>
 
-            <form onSubmit={handleSubmit(handleForm)} className="space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="userid"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
+            {/* Right Side - Form */}
+            <div className="md:col-span-3 p-8">
+              <div className="mb-8 text-center md:text-left">
+                <h2 className="text-2xl font-bold text-white">Sign In</h2>
+                <p className="text-slate-400 text-sm">Access your account dashboard</p>
+              </div>
+
+              <form onSubmit={handleSubmit(handleForm)} className="space-y-5">
+                {/* User ID */}
+                <div className="space-y-1.5">
+                  <label htmlFor="userid" className="text-xs font-semibold text-slate-400 uppercase tracking-wider ml-1">
                     User ID
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg
-                        className="h-5 w-5 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                      <FaIdCard className="text-sm" />
                     </div>
                     <input
                       {...register("userid")}
                       id="userid"
                       type="text"
-                      autoComplete="username"
-                      className={`block w-full pl-10 pr-3 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 ${
-                        errors.userid ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full bg-slate-900/50 border pl-10 pr-4 py-2.5 rounded-xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition duration-200 outline-none ${errors.userid ? "border-red-500/50" : "border-white/10"
+                        }`}
                       placeholder="Enter your user ID"
                     />
-                    {errors.userid && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.userid.message}
-                      </p>
-                    )}
                   </div>
+                  {errors.userid && (
+                    <p className="text-[11px] text-red-400 font-medium ml-1">{errors.userid.message}</p>
+                  )}
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label
-                      htmlFor="password"
-                      className="block text-sm font-medium text-gray-700"
-                    >
+                {/* Password */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between px-1">
+                    <label htmlFor="password" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                       Password
                     </label>
                     <Link
                       to="/forgot-password"
-                      className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                      className="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors"
                     >
                       Forgot password?
                     </Link>
                   </div>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg
-                        className="h-5 w-5 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                        />
-                      </svg>
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                      <FaLock className="text-sm" />
                     </div>
                     <input
                       {...register("password")}
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      autoComplete="current-password"
-                      className={`block w-full pl-10 pr-10 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 ${
-                        errors.password ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full bg-slate-900/50 border pl-10 pr-10 py-2.5 rounded-xl text-white placeholder:text-slate-600 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition duration-200 outline-none ${errors.password ? "border-red-500/50" : "border-white/10"
+                        }`}
                       placeholder="••••••••"
                     />
-                    {errors.password && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.password.message}
-                      </p>
-                    )}
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-indigo-400 transition-colors"
                     >
-                      {showPassword ? (
-                        <svg
-                          className="h-5 w-5 text-gray-400 hover:text-gray-600"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                          />
-                        </svg>
-                      ) : (
-                        <svg
-                          className="h-5 w-5 text-gray-400 hover:text-gray-600"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
-                      )}
+                      {showPassword ? <FaEyeSlash className="text-sm" /> : <FaEye className="text-sm" />}
                     </button>
                   </div>
+                  {errors.password && (
+                    <p className="text-[11px] text-red-400 font-medium ml-1">{errors.password.message}</p>
+                  )}
                 </div>
-              </div>
-              {errors.root && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                  {errors.root.message}
-                </div>
-              )}
 
-              <div>
                 <button
                   type="submit"
                   disabled={loading}
-                  onMouseEnter={() => setIsHovered(true)}
-                  onMouseLeave={() => setIsHovered(false)}
-                  className={`w-full flex justify-center cursor-pointer items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 ${
-                    loading
-                      ? "opacity-75 cursor-not-allowed"
-                      : "hover:shadow-md hover:-translate-y-0.5"
-                  } ${isHovered ? "shadow-lg" : ""}`}
+                  className={`w-full mt-2 py-3 cursor-pointer px-4 rounded-xl font-bold text-white transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.98] flex items-center justify-center space-x-2 ${loading
+                      ? "bg-slate-700 cursor-not-allowed"
+                      : "bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-indigo-500/40"
+                    }`}
                 >
                   {loading ? (
                     <>
-                      <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Signing in...
+                      <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                      <span>Signing in...</span>
                     </>
                   ) : (
-                    "Sign in to your account"
+                    <>
+                      <FaSignInAlt className="text-sm" />
+                      <span>Sign In</span>
+                    </>
                   )}
                 </button>
-              </div>
-            </form>
 
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">
-                    New to our platform?
+                {errors.root && (
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm font-medium">
+                    {errors.root.message}
+                  </div>
+                )}
+              </form>
+
+              <div className="mt-8">
+                <div className="relative flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/5"></div>
+                  </div>
+                  <span className="relative px-3 bg-slate-900 text-slate-500 text-xs font-semibold uppercase tracking-widest rounded-full">
+                    Or join us
                   </span>
                 </div>
-              </div>
 
-              <div className="mt-6">
                 <Link
                   to="/"
-                  className="w-full flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-200"
+                  className="w-full mt-6 flex items-center justify-center px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200"
                 >
                   Create an account
                 </Link>
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="bg-gray-50 px-8 py-4 rounded-b-2xl text-center">
-            <p className="text-xs text-gray-500">
-              By signing in, you agree to our
-              <a
-                href="#"
-                className="text-indigo-600 hover:text-indigo-500 ml-1"
-              >
-                Terms
-              </a>{" "}
-              and
-              <a
-                href="#"
-                className="text-indigo-600 hover:text-indigo-500 ml-1"
-              >
-                Privacy Policy
-              </a>
-              .
-            </p>
-          </div>
+        <div className="mt-6 text-center">
+          <p className="text-xs text-slate-500">
+            By signing in, you agree to our
+            <a href="#" className="text-indigo-400 hover:text-indigo-300 ml-1">Terms</a> and
+            <a href="#" className="text-indigo-400 hover:text-indigo-300 ml-1">Privacy Policy</a>
+          </p>
         </div>
       </div>
     </div>

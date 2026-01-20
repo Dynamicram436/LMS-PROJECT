@@ -4,7 +4,7 @@ import Exam from "./Exam";
 import { chaptersData } from "./courseCatalog";
 import { FiArrowLeft, FiBookOpen, FiPlayCircle, FiEdit3 } from "react-icons/fi";
 
-const Highlighter = ({ children, color = "bg-yellow-200/60" }) => (
+const Highlighter = ({ children, color = "bg-slate-200/60" }) => (
   <span className="relative inline-block px-1">
     <span className="relative z-10">{children}</span>
     <span
@@ -52,7 +52,7 @@ const Courses = () => {
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 cursor-pointer text-slate-600 hover:text-indigo-600 transition-colors font-semibold"
+            className="flex items-center gap-2 cursor-pointer text-slate-600 hover:text-slate-900 transition-colors font-semibold"
           >
             <FiArrowLeft className="w-5 h-5" />
             <span>Back to Subjects</span>
@@ -68,13 +68,13 @@ const Courses = () => {
         {/* Page Header */}
         <header className="mb-10">
           <div className="flex items-center gap-3 mb-3">
-            <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-bold uppercase tracking-wider border border-indigo-100">
+            <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-[10px] font-bold uppercase tracking-wider border border-slate-200">
               {subject || "Unknown Subject"}
             </span>
           </div>
           <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
             Level Up Your{" "}
-            <Highlighter color="bg-indigo-200/50">Knowledge</Highlighter>
+            <Highlighter color="bg-slate-200/50">Knowledge</Highlighter>
           </h1>
         </header>
 
@@ -84,7 +84,7 @@ const Courses = () => {
             <section className="">
               {activeVideo?.videoId ? (
                 <div className="relative group">
-                  <div className="aspect-video rounded-[2.5rem] overflow-hidden bg-slate-900 shadow-2xl shadow-indigo-100 border-8 border-white">
+                  <div className="aspect-video rounded-[2.5rem] overflow-hidden bg-slate-900 shadow-2xl shadow-slate-100 border-8 border-white">
                     <iframe
                       src={`https://www.youtube.com/embed/${activeVideo.videoId}?rel=0&modestbranding=1`}
                       allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -98,8 +98,8 @@ const Courses = () => {
                   <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
-                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em]">
+                        <span className="flex h-2 w-2 rounded-full bg-slate-500 animate-ping"></span>
+                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em]">
                           Currently Learning
                         </span>
                       </div>
@@ -119,7 +119,7 @@ const Courses = () => {
                           )}/exam?chapterId=${activeVideo.chapter.id}`
                         )
                       }
-                      className="inline-flex cursor-pointer shrink-0 items-center justify-center gap-3 bg-slate-900 hover:bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-xl hover:scale-[1.05] active:scale-95 text-sm"
+                      className="inline-flex cursor-pointer shrink-0 items-center justify-center gap-3 bg-slate-800 hover:bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-xl hover:scale-[1.05] active:scale-95 text-sm"
                     >
                       <FiEdit3 className="w-5 h-5" />
                       Take Assessment
@@ -150,7 +150,7 @@ const Courses = () => {
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
                   Course Syllabus
                 </h3>
-                <span className="text-[10px] font-black text-indigo-500 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100">
+                <span className="text-[10px] font-black text-slate-600 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
                   {chapters.length} LESSONS
                 </span>
               </div>
@@ -158,14 +158,14 @@ const Courses = () => {
               <div className="relative">
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="w-full bg-white border-2 border-slate-100 rounded-[1.5rem] p-5 flex items-center justify-between shadow-sm hover:border-indigo-300 transition-all text-left group"
+                  className="w-full bg-white border-2 border-slate-100 rounded-[1.5rem] p-5 flex items-center justify-between shadow-sm hover:border-slate-300 transition-all text-left group"
                 >
                   <div className="flex items-center gap-4 cursor-pointer">
-                    <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 font-bold group-hover:bg-slate-800 group-hover:text-white transition-colors">
                       {displayIndex.toString().padStart(2, "0")}
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mb-0.5">
+                      <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-0.5">
                         Active Module
                       </p>
                       <p className="font-bold text-slate-900 truncate max-w-[150px] md:max-w-none">
@@ -179,7 +179,7 @@ const Courses = () => {
                     }`}
                   >
                     <svg
-                      className="w-5 h-5 text-indigo-400"
+                      className="w-5 h-5 text-slate-400"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -195,15 +195,15 @@ const Courses = () => {
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-4 bg-white/95 backdrop-blur-xl border border-white rounded-[2rem] shadow-[0_20px_50px_rgba(79,70,229,0.15)] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300">
+                  <div className="absolute top-full left-0 right-0 mt-4 bg-white/95 backdrop-blur-xl border border-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300">
                     <div className="max-h-[450px] overflow-y-auto custom-scrollbar p-3">
                       {chapters.map((chapter, index) => (
                         <div
                           key={chapter.id}
                           className={`group flex items-center justify-between p-4 rounded-2xl transition-all cursor-pointer mb-2 ${
                             activeVideo?.chapter?.id === chapter.id
-                              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200"
-                              : "hover:bg-indigo-50 border border-transparent"
+                              ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
+                              : "hover:bg-slate-50 border border-transparent"
                           }`}
                           onClick={() => handleVideoSelect(chapter)}
                         >
@@ -211,8 +211,8 @@ const Courses = () => {
                             <span
                               className={`text-xs font-black ${
                                 activeVideo?.chapter?.id === chapter.id
-                                  ? "text-indigo-200"
-                                  : "text-slate-300 group-hover:text-indigo-400"
+                                  ? "text-slate-300"
+                                  : "text-slate-300 group-hover:text-slate-500"
                               }`}
                             >
                               {(index + 1).toString().padStart(2, "0")}
@@ -230,7 +230,7 @@ const Courses = () => {
                               <p
                                 className={`text-[10px] truncate ${
                                   activeVideo?.chapter?.id === chapter.id
-                                    ? "text-indigo-100"
+                                    ? "text-slate-200"
                                     : "text-slate-400"
                                 }`}
                               >
@@ -241,8 +241,8 @@ const Courses = () => {
                           <button
                             className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shrink-0 ml-4 ${
                               activeVideo?.chapter?.id === chapter.id
-                                ? "bg-white text-indigo-600 scale-110 shadow-md"
-                                : "bg-slate-100 text-slate-400 group-hover:bg-indigo-500 group-hover:text-white"
+                                ? "bg-white text-slate-800 scale-110 shadow-md"
+                                : "bg-slate-100 text-slate-400 group-hover:bg-slate-700 group-hover:text-white"
                             }`}
                           >
                             <FiPlayCircle className="w-4 h-4 fill-current" />

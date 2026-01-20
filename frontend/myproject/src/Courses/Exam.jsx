@@ -447,20 +447,20 @@ const Exam = () => {
 
   const getResultFeedback = (percentage) => {
     if (percentage >= 90)
-      return { emoji: "🏆", text: "Exceptional!", color: "text-emerald-500" };
+      return { emoji: "🏆", text: "Exceptional!", color: "text-slate-400" };
     if (percentage >= 70)
-      return { emoji: "🌟", text: "Great Job!", color: "text-blue-500" };
+      return { emoji: "🌟", text: "Great Job!", color: "text-slate-300" };
     if (percentage >= 50)
-      return { emoji: "📚", text: "Good Effort!", color: "text-amber-500" };
-    return { emoji: "💪", text: "Keep Practicing!", color: "text-rose-500" };
+      return { emoji: "📚", text: "Good Effort!", color: "text-slate-500" };
+    return { emoji: "💪", text: "Keep Practicing!", color: "text-slate-600" };
   };
 
   return (
     <div className="min-h-screen bg-slate-950 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
       {/* Decorative Background Glows */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-indigo-500/10 rounded-full blur-[120px]" />
-        <div className="absolute top-[60%] -right-[10%] w-[50%] h-[50%] bg-cyan-500/10 rounded-full blur-[120px]" />
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-slate-700/10 rounded-full blur-[120px]" />
+        <div className="absolute top-[60%] -right-[10%] w-[50%] h-[50%] bg-slate-600/10 rounded-full blur-[120px]" />
       </div>
 
       {/* Back Button */}
@@ -479,9 +479,9 @@ const Exam = () => {
               <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">
                 {chapter ? chapter.name : subject || category}
               </h1>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-indigo-500/10 rounded-full border border-indigo-500/20">
-                <span className="w-1 h-1 rounded-full bg-indigo-400 animate-pulse" />
-                <p className="text-indigo-300 font-bold tracking-widest uppercase text-[9px]">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-700/20 rounded-full border border-slate-600/30">
+                <span className="w-1 h-1 rounded-full bg-slate-400 animate-pulse" />
+                <p className="text-slate-300 font-bold tracking-widest uppercase text-[9px]">
                   {safeTotal} Questions
                 </p>
               </div>
@@ -491,18 +491,18 @@ const Exam = () => {
               <div className="py-20 flex flex-col items-center">
                 <div className="relative w-16 h-16">
                   <div className="absolute top-0 left-0 w-full h-full border-4 border-white/10 rounded-full" />
-                  <div className="absolute top-0 left-0 w-full h-full border-4 border-t-indigo-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin" />
+                  <div className="absolute top-0 left-0 w-full h-full border-4 border-t-slate-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin" />
                 </div>
-                <p className="mt-6 text-indigo-200/50 animate-pulse font-medium">
+                <p className="mt-6 text-slate-400/50 animate-pulse font-medium">
                   Preparing your exam...
                 </p>
               </div>
             ) : error && safeTotal === 0 ? (
-              <div className="p-8 text-center bg-rose-500/10 border border-rose-500/20 rounded-2xl">
-                <p className="text-rose-200 font-medium mb-4">{error}</p>
+              <div className="p-8 text-center bg-slate-700/20 border border-slate-600/30 rounded-2xl">
+                <p className="text-slate-200 font-medium mb-4">{error}</p>
                 <button
                   onClick={() => navigate(-1)}
-                  className="text-white bg-rose-600 px-6 py-2 rounded-xl"
+                  className="text-white bg-slate-600 px-6 py-2 rounded-xl"
                 >
                   Try Again Later
                 </button>
@@ -511,7 +511,7 @@ const Exam = () => {
               <div className="text-center animate-in fade-in zoom-in duration-500">
                 <div className="flex justify-center mb-8">
                   <div className="relative">
-                    <div className="absolute inset-0 bg-indigo-500/30 blur-2xl rounded-full" />
+                    <div className="absolute inset-0 bg-slate-600/30 blur-2xl rounded-full" />
                     <div className="relative w-32 h-32 bg-white/10 rounded-full flex items-center justify-center border border-white/20">
                       <span className="text-6xl">
                         {getResultFeedback((score / safeTotal) * 100).emoji}
@@ -525,23 +525,23 @@ const Exam = () => {
                 </h2>
 
                 <div className="mt-6 p-6 rounded-2xl bg-slate-800/50 border border-white/10 shadow-inner">
-                  <div className="text-indigo-300 font-bold tracking-widest uppercase text-[10px] mb-2">
+                  <div className="text-slate-300 font-bold tracking-widest uppercase text-[10px] mb-2">
                     Final Performance
                   </div>
                   <div className="text-5xl font-black text-white mb-4">
                     {score}
-                    <span className="text-indigo-500/50">/</span>
+                    <span className="text-slate-500/50">/</span>
                     {safeTotal}
                   </div>
                   <div className="mb-2 flex justify-between items-center text-xs font-bold">
-                    <span className="text-indigo-200">Completion Score</span>
+                    <span className="text-slate-300">Completion Score</span>
                     <span className="text-white">
                       {Math.round((score / safeTotal) * 100)}%
                     </span>
                   </div>
                   <div className="w-full bg-slate-950/50 h-3 rounded-full overflow-hidden p-0.5 border border-white/5">
                     <div
-                      className="h-full rounded-full transition-all duration-1000 bg-gradient-to-r from-indigo-500 to-cyan-400"
+                      className="h-full rounded-full transition-all duration-1000 bg-gradient-to-r from-slate-600 to-slate-400"
                       style={{ width: `${(score / safeTotal) * 100}%` }}
                     />
                   </div>
@@ -550,7 +550,7 @@ const Exam = () => {
                 <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
                   <button
                     onClick={handleRetakeExam}
-                    className="flex items-center cursor-pointer justify-center gap-2 px-8 py-3 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-500 transition-all duration-300 shadow-xl shadow-indigo-500/20 active:scale-95"
+                    className="flex items-center cursor-pointer justify-center gap-2 px-8 py-3 bg-slate-700 text-white font-bold rounded-2xl hover:bg-slate-600 transition-all duration-300 shadow-xl shadow-slate-700/20 active:scale-95"
                   >
                     <FaRedo className="text-sm" />
                     Retake Exam
@@ -568,7 +568,7 @@ const Exam = () => {
                 {user && (
                   <div className="mt-8 p-4 rounded-2xl bg-slate-800/50 border border-white/10">
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-indigo-300 font-bold tracking-widest uppercase text-[10px]">
+                      <h4 className="text-slate-300 font-bold tracking-widest uppercase text-[10px]">
                         YOUR EXAM HISTORY
                       </h4>
                       {examAttempts && examAttempts.length > 0 && (
@@ -578,7 +578,7 @@ const Exam = () => {
                               `/performance/${encodeURIComponent(courseId)}`
                             )
                           }
-                          className="text-xs font-bold px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-all flex items-center gap-1"
+                          className="text-xs font-bold px-3 py-1 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all flex items-center gap-1"
                         >
                           View All
                           <FaArrowLeft className="rotate-180 text-[8px]" />
@@ -592,7 +592,7 @@ const Exam = () => {
                             key={attempt.attemptNumber || idx}
                             className="flex justify-between items-center py-2 border-b border-white/5 last:border-0"
                           >
-                            <span className="text-sm text-indigo-200">
+                            <span className="text-sm text-slate-300">
                               Attempt #{attempt.attemptNumber}
                             </span>
                             <div className="text-right">
@@ -602,8 +602,8 @@ const Exam = () => {
                               <span
                                 className={`ml-2 text-xs ${
                                   attempt.passed
-                                    ? "text-green-400"
-                                    : "text-red-400"
+                                    ? "text-slate-400"
+                                    : "text-slate-500"
                                 }`}
                               >
                                 {attempt.passed ? "PASSED" : "FAILED"}
@@ -612,7 +612,7 @@ const Exam = () => {
                           </div>
                         ))
                       ) : (
-                        <p className="text-indigo-200/60 text-sm">
+                        <p className="text-slate-400/60 text-sm">
                           No previous attempts found
                         </p>
                       )}
@@ -626,21 +626,21 @@ const Exam = () => {
                 <div className="mb-6">
                   <div className="flex justify-between items-end mb-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-md bg-indigo-500/20 flex items-center justify-center text-indigo-300 font-bold text-[10px]">
+                      <div className="w-6 h-6 rounded-md bg-slate-700/30 flex items-center justify-center text-slate-300 font-bold text-[10px]">
                         {safeCurrentIndex + 1}
                       </div>
-                      <span className="text-indigo-100 font-bold text-xs tracking-tight">
+                      <span className="text-slate-200 font-bold text-xs tracking-tight">
                         Question Pool
                       </span>
                     </div>
-                    <span className="text-indigo-300/60 font-mono text-[10px] leading-none">
+                    <span className="text-slate-400/60 font-mono text-[10px] leading-none">
                       {Math.round(((safeCurrentIndex + 1) / safeTotal) * 100)}%
                       PROGRESS
                     </span>
                   </div>
                   <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 transition-all duration-500"
+                      className="h-full bg-gradient-to-r from-slate-600 to-slate-400 transition-all duration-500"
                       style={{
                         width: `${((safeCurrentIndex + 1) / safeTotal) * 100}%`,
                       }}
@@ -660,7 +660,7 @@ const Exam = () => {
                         onClick={() => handleAnswerOptionClick(index)}
                         className={`w-full relative p-4 rounded-xl border-2 text-left transition-all duration-200 flex items-center justify-between ${
                           selectedOptions[safeCurrentIndex] === index
-                            ? "bg-indigo-600 border-indigo-400 shadow-lg transform -translate-y-0.5"
+                            ? "bg-slate-700 border-slate-500 shadow-lg transform -translate-y-0.5"
                             : "bg-slate-800/40 border-white/5 hover:border-white/10 hover:bg-slate-800/60"
                         }`}
                       >
@@ -668,8 +668,8 @@ const Exam = () => {
                           <div
                             className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center font-bold text-xs transition-all duration-200 ${
                               selectedOptions[safeCurrentIndex] === index
-                                ? "border-white bg-white text-indigo-600 shadow-md"
-                                : "border-white/10 text-indigo-200"
+                                ? "border-white bg-white text-slate-800 shadow-md"
+                                : "border-white/10 text-slate-300"
                             }`}
                           >
                             {String.fromCharCode(65 + index)}
@@ -678,7 +678,7 @@ const Exam = () => {
                             className={`text-sm font-bold transition-colors ${
                               selectedOptions[safeCurrentIndex] === index
                                 ? "text-white"
-                                : "text-indigo-50"
+                                : "text-slate-100"
                             }`}
                           >
                             {option}
@@ -706,7 +706,7 @@ const Exam = () => {
                     className={`flex items-center cursor-pointer gap-2 font-bold px-4 py-2 rounded-lg transition-all text-xs ${
                       safeCurrentIndex === 0
                         ? "opacity-20 cursor-not-allowed text-white"
-                        : "text-indigo-200 hover:bg-white/10 active:scale-95"
+                        : "text-slate-200 hover:bg-slate-700/20 active:scale-95"
                     }`}
                   >
                     <FaArrowLeft className="text-[10px]" />
@@ -718,7 +718,7 @@ const Exam = () => {
                       <button
                         onClick={handleSubmit}
                         disabled={selectedOptions[safeCurrentIndex] === null}
-                        className="flex cursor-pointer items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold px-6 py-2 rounded-xl hover:shadow-lg transition-all text-xs active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex cursor-pointer items-center gap-2 bg-gradient-to-r from-slate-600 to-slate-500 text-white font-bold px-6 py-2 rounded-xl hover:shadow-lg transition-all text-xs active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <FaCheckCircle />
                         Finish
@@ -727,7 +727,7 @@ const Exam = () => {
                       <button
                         onClick={handleNext}
                         disabled={selectedOptions[safeCurrentIndex] === null}
-                        className="flex cursor-pointer items-center gap-2 bg-indigo-600 text-white font-bold px-6 py-2 rounded-xl hover:bg-indigo-500 hover:shadow-lg transition-all text-xs active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex cursor-pointer items-center gap-2 bg-slate-700 text-white font-bold px-6 py-2 rounded-xl hover:bg-slate-600 hover:shadow-lg transition-all text-xs active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Next
                       </button>

@@ -2,6 +2,7 @@ import User from "../models/userSchema.js";
 import ExamQuestion from "../models/examQuestionSchema.js";
 import ExamAttempt from "../models/examAttemptSchema.js";
 import ExamAttemptDatabase from "../models/examAttemptDatabaseSchema.js";
+import { seedQuestions } from "../seedExamQuestionsLocal.js";
 
 export const saveExamResult = async (req, res) => {
   try {
@@ -470,6 +471,20 @@ export const getExamQuestions = async (req, res) => {
       });
     }
 
+    // If no questions found, try to seed the database
+    if (!examData || !examData.questions || examData.questions.length === 0) {
+      console.log("No questions found, attempting to seed database...");
+      const seedResult = await seedQuestions();
+      
+      if (seedResult.success) {
+        console.log("Database seeded successfully, trying to fetch questions again...");
+        examData = await ExamQuestion.findOne({
+          chapterId: chapterIdNum,
+          category: category,
+        });
+      }
+    }
+
     if (!examData || !examData.questions || examData.questions.length === 0) {
       return res.status(200).json({
         success: false,
@@ -509,6 +524,21 @@ export const getExamQuestions = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching exam questions:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+// Seed exam questions endpoint
+export const seedExamQuestions = async (req, res) => {
+  try {
+    const result = await seedQuestions();
+    res.status(result.success ? 200 : 500).json(result);
+  } catch (error) {
+    console.error("Error seeding exam questions:", error);
     res.status(500).json({
       success: false,
       message: "Server error",
