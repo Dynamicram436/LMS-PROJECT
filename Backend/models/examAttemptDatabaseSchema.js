@@ -22,31 +22,39 @@ const examAttemptDatabaseSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      required: true
+      required: true,
+      enum: ["English", "Telugu", "Hindi", "Mathematics", "Science", "Social Studies"]
     },
     chapterName: {
       type: String,
       required: true
     },
-    questions: [
-      {
-        question: {
-          type: String,
-          required: true,
-        },
-        options: [
-          {
-            type: String,
-            required: true,
-          },
-        ],
-        correctAnswer: {
-          type: Number,
-          required: true,
-          min: 0,
-        },
+    questions: [{
+      question: {
+        type: String,
+        required: true
       },
-    ],
+      options: {
+        type: [String],
+        required: true,
+        validate: {
+          validator: function(options) {
+            return options.length >= 2;
+          },
+          message: 'Question must have at least 2 options'
+        }
+      },
+      correctAnswer: {
+        type: Number,
+        required: true,
+        validate: {
+          validator: function(correctAnswer) {
+            return correctAnswer >= 0 && correctAnswer < this.options.length;
+          },
+          message: 'Correct answer must be a valid option index'
+        }
+      }
+    }],
     isActive: {
       type: Boolean,
       default: true
@@ -54,6 +62,13 @@ const examAttemptDatabaseSchema = new mongoose.Schema(
     createdAt: {
       type: Date,
       default: Date.now
+    },
+    expiresAt: {
+      type: Date,
+      default: function() {
+        // Expires after 24 hours
+        return new Date(Date.now() + 24 * 60 * 60 * 1000);
+      }
     }
   },
   { 
@@ -63,10 +78,10 @@ const examAttemptDatabaseSchema = new mongoose.Schema(
   }
 );
 
-// Create compound index for faster queries
-examAttemptDatabaseSchema.index({ attemptId: 1 }, { unique: true });
+// Create indexes for faster queries
 examAttemptDatabaseSchema.index({ userId: 1, courseId: 1 });
-examAttemptDatabaseSchema.index({ userId: 1, isActive: 1 });
+examAttemptDatabaseSchema.index({ chapterId: 1, category: 1 });
+examAttemptDatabaseSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 const ExamAttemptDatabase = mongoose.models.ExamAttemptDatabase || mongoose.model("ExamAttemptDatabase", examAttemptDatabaseSchema);
 

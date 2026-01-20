@@ -71,9 +71,10 @@ const examAttemptSchema = new mongoose.Schema(
   }
 );
 
-// Create compound index for faster queries
+// Create compound index for faster queries (attemptId already indexed due to unique: true)
 examAttemptSchema.index({ userId: 1, courseId: 1, attemptNumber: 1 });
 examAttemptSchema.index({ userId: 1, attemptDate: -1 });
+// examAttemptSchema.index({ attemptId: 1 }); // Removed - duplicate due to unique: true
 
 const ExamAttempt = mongoose.models.ExamAttempt || mongoose.model("ExamAttempt", examAttemptSchema);
 

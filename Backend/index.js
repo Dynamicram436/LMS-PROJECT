@@ -1,6 +1,10 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import dns from "dns";
+
+// Fix for SRV resolution issues on some local networks
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
 import authRoute from "./routes/authRoute.js";
 import courseRoute from "./routes/courseRoute.js";
 import examRoute from "./routes/examRoute.js";

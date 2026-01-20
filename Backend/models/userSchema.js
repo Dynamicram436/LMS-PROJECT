@@ -161,10 +161,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Indexes for faster queries
-userSchema.index({ email: 1 });
-userSchema.index({ rollno: 1 });
-
+// Create the real MongoDB model
 const User = mongoose.models.User || mongoose.model("User", userSchema);
 
 export default User;

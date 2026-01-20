@@ -1,8 +1,10 @@
 const mongoose = require('mongoose');
+require('dotenv').config();
 const User = require('./models/userSchema.js');
 
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/mern-stack').then(async () => {
+const mongoURI = process.env.MONGODB_URL || 'mongodb+srv://bhargavramgomatham_db_user:436465@cluster0.lc2qwz1.mongodb.net/';
+mongoose.connect(mongoURI).then(async () => {
     console.log('Connected to MongoDB');
     
     try {
