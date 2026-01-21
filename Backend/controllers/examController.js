@@ -10,6 +10,10 @@ export const saveExamResult = async (req, res) => {
       req.body;
 
     console.log(`[SaveExamResult] Received request for userId: ${userId}, courseId: ${courseId}`);
+    console.log(`[SaveExamResult] Answers received: ${answers ? answers.length : 0} answers`);
+    if (answers && answers.length > 0) {
+      console.log(`[SaveExamResult] First answer:`, JSON.stringify(answers[0], null, 2));
+    }
 
     // Find the user by userid field (not MongoDB _id)
     const user = await User.findOne({ userid: userId });
@@ -180,13 +184,33 @@ export const getExamResults = async (req, res) => {
           ? progress.courseId.toString()
           : String(progress.courseId);
 
+        console.log(`[getExamResults] Fetching attempts for userId: ${userId}, courseId: ${courseId}`);
+
         // Fetch full attempt details from ExamAttempt collection
-        const detailedAttempts = await ExamAttempt.find({
+        let detailedAttempts = await ExamAttempt.find({
           userId: userId,
           courseId: courseId,
         })
           .sort({ attemptNumber: 1 })
           .lean();
+        
+        console.log(`[getExamResults] Found ${detailedAttempts.length} detailed attempts for courseId: ${courseId}`);
+        if (detailedAttempts.length > 0) {
+          console.log(`[getExamResults] First attempt answers count: ${detailedAttempts[0].answers?.length || 0}`);
+        } else {
+          // Fallback: If no records in ExamAttempt collection, use embedded courseProgress.examAttempts
+          console.log(`[getExamResults] No ExamAttempt records found, using fallback from courseProgress`);
+          if (progress.examAttempts && progress.examAttempts.length > 0) {
+            detailedAttempts = progress.examAttempts.map((attempt, index) => ({
+              ...attempt,
+              userId: userId,
+              courseId: courseId,
+              // Use attemptId if not present
+              attemptId: attempt.examAttemptId || `${userId}_${courseId}_${index}`,
+            }));
+            console.log(`[getExamResults] Using ${detailedAttempts.length} attempts from courseProgress`);
+          }
+        }
 
         // Map attempts to the format expected by the frontend
         const enrichedExamAttempts = detailedAttempts.map((attempt) => ({
@@ -430,13 +454,25 @@ export const createExamAttemptDatabase = async (req, res) => {
 // Get exam questions by category, course, and video
 export const getExamQuestions = async (req, res) => {
   try {
-    const { category, course, video, numQuestions, attemptId } = req.query;
+    const { category, course, video, chapterId, numQuestions, attemptId } = req.query;
+
+    // Support both old format (category, course, video) and new format (chapterId, category)
+    let queryCategory = category;
+    let queryChapterId = chapterId ? parseInt(chapterId) : null;
 
     // Validate required parameters
-    if (!category || !course || !video) {
+    if (!queryCategory) {
       return res.status(400).json({
         success: false,
-        message: "category, course, and video are required",
+        message: "category is required",
+      });
+    }
+
+    // If chapterId is provided, use it; otherwise require course and video
+    if (!queryChapterId && (!course || !video)) {
+      return res.status(400).json({
+        success: false,
+        message: "Either chapterId or (course and video) are required",
       });
     }
 
@@ -452,11 +488,20 @@ export const getExamQuestions = async (req, res) => {
 
     // If no attempt-specific data found, fall back to main database
     if (!examData) {
-      examData = await ExamQuestion.findOne({
-        category: category,
-        course: course,
-        video: video,
-      });
+      if (queryChapterId) {
+        // Search by chapterId and category
+        examData = await ExamQuestion.findOne({
+          chapterId: queryChapterId,
+          category: queryCategory,
+        });
+      } else {
+        // Search by category, course, and video
+        examData = await ExamQuestion.findOne({
+          category: queryCategory,
+          course: course,
+          video: video,
+        });
+      }
     }
 
     // If no questions found, try to seed the database
@@ -466,11 +511,18 @@ export const getExamQuestions = async (req, res) => {
       
       if (seedResult.success) {
         console.log("Database seeded successfully, trying to fetch questions again...");
-        examData = await ExamQuestion.findOne({
-          category: category,
-          course: course,
-          video: video,
-        });
+        if (queryChapterId) {
+          examData = await ExamQuestion.findOne({
+            chapterId: queryChapterId,
+            category: queryCategory,
+          });
+        } else {
+          examData = await ExamQuestion.findOne({
+            category: queryCategory,
+            course: course,
+            video: video,
+          });
+        }
       }
     }
 
