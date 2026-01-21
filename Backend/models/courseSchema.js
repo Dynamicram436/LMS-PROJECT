@@ -20,16 +20,25 @@ const videoSchema = new mongoose.Schema({
 });
 
 const questionSchema = new mongoose.Schema({
-  question: {
+  qType: {
+    type: String,
+    required: true,
+    enum: ["MCQ", "TrueFalse", "ShortAnswer"]
+  },
+  qId: {
     type: String,
     required: true
   },
-  options: [{
+  qDesc: {
+    type: String,
+    required: true
+  },
+  choices: [{
     type: String,
     required: true
   }],
-  correctAnswer: {
-    type: Number,
+  correctAns: {
+    type: String,
     required: true
   }
 });

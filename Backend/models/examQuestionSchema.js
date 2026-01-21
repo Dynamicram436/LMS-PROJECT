@@ -7,28 +7,37 @@ const examQuestionSchema = new mongoose.Schema(
       required: true,
       enum: ["English", "Telugu", "Hindi", "Mathematics", "Science", "Social Studies"],
     },
-    chapterId: {
-      type: Number,
+    course: {
+      type: String,
       required: true,
     },
-    chapterName: {
+    video: {
       type: String,
       required: true,
     },
     questions: [
       {
-        question: {
+        qType: {
+          type: String,
+          required: true,
+          enum: ["MCQ", "TrueFalse", "ShortAnswer"],
+        },
+        qId: {
           type: String,
           required: true,
         },
-        options: [
+        qDesc: {
+          type: String,
+          required: true,
+        },
+        choices: [
           {
             type: String,
             required: true,
           }
         ],
-        correctAnswer: {
-          type: Number,
+        correctAns: {
+          type: String,
           required: true,
         },
       },
@@ -38,7 +47,7 @@ const examQuestionSchema = new mongoose.Schema(
 );
 
 // Create compound index for faster queries
-examQuestionSchema.index({ category: 1, chapterId: 1 }, { unique: true });
+examQuestionSchema.index({ category: 1, course: 1, video: 1 }, { unique: true });
 
 const ExamQuestion =
   mongoose.models.ExamQuestion ||

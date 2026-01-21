@@ -87,109 +87,101 @@ const Home = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-20">
+    <div className="min-h-screen bg-white font-sans text-gray-900 pb-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Welcome Section */}
-        <div className="pt-24 pb-12">
-          <div className="bg-white rounded-2xl p-8 sm:p-12 shadow-sm border border-gray-200 relative overflow-hidden">
-            <div className="relative z-10 flex flex-col items-center md:items-start text-center md:text-left">
-              <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-50 text-blue-700 mb-6 border border-blue-100">
-                Hi {user?.name || "Student"} 👋 Welcome back!
-              </span>
-              <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 tracking-tight">
-                Master your skills <br />
-                <span className="text-blue-600">with LMS</span>
-              </h1>
-              <p className="text-lg text-gray-600 mb-10 max-w-2xl leading-relaxed">
-                Explore comprehensive courses, track your performance, and
-                achieve your learning goals. Everything you need to succeed is
-                right here at your fingertips.
-              </p>
+        <div className="pt-20 pb-12">
+          <div className="flex flex-col items-center md:items-start text-center md:text-left">
+            <span className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 mb-6">
+              Welcome back, {user?.name || "Student"} 👋
+            </span>
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 tracking-tight">
+              Master your skills
+            </h1>
+            <p className="text-lg text-gray-600 mb-10 max-w-2xl leading-relaxed">
+              Explore comprehensive courses, track your performance, and achieve
+              your learning goals. Everything you need to succeed is here.
+            </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                <button
-                  onClick={() => {
-                    if (localStorage.getItem("user")) {
-                      navigate("/viewcourses");
-                    } else {
-                      toast.error("Please log in to explore courses");
-                      navigate("/login");
-                    }
-                  }}
-                  className="px-8 py-4 cursor-pointer bg-blue-600 text-white font-bold rounded-xl shadow-sm hover:bg-blue-700 hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2"
-                >
-                  🚀 Explore Courses
-                </button>
-                {!user && (
-                  <div className="flex gap-4">
-                    <button
-                      onClick={() => navigate("/login")}
-                      className="px-8 py-4 cursor-pointer bg-white text-blue-600 font-bold border-2 border-blue-100 rounded-xl hover:bg-blue-50 transition-all duration-200 flex items-center justify-center"
-                    >
-                      Log In
-                    </button>
-                    <button
-                      onClick={() => navigate("/register")}
-                      className="px-8 py-4 cursor-pointer bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-all duration-200 flex items-center justify-center"
-                    >
-                      Sign Up
-                    </button>
-                  </div>
-                )}
-              </div>
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+              <button
+                onClick={() => {
+                  if (localStorage.getItem("user")) {
+                    navigate("/viewcourses");
+                  } else {
+                    toast.error("Please log in to explore courses");
+                    navigate("/login");
+                  }
+                }}
+                className="px-8 py-3 cursor-pointer bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                Explore Courses
+              </button>
+              {!user && (
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => navigate("/login")}
+                    className="px-8 py-3 cursor-pointer bg-white text-gray-900 font-semibold border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center justify-center"
+                  >
+                    Log In
+                  </button>
+                  <button
+                    onClick={() => navigate("/register")}
+                    className="px-8 py-3 cursor-pointer bg-gray-100 text-gray-900 font-semibold rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center justify-center"
+                  >
+                    Sign Up
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
-
-
 
         {/* Dashboard Content */}
         {user && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Stats Overview */}
             <div className="lg:col-span-1 space-y-6">
-              <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
-                <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                  <span className="p-2 bg-blue-50 rounded-lg text-blue-600">
-                    📊
-                  </span>
-                  At a Glance
+              <div className="bg-gray-50 p-8 rounded-xl border border-gray-200">
+                <h3 className="text-lg font-semibold mb-6 text-gray-900">
+                  Overview
                 </h3>
                 <div className="space-y-4">
-                  <div className="p-4 bg-gray-50 rounded-xl flex justify-between items-center">
-                    <span className="text-gray-600 font-medium">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 text-sm font-medium">
                       Exams Attempted
                     </span>
-                    <span className="text-2xl font-bold text-blue-600">
+                    <span className="text-3xl font-bold text-gray-900">
                       {examResults.length}
                     </span>
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-xl flex justify-between items-center">
-                    <span className="text-gray-600 font-medium">
+                  <div className="border-t border-gray-200"></div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 text-sm font-medium">
                       Courses Started
                     </span>
-                    <span className="text-2xl font-bold text-blue-600">
+                    <span className="text-3xl font-bold text-gray-900">
                       --
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-blue-600 p-8 rounded-2xl shadow-lg text-white relative overflow-hidden">
+              <div className="bg-gray-900 p-8 rounded-xl text-white relative overflow-hidden">
                 <div className="relative z-10">
-                  <h4 className="text-lg font-bold mb-2">Keep it up!</h4>
-                  <p className="text-blue-100 text-sm mb-6">
+                  <h4 className="text-lg font-semibold mb-2">Keep it up</h4>
+                  <p className="text-gray-300 text-sm mb-6">
                     You're making great progress in your learning journey.
                   </p>
                   <button
                     onClick={() => navigate("/viewcourses")}
-                    className="w-full py-3 cursor-pointer bg-white text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors"
+                    className="w-full py-2 cursor-pointer bg-white text-gray-900 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
                   >
                     View My Courses
                   </button>
@@ -199,18 +191,15 @@ const Home = () => {
 
             {/* Results Section */}
             <div className="lg:col-span-2">
-              <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 h-full">
+              <div className="bg-gray-50 p-8 rounded-xl border border-gray-200 h-full">
                 <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-xl font-bold flex items-center gap-2">
-                    <span className="p-2 bg-blue-50 rounded-lg text-blue-600">
-                      🎯
-                    </span>
+                  <h3 className="text-lg font-semibold text-gray-900">
                     Recent Performance
                   </h3>
                   {examResults.length > 0 && (
                     <button
                       onClick={() => navigate("/performance/all")}
-                      className="text-blue-600 text-sm font-semibold hover:text-blue-700 transition-colors flex items-center gap-1 cursor-pointer"
+                      className="text-gray-700 text-sm font-medium hover:text-gray-900 transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       View All
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -221,60 +210,55 @@ const Home = () => {
                 </div>
 
                 {examResults.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {examResults.slice(0, 3).map((result, idx) => (
                       <div
                         key={idx}
                         onClick={() => navigate(`/performance/${encodeURIComponent(result.courseId)}`)}
-                        className="p-5 border border-gray-200 rounded-xl bg-white hover:border-blue-200 hover:bg-gray-50 hover:shadow-sm transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
+                        className="p-5 border border-gray-200 rounded-lg bg-white hover:border-gray-300 hover:shadow-sm transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
                       >
-                        <div className="flex items-center gap-4 text-left rounded-xl transition">
-                          <div className="text-3xl bg-gray-50 w-14 h-14 rounded-xl flex items-center justify-center border border-gray-200 group-hover:scale-110 transition-transform">
+                        <div className="flex items-center gap-4 text-left">
+                          <div className="text-3xl bg-gray-100 w-12 h-12 rounded-lg flex items-center justify-center border border-gray-300 group-hover:scale-105 transition-transform">
                             {getScoreEmoji(result.score)}
                           </div>
                           <div>
-                            <h4 className="font-bold text-gray-800 text-lg group-hover:text-blue-600 transition-colors">
+                            <h4 className="font-semibold text-gray-900 group-hover:text-gray-700 transition-colors">
                               {result.courseName}
                             </h4>
-                            <p className="text-sm text-gray-500 flex items-center gap-1">
+                            <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
-                              Latest: {result.score}%
+                              {result.score}%
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-4">
                           <div className="flex flex-col text-right">
-                            <p className={`text-xs font-bold uppercase tracking-wider ${result.passed ? "text-green-600" : "text-red-500"}`}>
-                              {result.passed ? "✅ Passed" : "📚 Still need to be Focused"}
+                            <p className={`text-xs font-semibold uppercase tracking-wide ${result.passed ? "text-gray-700" : "text-gray-600"}`}>
+                              {result.passed ? "✅ Passed" : "📚 Review needed"}
                             </p>
-                            <p className="text-xs text-gray-400">
-                              {result.attempts} records
+                            <p className="text-xs text-gray-400 mt-1">
+                              {result.attempts} attempt{result.attempts !== 1 ? 's' : ''}
                             </p>
                           </div>
-                          <div className="h-10 w-[2px] bg-gray-200 hidden sm:block"></div>
-                          <div className="p-2 text-gray-300 group-hover:text-blue-600 transition-colors">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                          </div>
+                          <svg className="w-5 h-5 text-gray-300 group-hover:text-gray-500 transition-colors hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-3xl mb-4">
-                      👻
-                    </div>
-                    <h4 className="font-bold text-gray-900 text-xl mb-2">
-                      No results yet
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="text-5xl mb-4">📚</div>
+                    <h4 className="font-semibold text-gray-900 text-lg mb-2">
+                      No exams taken yet
                     </h4>
-                    <p className="text-gray-500 max-w-sm leading-relaxed">
-                      Time to start learning! Take your first exam to see your
-                      performance here and track your amazing progress.
+                    <p className="text-gray-600 max-w-sm">
+                      Start your first course and take an exam to see your
+                      performance metrics here.
                     </p>
                   </div>
                 )}

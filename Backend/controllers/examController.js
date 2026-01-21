@@ -241,32 +241,23 @@ export const getExamResults = async (req, res) => {
   }
 };
 
-// Create exam questions for a chapter
+// Create exam questions for a category/course/video
 export const createExamQuestions = async (req, res) => {
   try {
-    const { chapterId, category, chapterName, questions } = req.body;
+    const { category, course, video, questions } = req.body;
 
     // Validate required fields
     if (
-      !chapterId ||
       !category ||
-      !chapterName ||
+      !course ||
+      !video ||
       !questions ||
       !Array.isArray(questions)
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "chapterId, category, chapterName, and questions array are required",
-      });
-    }
-
-    // Validate chapterId is a number
-    const chapterIdNum = parseInt(chapterId);
-    if (isNaN(chapterIdNum)) {
-      return res.status(400).json({
-        success: false,
-        message: "chapterId must be a valid number",
+          "category, course, video, and questions array are required",
       });
     }
 
@@ -290,31 +281,31 @@ export const createExamQuestions = async (req, res) => {
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       if (
-        !q.question ||
-        !Array.isArray(q.options) ||
-        q.options.length < 2 ||
-        typeof q.correctAnswer !== "number" ||
-        q.correctAnswer < 0 ||
-        q.correctAnswer >= q.options.length
+        !q.qType ||
+        !q.qId ||
+        !q.qDesc ||
+        !Array.isArray(q.choices) ||
+        q.choices.length < 2 ||
+        !q.correctAns
       ) {
         return res.status(400).json({
           success: false,
           message: `Question ${
             i + 1
-          } is invalid. Each question must have: question (string), options (array of at least 2 strings), and correctAnswer (number between 0 and options.length - 1)`,
+          } is invalid. Each question must have: qType (string), qId (string), qDesc (string), choices (array of at least 2 strings), and correctAns (string)`,
         });
       }
     }
 
-    // Check if exam questions already exist for this chapterId and category
+    // Check if exam questions already exist for this category, course, and video
     const existingExam = await ExamQuestion.findOne({
-      chapterId: chapterIdNum,
       category: category,
+      course: course,
+      video: video,
     });
 
     if (existingExam) {
       // Update existing exam questions
-      existingExam.chapterName = chapterName;
       existingExam.questions = questions;
       await existingExam.save();
 
@@ -327,9 +318,9 @@ export const createExamQuestions = async (req, res) => {
 
     // Create new exam questions
     const examData = await ExamQuestion.create({
-      chapterId: chapterIdNum,
       category: category,
-      chapterName: chapterName,
+      course: course,
+      video: video,
       questions: questions,
     });
 
@@ -436,24 +427,16 @@ export const createExamAttemptDatabase = async (req, res) => {
   }
 };
 
-// Get exam questions by chapterId and category
+// Get exam questions by category, course, and video
 export const getExamQuestions = async (req, res) => {
   try {
-    const { chapterId, category, numQuestions, attemptId } = req.query;
+    const { category, course, video, numQuestions, attemptId } = req.query;
 
     // Validate required parameters
-    if (!chapterId || !category) {
+    if (!category || !course || !video) {
       return res.status(400).json({
         success: false,
-        message: "chapterId and category are required",
-      });
-    }
-
-    const chapterIdNum = parseInt(chapterId);
-    if (isNaN(chapterIdNum)) {
-      return res.status(400).json({
-        success: false,
-        message: "chapterId must be a valid number",
+        message: "category, course, and video are required",
       });
     }
 
@@ -470,8 +453,9 @@ export const getExamQuestions = async (req, res) => {
     // If no attempt-specific data found, fall back to main database
     if (!examData) {
       examData = await ExamQuestion.findOne({
-        chapterId: chapterIdNum,
         category: category,
+        course: course,
+        video: video,
       });
     }
 
@@ -483,8 +467,9 @@ export const getExamQuestions = async (req, res) => {
       if (seedResult.success) {
         console.log("Database seeded successfully, trying to fetch questions again...");
         examData = await ExamQuestion.findOne({
-          chapterId: chapterIdNum,
           category: category,
+          course: course,
+          video: video,
         });
       }
     }
@@ -493,10 +478,11 @@ export const getExamQuestions = async (req, res) => {
       return res.status(200).json({
         success: false,
         message:
-          "No questions found for this chapter. Please seed the database with exam questions.",
+          "No questions found for this course/video. Please seed the database with exam questions.",
         data: {
-          chapterId: chapterIdNum,
           category: category,
+          course: course,
+          video: video,
           questions: [],
         },
       });
@@ -519,9 +505,9 @@ export const getExamQuestions = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
-        chapterId: examData.chapterId,
         category: examData.category,
-        chapterName: examData.chapterName,
+        course: examData.course,
+        video: examData.video,
         questions: finalQuestions,
         attemptId: examData.attemptId || null,
       },
