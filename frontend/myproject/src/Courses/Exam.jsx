@@ -209,48 +209,23 @@ const Exam = () => {
             );
             setLoading(false);
             return;
-          } else if (response.data.data?.questions?.length === 0) {
-            // No questions in database, use fallback
+          } else {
+            // No questions in database
             console.warn(
-              "No questions found in database for this chapter, using fallback questions"
+              "No questions found in database for this chapter."
             );
+            setError("No questions found for this chapter in the database. Please contact support.");
+            setLoading(false);
+            return;
           }
         }
-        if (chapter?.examQuestions?.length > 0) {
-          setQuestions(normalizeQuestions(chapter.examQuestions, chapter.name));
-        } else if (chapter) {
-          setQuestions(
-            normalizeQuestions(
-              makeDefaultChapterQuestions(chapter.name),
-              chapter.name
-            )
-          );
-        } else {
-          setQuestions(
-            normalizeQuestions(DEFAULT_QUESTIONS, subject || "Exam")
-          );
-        }
+
+        setError("Invalid course or chapter selection.");
         setLoading(false);
       } catch (err) {
         console.error("Error fetching questions:", err);
-        if (chapter?.examQuestions?.length > 0) {
-          setQuestions(normalizeQuestions(chapter.examQuestions, chapter.name));
-        } else if (chapter) {
-          setQuestions(
-            normalizeQuestions(
-              makeDefaultChapterQuestions(chapter.name),
-              chapter.name
-            )
-          );
-        } else {
-          setQuestions(
-            normalizeQuestions(DEFAULT_QUESTIONS, subject || "Exam")
-          );
-        }
+        setError("Failed to connect to the server. Please check your connection.");
         setLoading(false);
-        setError(
-          "Note: Using local/default questions as server connection failed."
-        );
       }
     };
     fetchQuestions();
@@ -600,11 +575,10 @@ const Exam = () => {
                                 {attempt.score}%
                               </span>
                               <span
-                                className={`ml-2 text-xs ${
-                                  attempt.passed
+                                className={`ml-2 text-xs ${attempt.passed
                                     ? "text-slate-400"
                                     : "text-slate-500"
-                                }`}
+                                  }`}
                               >
                                 {attempt.passed ? "PASSED" : "FAILED"}
                               </span>
@@ -658,38 +632,34 @@ const Exam = () => {
                       <button
                         key={index}
                         onClick={() => handleAnswerOptionClick(index)}
-                        className={`w-full relative p-4 rounded-xl border-2 text-left transition-all duration-200 flex items-center justify-between ${
-                          selectedOptions[safeCurrentIndex] === index
+                        className={`w-full relative p-4 rounded-xl border-2 text-left transition-all duration-200 flex items-center justify-between ${selectedOptions[safeCurrentIndex] === index
                             ? "bg-slate-700 border-slate-500 shadow-lg transform -translate-y-0.5"
                             : "bg-slate-800/40 border-white/5 hover:border-white/10 hover:bg-slate-800/60"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-4">
                           <div
-                            className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center font-bold text-xs transition-all duration-200 ${
-                              selectedOptions[safeCurrentIndex] === index
+                            className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center font-bold text-xs transition-all duration-200 ${selectedOptions[safeCurrentIndex] === index
                                 ? "border-white bg-white text-slate-800 shadow-md"
                                 : "border-white/10 text-slate-300"
-                            }`}
+                              }`}
                           >
                             {String.fromCharCode(65 + index)}
                           </div>
                           <span
-                            className={`text-sm font-bold transition-colors ${
-                              selectedOptions[safeCurrentIndex] === index
+                            className={`text-sm font-bold transition-colors ${selectedOptions[safeCurrentIndex] === index
                                 ? "text-white"
                                 : "text-slate-100"
-                            }`}
+                              }`}
                           >
                             {option}
                           </span>
                         </div>
                         <div
-                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                            selectedOptions[safeCurrentIndex] === index
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${selectedOptions[safeCurrentIndex] === index
                               ? "scale-100 opacity-100 border-white"
                               : "scale-50 opacity-0"
-                          }`}
+                            }`}
                         >
                           <div className="w-2 h-2 bg-white rounded-full" />
                         </div>
@@ -703,11 +673,10 @@ const Exam = () => {
                   <button
                     onClick={handlePrevious}
                     disabled={safeCurrentIndex === 0}
-                    className={`flex items-center cursor-pointer gap-2 font-bold px-4 py-2 rounded-lg transition-all text-xs ${
-                      safeCurrentIndex === 0
+                    className={`flex items-center cursor-pointer gap-2 font-bold px-4 py-2 rounded-lg transition-all text-xs ${safeCurrentIndex === 0
                         ? "opacity-20 cursor-not-allowed text-white"
                         : "text-slate-200 hover:bg-slate-700/20 active:scale-95"
-                    }`}
+                      }`}
                   >
                     <FaArrowLeft className="text-[10px]" />
                     Prev

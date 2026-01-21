@@ -147,6 +147,8 @@ const Home = () => {
           </div>
         </div>
 
+
+
         {/* Dashboard Content */}
         {user && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -205,76 +207,59 @@ const Home = () => {
                     </span>
                     Recent Performance
                   </h3>
-                  <Link
-                    to="/performance/overall"
-                    className="text-blue-600 text-sm font-semibold hover:text-blue-700 transition-colors"
-                  >
-                    View all
-                  </Link>
+                  {examResults.length > 0 && (
+                    <button
+                      onClick={() => navigate("/performance/all")}
+                      className="text-blue-600 text-sm font-semibold hover:text-blue-700 transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      View All
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
 
                 {examResults.length > 0 ? (
                   <div className="space-y-4">
-                    {examResults.map((result, idx) => (
+                    {examResults.slice(0, 3).map((result, idx) => (
                       <div
                         key={idx}
-                        className="p-5 border border-gray-200 rounded-xl bg-white hover:border-blue-200 hover:bg-gray-50 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                        onClick={() => navigate(`/performance/${encodeURIComponent(result.courseId)}`)}
+                        className="p-5 border border-gray-200 rounded-xl bg-white hover:border-blue-200 hover:bg-gray-50 hover:shadow-sm transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
                       >
-                        <button
-                          type="button"
-                          className="w-full flex items-center gap-4 text-left focus:outline-none hover:bg-gray-50 rounded-xl p-1 transition"
-                        >
-                          <div className="text-3xl bg-gray-50 w-14 h-14 rounded-xl flex items-center justify-center border border-gray-200">
+                        <div className="flex items-center gap-4 text-left rounded-xl transition">
+                          <div className="text-3xl bg-gray-50 w-14 h-14 rounded-xl flex items-center justify-center border border-gray-200 group-hover:scale-110 transition-transform">
                             {getScoreEmoji(result.score)}
                           </div>
                           <div>
-                            <h4 className="font-bold text-gray-800 text-lg">
+                            <h4 className="font-bold text-gray-800 text-lg group-hover:text-blue-600 transition-colors">
                               {result.courseName}
                             </h4>
                             <p className="text-sm text-gray-500 flex items-center gap-1">
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
-                              Attempted recently
+                              Latest: {result.score}%
                             </p>
                           </div>
-                        </button>
+                        </div>
 
                         <div className="flex items-center gap-6">
                           <div className="flex flex-col text-right">
-                            <p className="text-xl font-bold text-gray-900">
-                              {result.score}%
+                            <p className={`text-xs font-bold uppercase tracking-wider ${result.passed ? "text-green-600" : "text-red-500"}`}>
+                              {result.passed ? "✅ Passed" : "📚 Still need to be Focused"}
                             </p>
-                            <p
-                              className={`text-xs font-bold uppercase tracking-wider ${result.passed
-                                  ? "text-green-600"
-                                  : "text-red-500"
-                                }`}
-                            >
-                              {result.passed
-                                ? "✅ Passed"
-                                : "📚 Needs Still more Preparation"}
+                            <p className="text-xs text-gray-400">
+                              {result.attempts} records
                             </p>
                           </div>
                           <div className="h-10 w-[2px] bg-gray-200 hidden sm:block"></div>
-                          <button
-                            onClick={() => navigate(`/performance/${encodeURIComponent(result.courseId)}`)}
-                            className="p-2 hover:bg-gray-100 cursor-pointer rounded-lg transition-colors text-gray-400 hover:text-blue-600"
-                          >
-                            <svg
-                              className="w-6 h-6"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 5l7 7-7 7"
-                              />
+                          <div className="p-2 text-gray-300 group-hover:text-blue-600 transition-colors">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
-                          </button>
+                          </div>
                         </div>
                       </div>
                     ))}

@@ -2,14 +2,14 @@ import mongoose from "mongoose";
 
 const examQuestionSchema = new mongoose.Schema(
   {
-    chapterId: {
-      type: Number,
-      required: true,
-    },
     category: {
       type: String,
       required: true,
       enum: ["English", "Telugu", "Hindi", "Mathematics", "Science", "Social Studies"],
+    },
+    chapterId: {
+      type: Number,
+      required: true,
     },
     chapterName: {
       type: String,
@@ -25,12 +25,11 @@ const examQuestionSchema = new mongoose.Schema(
           {
             type: String,
             required: true,
-          },
+          }
         ],
         correctAnswer: {
           type: Number,
           required: true,
-          min: 0,
         },
       },
     ],
@@ -39,7 +38,7 @@ const examQuestionSchema = new mongoose.Schema(
 );
 
 // Create compound index for faster queries
-examQuestionSchema.index({ chapterId: 1, category: 1 }, { unique: true });
+examQuestionSchema.index({ category: 1, chapterId: 1 }, { unique: true });
 
 const ExamQuestion =
   mongoose.models.ExamQuestion ||

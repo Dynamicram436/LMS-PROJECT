@@ -2,16 +2,19 @@ import User from "../models/userSchema.js";
 import ExamQuestion from "../models/examQuestionSchema.js";
 import ExamAttempt from "../models/examAttemptSchema.js";
 import ExamAttemptDatabase from "../models/examAttemptDatabaseSchema.js";
-import { seedQuestions } from "../seedExamQuestionsLocal.js";
+import  seedQuestions  from "../seedExamQuestions.js";
 
 export const saveExamResult = async (req, res) => {
   try {
     const { userId, courseId, score, totalQuestions, answers, attemptId } =
       req.body;
 
+    console.log(`[SaveExamResult] Received request for userId: ${userId}, courseId: ${courseId}`);
+
     // Find the user by userid field (not MongoDB _id)
     const user = await User.findOne({ userid: userId });
     if (!user) {
+      console.error(`[SaveExamResult] User not found: ${userId}`);
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
@@ -104,6 +107,7 @@ export const saveExamResult = async (req, res) => {
     );
 
     await user.save();
+    console.log(`[SaveExamResult] Successfully saved exam result for ${userId}`);
 
     res.status(200).json({
       success: true,
@@ -117,7 +121,7 @@ export const saveExamResult = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error saving exam result:", error);
+    console.error("[SaveExamResult] Error saving exam result:", error);
     res
       .status(500)
       .json({ success: false, message: "Server error", error: error.message });
