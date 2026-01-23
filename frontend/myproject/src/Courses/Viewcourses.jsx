@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FiBook, FiFilter, FiArrowRight } from "react-icons/fi";
 import { subjectsData, categories } from "./courseCatalog";
+import { Helmet } from "react-helmet-async";
 
 const Viewcourses = () => {
   const navigate = useNavigate();
@@ -36,6 +37,14 @@ const Viewcourses = () => {
   };
 
   return (
+   <>
+     <Helmet>
+           <title>Courses - SkillTrack</title>
+           <meta
+             name="Courses page"
+             content="View all available courses on SkillTrack"
+           />
+         </Helmet>
     <div className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto mt-20">
         <div className="text-center mb-12">
@@ -177,6 +186,7 @@ const Viewcourses = () => {
         )}
       </div>
     </div>
+   </>
   );
 };
 

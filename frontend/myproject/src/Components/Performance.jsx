@@ -19,6 +19,7 @@ import {
   FaThumbsUp,
   FaThumbsDown,
 } from "react-icons/fa";
+import { Helmet } from "react-helmet-async";
 
 const Performance = () => {
   const { category } = useParams();
@@ -49,10 +50,22 @@ const Performance = () => {
           console.log("Raw exam data:", response.data.data);
           if (response.data.data.length > 0) {
             console.log("First course:", response.data.data[0]);
-            console.log("First course examAttempts:", response.data.data[0].examAttempts);
-            if (response.data.data[0].examAttempts && response.data.data[0].examAttempts.length > 0) {
-              console.log("First exam attempt:", response.data.data[0].examAttempts[0]);
-              console.log("First exam answers:", response.data.data[0].examAttempts[0].answers);
+            console.log(
+              "First course examAttempts:",
+              response.data.data[0].examAttempts,
+            );
+            if (
+              response.data.data[0].examAttempts &&
+              response.data.data[0].examAttempts.length > 0
+            ) {
+              console.log(
+                "First exam attempt:",
+                response.data.data[0].examAttempts[0],
+              );
+              console.log(
+                "First exam answers:",
+                response.data.data[0].examAttempts[0].answers,
+              );
             }
           }
           setAllExamData(response.data.data);
@@ -309,71 +322,122 @@ const Performance = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <button
-        onClick={() => navigate(-1)}
-        className="fixed top-24 left-8 cursor-pointer z-50 flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-full transition-colors duration-200 shadow-sm"
-      >
-        <FaArrowLeft />
-        <span className="font-bold text-sm">Back</span>
-      </button>
+    <>
+      <Helmet>
+        <title>Performance - SkillTrack</title>
+        <meta name="Performance page" content="Welcome to Performance page" />
+      </Helmet>
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <button
+          onClick={() => navigate(-1)}
+          className="fixed top-24 left-8 cursor-pointer z-50 flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-full transition-colors duration-200 shadow-sm"
+        >
+          <FaArrowLeft />
+          <span className="font-bold text-sm">Back</span>
+        </button>
 
-      <div className="max-w-6xl mx-auto relative z-10 mt-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            {isOverallView
-              ? "Universal Knowledge Explorer"
-              : "Performance Analytics"}
-          </h1>
-          <p className="text-gray-600 text-lg">
-            {isOverallView
-              ? "A comprehensive overview of all your learning achievements"
-              : `${subject} - Detailed Exam Results`}
-          </p>
-        </div>
+        <div className="max-w-6xl mx-auto relative z-10 mt-12">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              {isOverallView
+                ? "Universal Knowledge Explorer"
+                : "Performance Analytics"}
+            </h1>
+            <p className="text-gray-600 text-lg">
+              {isOverallView
+                ? "A comprehensive overview of all your learning achievements"
+                : `${subject} - Detailed Exam Results`}
+            </p>
+          </div>
 
-        {isOverallView && allExamData.length > 0 && (
-          <div className="space-y-12 mb-12">
-            <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <span className="w-2 h-6 bg-blue-600 rounded-full"></span>
-                All Exam Attempts - Unified View
-              </h3>
-              <div className="space-y-4">
-                {console.log("Rendering attempts:", globalStats?.allAttempts)}
-                {globalStats?.allAttempts?.map((attempt, index) => (
-                  <div
-                    key={index}
-                    onClick={() => {
-                      setSelectedAttempt(attempt);
-                      const element =
-                        document.getElementById("question-analysis");
-                      if (element)
-                        element.scrollIntoView({ behavior: "smooth" });
-                    }}
-                    className={`p-5 border rounded-xl transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group ${
-                      selectedAttempt?.attemptId === attempt.attemptId
-                        ? "bg-blue-50 border-blue-300 shadow-sm"
-                        : "bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50 hover:shadow-sm"
-                    }`}
-                  >
-                    <div className="flex items-center gap-4 text-left rounded-xl transition">
-                      <div className="text-3xl bg-gray-50 w-14 h-14 rounded-xl flex items-center justify-center border border-gray-200 group-hover:scale-110 transition-transform">
-                        {getScoreEmoji(attempt.score)}
+          {isOverallView && allExamData.length > 0 && (
+            <div className="space-y-12 mb-12">
+              <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                  <span className="w-2 h-6 bg-blue-600 rounded-full"></span>
+                  All Exam Attempts - Unified View
+                </h3>
+                <div className="space-y-4">
+                  {console.log("Rendering attempts:", globalStats?.allAttempts)}
+                  {globalStats?.allAttempts?.map((attempt, index) => (
+                    <div
+                      key={index}
+                      onClick={() => {
+                        setSelectedAttempt(attempt);
+                        const element =
+                          document.getElementById("question-analysis");
+                        if (element)
+                          element.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      className={`p-5 border rounded-xl transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group ${
+                        selectedAttempt?.attemptId === attempt.attemptId
+                          ? "bg-blue-50 border-blue-300 shadow-sm"
+                          : "bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50 hover:shadow-sm"
+                      }`}
+                    >
+                      <div className="flex items-center gap-4 text-left rounded-xl transition">
+                        <div className="text-3xl bg-gray-50 w-14 h-14 rounded-xl flex items-center justify-center border border-gray-200 group-hover:scale-110 transition-transform">
+                          {getScoreEmoji(attempt.score)}
+                        </div>
+                        <div>
+                          <h4
+                            className={`font-bold text-lg transition-colors ${
+                              selectedAttempt?.attemptId === attempt.attemptId
+                                ? "text-blue-600"
+                                : "text-gray-800 group-hover:text-blue-600"
+                            }`}
+                          >
+                            {attempt.courseName || attempt.courseId}
+                          </h4>
+                          <p className="text-sm text-gray-500 flex items-center gap-1">
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            Score: {attempt.score}%
+                            <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                              {attempt.attemptDate
+                                ? new Date(
+                                    attempt.attemptDate,
+                                  ).toLocaleDateString()
+                                : "Recent"}
+                            </span>
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h4
-                          className={`font-bold text-lg transition-colors ${
+
+                      <div className="flex items-center gap-6">
+                        <div className="flex flex-col text-right">
+                          <p
+                            className={`text-xs font-bold uppercase tracking-wider ${attempt.passed ? "text-green-600" : "text-red-500"}`}
+                          >
+                            {attempt.passed
+                              ? "✅ Passed"
+                              : "📚 Still need to be Focused"}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            Attempt #{attempt.attemptNumber || index + 1}
+                          </p>
+                        </div>
+                        <div className="h-10 w-0.5 bg-gray-200 hidden sm:block"></div>
+                        <div
+                          className={`p-2 transition-colors ${
                             selectedAttempt?.attemptId === attempt.attemptId
                               ? "text-blue-600"
-                              : "text-gray-800 group-hover:text-blue-600"
+                              : "text-gray-300 group-hover:text-blue-600"
                           }`}
                         >
-                          {attempt.courseName || attempt.courseId}
-                        </h4>
-                        <p className="text-sm text-gray-500 flex items-center gap-1">
                           <svg
-                            className="w-4 h-4"
+                            className="w-6 h-6"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -382,493 +446,456 @@ const Performance = () => {
                               strokeLinecap="round"
                               strokeLinejoin="round"
                               strokeWidth={2}
-                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                              d="M9 5l7 7-7 7"
                             />
                           </svg>
-                          Score: {attempt.score}%
-                          <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
-                            {attempt.attemptDate
-                              ? new Date(
-                                  attempt.attemptDate,
-                                ).toLocaleDateString()
-                              : "Recent"}
-                          </span>
-                        </p>
+                        </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+              </div>
 
-                    <div className="flex items-center gap-6">
-                      <div className="flex flex-col text-right">
-                        <p
-                          className={`text-xs font-bold uppercase tracking-wider ${attempt.passed ? "text-green-600" : "text-red-500"}`}
-                        >
-                          {attempt.passed
-                            ? "✅ Passed"
-                            : "📚 Still need to be Focused"}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          Attempt #{attempt.attemptNumber || index + 1}
-                        </p>
-                      </div>
-                      <div className="h-10 w-0.5 bg-gray-200 hidden sm:block"></div>
-                      <div
-                        className={`p-2 transition-colors ${
-                          selectedAttempt?.attemptId === attempt.attemptId
-                            ? "text-blue-600"
-                            : "text-gray-300 group-hover:text-blue-600"
-                        }`}
-                      >
-                        <svg
-                          className="w-6 h-6"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                      </div>
+              {/* Global Statistics */}
+              <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                  <span className="w-2 h-6 bg-green-600 rounded-full"></span>
+                  Overall Statistics
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                    <div className="text-3xl font-bold text-gray-900 mb-2">
+                      {globalStats.totalAttempts}
+                    </div>
+                    <div className="text-gray-500 text-sm">Total Attempts</div>
+                  </div>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                    <div className="text-3xl font-bold text-gray-900 mb-2">
+                      {globalStats.avgScore}%
+                    </div>
+                    <div className="text-gray-500 text-sm">Average Score</div>
+                  </div>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                    <div className="text-3xl font-bold text-gray-900 mb-2">
+                      {globalStats.passingRate}%
+                    </div>
+                    <div className="text-gray-500 text-sm">Passing Rate</div>
+                  </div>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                    <div className="text-3xl font-bold text-gray-900 mb-2">
+                      {globalStats.subjectsCleared}
+                    </div>
+                    <div className="text-gray-500 text-sm">
+                      Subjects Cleared
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
+          )}
 
-            {/* Global Statistics */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <span className="w-2 h-6 bg-green-600 rounded-full"></span>
-                Overall Statistics
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+          {!isOverallView && (
+            <>
+              {/* Overview Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <PerformanceIcon
+                      className={`text-3xl ${performanceLevel.color}`}
+                    />
+                    <span
+                      className={`text-xs font-bold px-2 py-1 rounded-full ${performanceLevel.bg} ${performanceLevel.border} ${performanceLevel.color}`}
+                    >
+                      {performanceLevel.level}
+                    </span>
+                  </div>
                   <div className="text-3xl font-bold text-gray-900 mb-2">
-                    {globalStats.totalAttempts}
+                    {currentScore}%
+                  </div>
+                  <div className="text-gray-500 text-sm">Overall Score</div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <FaHistory className="text-3xl text-blue-600" />
+                    <span className="text-xs font-bold px-2 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-600">
+                      Active
+                    </span>
+                  </div>
+                  <div className="text-3xl font-bold text-gray-900 mb-2">
+                    {currentAttempts.length}
                   </div>
                   <div className="text-gray-500 text-sm">Total Attempts</div>
                 </div>
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
-                  <div className="text-3xl font-bold text-gray-900 mb-2">
-                    {globalStats.avgScore}%
+
+                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <FaFire className="text-3xl text-orange-600" />
+                    <span className="text-xs font-bold px-2 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-600">
+                      Hot!
+                    </span>
                   </div>
-                  <div className="text-gray-500 text-sm">Average Score</div>
-                </div>
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
                   <div className="text-3xl font-bold text-gray-900 mb-2">
-                    {globalStats.passingRate}%
+                    {streakInfo.current}
                   </div>
-                  <div className="text-gray-500 text-sm">Passing Rate</div>
+                  <div className="text-gray-500 text-sm">Current Streak</div>
                 </div>
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+
+                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <FaTrophy className="text-3xl text-yellow-600" />
+                    <span className="text-xs font-bold px-2 py-1 rounded-full bg-yellow-50 border border-yellow-200 text-yellow-600">
+                      Record
+                    </span>
+                  </div>
                   <div className="text-3xl font-bold text-gray-900 mb-2">
-                    {globalStats.subjectsCleared}
+                    {streakInfo.best}
                   </div>
-                  <div className="text-gray-500 text-sm">Subjects Cleared</div>
+                  <div className="text-gray-500 text-sm">Best Streak</div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
 
-        {!isOverallView && (
-          <>
-            {/* Overview Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <PerformanceIcon
-                    className={`text-3xl ${performanceLevel.color}`}
-                  />
-                  <span
-                    className={`text-xs font-bold px-2 py-1 rounded-full ${performanceLevel.bg} ${performanceLevel.border} ${performanceLevel.color}`}
-                  >
-                    {performanceLevel.level}
-                  </span>
+              <div className="bg-white border border-gray-200 rounded-xl p-6 mb-12 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <FaChartLine
+                      className={`text-2xl ${improvementTrend.trend === "up" ? "text-green-600" : improvementTrend.trend === "down" ? "text-red-600" : "text-yellow-600"}`}
+                    />
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900">
+                        Recent Performance
+                      </h3>
+                      <p className="text-gray-500 text-sm">
+                        Based on last 5 attempts
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div
+                      className={`text-2xl font-bold ${improvementTrend.trend === "up" ? "text-green-600" : improvementTrend.trend === "down" ? "text-red-600" : "text-yellow-600"}`}
+                    >
+                      {improvementTrend.trend === "up"
+                        ? "↑"
+                        : improvementTrend.trend === "down"
+                          ? "↓"
+                          : "→"}{" "}
+                      {Math.abs(improvementTrend.change)}%
+                    </div>
+                    <div className="text-gray-500 text-sm">
+                      {improvementTrend.trend === "up"
+                        ? "Improving"
+                        : improvementTrend.trend === "down"
+                          ? "Declining"
+                          : "Stable"}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-gray-900 mb-2">
-                  {currentScore}%
-                </div>
-                <div className="text-gray-500 text-sm">Overall Score</div>
               </div>
+            </>
+          )}
 
-              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <FaHistory className="text-3xl text-blue-600" />
-                  <span className="text-xs font-bold px-2 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-600">
-                    Active
-                  </span>
-                </div>
-                <div className="text-3xl font-bold text-gray-900 mb-2">
-                  {currentAttempts.length}
-                </div>
-                <div className="text-gray-500 text-sm">Total Attempts</div>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <FaFire className="text-3xl text-orange-600" />
-                  <span className="text-xs font-bold px-2 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-600">
-                    Hot!
-                  </span>
-                </div>
-                <div className="text-3xl font-bold text-gray-900 mb-2">
-                  {streakInfo.current}
-                </div>
-                <div className="text-gray-500 text-sm">Current Streak</div>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <FaTrophy className="text-3xl text-yellow-600" />
-                  <span className="text-xs font-bold px-2 py-1 rounded-full bg-yellow-50 border border-yellow-200 text-yellow-600">
-                    Record
-                  </span>
-                </div>
-                <div className="text-3xl font-bold text-gray-900 mb-2">
-                  {streakInfo.best}
-                </div>
-                <div className="text-gray-500 text-sm">Best Streak</div>
-              </div>
-            </div>
-
+          {isOverallView && (
             <div className="bg-white border border-gray-200 rounded-xl p-6 mb-12 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <FaChartLine
-                    className={`text-2xl ${improvementTrend.trend === "up" ? "text-green-600" : improvementTrend.trend === "down" ? "text-red-600" : "text-yellow-600"}`}
-                  />
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900">
-                      Recent Performance
-                    </h3>
-                    <p className="text-gray-500 text-sm">
-                      Based on last 5 attempts
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div
-                    className={`text-2xl font-bold ${improvementTrend.trend === "up" ? "text-green-600" : improvementTrend.trend === "down" ? "text-red-600" : "text-yellow-600"}`}
-                  >
-                    {improvementTrend.trend === "up"
-                      ? "↑"
-                      : improvementTrend.trend === "down"
-                        ? "↓"
-                        : "→"}{" "}
-                    {Math.abs(improvementTrend.change)}%
-                  </div>
-                  <div className="text-gray-500 text-sm">
-                    {improvementTrend.trend === "up"
-                      ? "Improving"
-                      : improvementTrend.trend === "down"
-                        ? "Declining"
-                        : "Stable"}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-
-        {isOverallView && (
-          <div className="bg-white border border-gray-200 rounded-xl p-6 mb-12 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <span className="w-2 h-6 bg-blue-600 rounded-full"></span>
-              All Chapters Performance
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-4 px-4 font-bold text-gray-900">
-                      Chapter Name
-                    </th>
-                    <th className="text-center py-4 px-4 font-bold text-gray-900">
-                      Best Score
-                    </th>
-                    <th className="text-center py-4 px-4 font-bold text-gray-900">
-                      Attempts
-                    </th>
-                    <th className="text-center py-4 px-4 font-bold text-gray-900">
-                      Status
-                    </th>
-                    <th className="text-center py-4 px-4 font-bold text-gray-900">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allExamData.map((course, idx) => {
-                    const bestScore = course.score || 0;
-                    const totalAttempts =
-                      course.attempts ||
-                      (course.examAttempts ? course.examAttempts.length : 0);
-                    const passed = course.passed || false;
-                    return (
-                      <tr
-                        key={idx}
-                        className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="py-4 px-4 text-gray-900 font-medium">
-                          {course.courseName}
-                        </td>
-                        <td className="text-center py-4 px-4">
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="text-2xl">
-                              {getScoreEmoji(bestScore)}
-                            </span>
-                            <span className="text-lg font-bold text-gray-900">
-                              {bestScore}%
-                            </span>
-                          </div>
-                        </td>
-                        <td className="text-center py-4 px-4 text-gray-600 font-medium">
-                          {totalAttempts}
-                        </td>
-                        <td className="text-center py-4 px-4">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-bold ${passed ? "bg-green-50 border border-green-200 text-green-600" : "bg-yellow-50 border border-yellow-200 text-yellow-600"}`}
-                          >
-                            {passed ? "✅ Passed" : "📚 Improving"}
-                          </span>
-                        </td>
-                        <td className="text-center py-4 px-4">
-                          <button
-                            onClick={() =>
-                              navigate(
-                                `/performance/${encodeURIComponent(course.courseId)}`,
-                              )
-                            }
-                            className="px-4 py-2 bg-blue-50 text-blue-600 font-semibold rounded-lg hover:bg-blue-100 transition-colors text-sm cursor-pointer"
-                          >
-                            View Details
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Attempt History - Only show for single course view */}
-        {!isOverallView && (
-          <div className="bg-white border border-gray-200 rounded-xl p-6 mb-12 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-              <FaHistory className="text-blue-600" />
-              Attempt History
-            </h3>
-            <div className="space-y-3">
-              {currentAttempts.map((attempt, index) => (
-                <div
-                  key={index}
-                  onClick={() => setSelectedAttempt(attempt)}
-                  className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${selectedAttempt?.attemptId === attempt.attemptId ? "bg-blue-50 border-blue-300" : "bg-gray-50 border-gray-200 hover:border-gray-300"}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-                        <span className="text-blue-600 font-bold">
-                          {`#${attempt.attemptNumber || index + 1}`}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-900 font-bold">
-                            {attempt.score || 0}%
-                          </span>
-                        </div>
-                        <div className="text-gray-500 text-sm">
-                          {attempt.attemptDate
-                            ? new Date(attempt.attemptDate).toLocaleString()
-                            : "Recent"}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold ${attempt.passed ? "bg-green-50 border border-green-200 text-green-600" : "bg-red-50 border border-red-200 text-red-600"}`}
-                      >
-                        {attempt.passed ? "PASSED" : "FAILED"}
-                      </span>
-                      {selectedAttempt?.attemptId === attempt.attemptId && (
-                        <FaCheckCircle className="text-blue-600" />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Detailed Question Analysis - Only show for single course view */}
-        {!isOverallView &&
-          selectedAttempt &&
-          selectedAttempt.answers &&
-          selectedAttempt.answers.length > 0 && (
-            <div
-              id="question-analysis"
-              className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mt-12 scroll-mt-24"
-            >
-              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <FaBrain className="text-blue-600" />
-                Question Analysis - Attempt #{selectedAttempt.attemptNumber}
+              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <span className="w-2 h-6 bg-blue-600 rounded-full"></span>
+                All Chapters Performance
               </h3>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <FaThumbsUp className="text-green-600 text-xl" />
-                    <span className="text-green-600 font-bold">
-                      Correct Answers
-                    </span>
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900">
-                    {selectedAttempt.answers.filter((a) => a.isCorrect).length}
-                  </div>
-                  <div className="text-sm text-gray-500 mt-2">
-                    of {selectedAttempt.answers.length} total
-                  </div>
-                </div>
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <FaThumbsDown className="text-red-600 text-xl" />
-                    <span className="text-red-600 font-bold">
-                      Incorrect Answers
-                    </span>
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900">
-                    {selectedAttempt.answers.filter((a) => !a.isCorrect).length}
-                  </div>
-                  <div className="text-sm text-gray-500 mt-2">
-                    of {selectedAttempt.answers.length} total
-                  </div>
-                </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-4 px-4 font-bold text-gray-900">
+                        Chapter Name
+                      </th>
+                      <th className="text-center py-4 px-4 font-bold text-gray-900">
+                        Best Score
+                      </th>
+                      <th className="text-center py-4 px-4 font-bold text-gray-900">
+                        Attempts
+                      </th>
+                      <th className="text-center py-4 px-4 font-bold text-gray-900">
+                        Status
+                      </th>
+                      <th className="text-center py-4 px-4 font-bold text-gray-900">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allExamData.map((course, idx) => {
+                      const bestScore = course.score || 0;
+                      const totalAttempts =
+                        course.attempts ||
+                        (course.examAttempts ? course.examAttempts.length : 0);
+                      const passed = course.passed || false;
+                      return (
+                        <tr
+                          key={idx}
+                          className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="py-4 px-4 text-gray-900 font-medium">
+                            {course.courseName}
+                          </td>
+                          <td className="text-center py-4 px-4">
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="text-2xl">
+                                {getScoreEmoji(bestScore)}
+                              </span>
+                              <span className="text-lg font-bold text-gray-900">
+                                {bestScore}%
+                              </span>
+                            </div>
+                          </td>
+                          <td className="text-center py-4 px-4 text-gray-600 font-medium">
+                            {totalAttempts}
+                          </td>
+                          <td className="text-center py-4 px-4">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-bold ${passed ? "bg-green-50 border border-green-200 text-green-600" : "bg-yellow-50 border border-yellow-200 text-yellow-600"}`}
+                            >
+                              {passed ? "✅ Passed" : "📚 Improving"}
+                            </span>
+                          </td>
+                          <td className="text-center py-4 px-4">
+                            <button
+                              onClick={() =>
+                                navigate(
+                                  `/performance/${encodeURIComponent(course.courseId)}`,
+                                )
+                              }
+                              className="px-4 py-2 bg-blue-50 text-blue-600 font-semibold rounded-lg hover:bg-blue-100 transition-colors text-sm cursor-pointer"
+                            >
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
+            </div>
+          )}
 
-              <div className="space-y-4">
-                {selectedAttempt.answers.map((answer, index) => (
+          {/* Attempt History - Only show for single course view */}
+          {!isOverallView && (
+            <div className="bg-white border border-gray-200 rounded-xl p-6 mb-12 shadow-sm">
+              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                <FaHistory className="text-blue-600" />
+                Attempt History
+              </h3>
+              <div className="space-y-3">
+                {currentAttempts.map((attempt, index) => (
                   <div
                     key={index}
-                    className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden"
+                    onClick={() => setSelectedAttempt(attempt)}
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${selectedAttempt?.attemptId === attempt.attemptId ? "bg-blue-50 border-blue-300" : "bg-gray-50 border-gray-200 hover:border-gray-300"}`}
                   >
-                    <div
-                      onClick={() => toggleQuestionExpansion(index)}
-                      className="p-4 cursor-pointer hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center ${answer.isCorrect ? "bg-green-50" : "bg-red-50"}`}
-                          >
-                            {answer.isCorrect ? (
-                              <FaCheckCircle className="text-green-600 text-sm" />
-                            ) : (
-                              <FaTimesCircle className="text-red-600 text-sm" />
-                            )}
-                          </div>
-                          <span className="text-gray-900 font-medium">
-                            Question {index + 1}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+                          <span className="text-blue-600 font-bold">
+                            {`#${attempt.attemptNumber || index + 1}`}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`text-sm font-bold ${answer.isCorrect ? "text-green-600" : "text-red-600"}`}
-                          >
-                            {answer.isCorrect ? "Correct" : "Incorrect"}
-                          </span>
-                          <span className="text-gray-400">
-                            {expandedQuestions.has(index) ? "−" : "+"}
-                          </span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-900 font-bold">
+                              {attempt.score || 0}%
+                            </span>
+                          </div>
+                          <div className="text-gray-500 text-sm">
+                            {attempt.attemptDate
+                              ? new Date(attempt.attemptDate).toLocaleString()
+                              : "Recent"}
+                          </div>
                         </div>
                       </div>
-                      {!expandedQuestions.has(index) && (
-                        <div className="mt-3 text-sm text-gray-600 pl-12">
-                          <p className="truncate max-w-2xl">
-                            {answer.question}
-                          </p>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-bold ${attempt.passed ? "bg-green-50 border border-green-200 text-green-600" : "bg-red-50 border border-red-200 text-red-600"}`}
+                        >
+                          {attempt.passed ? "PASSED" : "FAILED"}
+                        </span>
+                        {selectedAttempt?.attemptId === attempt.attemptId && (
+                          <FaCheckCircle className="text-blue-600" />
+                        )}
+                      </div>
                     </div>
-
-                    {expandedQuestions.has(index) && (
-                      <div className="px-4 pb-4 border-t border-gray-200">
-                        <div className="pt-4 space-y-4">
-                          <div>
-                            <p className="text-gray-600 text-sm mb-2 font-medium">
-                              Question:
-                            </p>
-                            <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                              {answer.question}
-                            </p>
-                          </div>
-                          <div className="p-4 rounded-lg border bg-gray-50 border-gray-200">
-                            <p className="text-xs uppercase font-bold text-gray-600 mb-2">
-                              Your Answer
-                            </p>
-                            <p className="text-gray-900 font-semibold text-lg">
-                              {answer.selectedOption !== null &&
-                              answer.selectedOption !== undefined
-                                ? answer.options &&
-                                  answer.options[answer.selectedOption]
-                                  ? `${String.fromCharCode(65 + answer.selectedOption)}. ${answer.options[answer.selectedOption]}`
-                                  : `Option ${String.fromCharCode(65 + answer.selectedOption)}`
-                                : "Not answered"}
-                            </p>
-                            <p
-                              className={`text-sm mt-2 font-bold ${answer.isCorrect ? "text-green-600" : "text-red-600"}`}
-                            >
-                              {answer.isCorrect ? "✓ Correct" : "✗ Incorrect"}
-                            </p>
-                          </div>
-                          <div className="space-y-2">
-                            <p className="text-gray-600 text-sm font-medium">
-                              All Options:
-                            </p>
-                            <div className="space-y-2">
-                              {answer.options && answer.options.length > 0 ? (
-                                answer.options.map((option, optIndex) => (
-                                  <div
-                                    key={optIndex}
-                                    className={`p-3 rounded-lg border ${optIndex === answer.selectedOption ? "bg-blue-50 border-blue-300" : "bg-white border-gray-200"}`}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-gray-900">
-                                        {String.fromCharCode(65 + optIndex)}.{" "}
-                                        {option}
-                                      </span>
-                                      {optIndex === answer.selectedOption && (
-                                        <span className="text-blue-600 text-xs font-bold bg-blue-50 px-2 py-1 rounded">
-                                          YOUR ANSWER
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="text-gray-600 text-sm p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                  Options not available
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
             </div>
           )}
+
+          {/* Detailed Question Analysis - Only show for single course view */}
+          {!isOverallView &&
+            selectedAttempt &&
+            selectedAttempt.answers &&
+            selectedAttempt.answers.length > 0 && (
+              <div
+                id="question-analysis"
+                className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mt-12 scroll-mt-24"
+              >
+                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                  <FaBrain className="text-blue-600" />
+                  Question Analysis - Attempt #{selectedAttempt.attemptNumber}
+                </h3>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <FaThumbsUp className="text-green-600 text-xl" />
+                      <span className="text-green-600 font-bold">
+                        Correct Answers
+                      </span>
+                    </div>
+                    <div className="text-3xl font-bold text-gray-900">
+                      {
+                        selectedAttempt.answers.filter((a) => a.isCorrect)
+                          .length
+                      }
+                    </div>
+                    <div className="text-sm text-gray-500 mt-2">
+                      of {selectedAttempt.answers.length} total
+                    </div>
+                  </div>
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <FaThumbsDown className="text-red-600 text-xl" />
+                      <span className="text-red-600 font-bold">
+                        Incorrect Answers
+                      </span>
+                    </div>
+                    <div className="text-3xl font-bold text-gray-900">
+                      {
+                        selectedAttempt.answers.filter((a) => !a.isCorrect)
+                          .length
+                      }
+                    </div>
+                    <div className="text-sm text-gray-500 mt-2">
+                      of {selectedAttempt.answers.length} total
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {selectedAttempt.answers.map((answer, index) => (
+                    <div
+                      key={index}
+                      className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden"
+                    >
+                      <div
+                        onClick={() => toggleQuestionExpansion(index)}
+                        className="p-4 cursor-pointer hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-8 h-8 rounded-full flex items-center justify-center ${answer.isCorrect ? "bg-green-50" : "bg-red-50"}`}
+                            >
+                              {answer.isCorrect ? (
+                                <FaCheckCircle className="text-green-600 text-sm" />
+                              ) : (
+                                <FaTimesCircle className="text-red-600 text-sm" />
+                              )}
+                            </div>
+                            <span className="text-gray-900 font-medium">
+                              Question {index + 1}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`text-sm font-bold ${answer.isCorrect ? "text-green-600" : "text-red-600"}`}
+                            >
+                              {answer.isCorrect ? "Correct" : "Incorrect"}
+                            </span>
+                            <span className="text-gray-400">
+                              {expandedQuestions.has(index) ? "−" : "+"}
+                            </span>
+                          </div>
+                        </div>
+                        {!expandedQuestions.has(index) && (
+                          <div className="mt-3 text-sm text-gray-600 pl-12">
+                            <p className="truncate max-w-2xl">
+                              {answer.question}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {expandedQuestions.has(index) && (
+                        <div className="px-4 pb-4 border-t border-gray-200">
+                          <div className="pt-4 space-y-4">
+                            <div>
+                              <p className="text-gray-600 text-sm mb-2 font-medium">
+                                Question:
+                              </p>
+                              <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                                {answer.question}
+                              </p>
+                            </div>
+                            <div className="p-4 rounded-lg border bg-gray-50 border-gray-200">
+                              <p className="text-xs uppercase font-bold text-gray-600 mb-2">
+                                Your Answer
+                              </p>
+                              <p className="text-gray-900 font-semibold text-lg">
+                                {answer.selectedOption !== null &&
+                                answer.selectedOption !== undefined
+                                  ? answer.options &&
+                                    answer.options[answer.selectedOption]
+                                    ? `${String.fromCharCode(65 + answer.selectedOption)}. ${answer.options[answer.selectedOption]}`
+                                    : `Option ${String.fromCharCode(65 + answer.selectedOption)}`
+                                  : "Not answered"}
+                              </p>
+                              <p
+                                className={`text-sm mt-2 font-bold ${answer.isCorrect ? "text-green-600" : "text-red-600"}`}
+                              >
+                                {answer.isCorrect ? "✓ Correct" : "✗ Incorrect"}
+                              </p>
+                            </div>
+                            <div className="space-y-2">
+                              <p className="text-gray-600 text-sm font-medium">
+                                All Options:
+                              </p>
+                              <div className="space-y-2">
+                                {answer.options && answer.options.length > 0 ? (
+                                  answer.options.map((option, optIndex) => (
+                                    <div
+                                      key={optIndex}
+                                      className={`p-3 rounded-lg border ${optIndex === answer.selectedOption ? "bg-blue-50 border-blue-300" : "bg-white border-gray-200"}`}
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-gray-900">
+                                          {String.fromCharCode(65 + optIndex)}.{" "}
+                                          {option}
+                                        </span>
+                                        {optIndex === answer.selectedOption && (
+                                          <span className="text-blue-600 text-xs font-bold bg-blue-50 px-2 py-1 rounded">
+                                            YOUR ANSWER
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="text-gray-600 text-sm p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    Options not available
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
