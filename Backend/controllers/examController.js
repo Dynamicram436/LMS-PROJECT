@@ -9,8 +9,8 @@ export const saveExamResult = async (req, res) => {
     const { userId, courseId, score, totalQuestions, answers, attemptId } =
       req.body;
 
-    console.log(`[SaveExamResult] Received request for userId: ${userId}, courseId: ${courseId}`);
-    console.log(`[SaveExamResult] Answers received: ${answers ? answers.length : 0} answers`);
+    // console.log(`[SaveExamResult] Received request for userId: ${userId}, courseId: ${courseId}`);
+    // console.log(`[SaveExamResult] Answers received: ${answers ? answers.length : 0} answers`);
     if (answers && answers.length > 0) {
       console.log(`[SaveExamResult] First answer:`, JSON.stringify(answers[0], null, 2));
     }
@@ -184,7 +184,7 @@ export const getExamResults = async (req, res) => {
           ? progress.courseId.toString()
           : String(progress.courseId);
 
-        console.log(`[getExamResults] Fetching attempts for userId: ${userId}, courseId: ${courseId}`);
+        // console.log(`[getExamResults] Fetching attempts for userId: ${userId}, courseId: ${courseId}`);
 
         // Fetch full attempt details from ExamAttempt collection
         let detailedAttempts = await ExamAttempt.find({
@@ -194,12 +194,12 @@ export const getExamResults = async (req, res) => {
           .sort({ attemptNumber: 1 })
           .lean();
         
-        console.log(`[getExamResults] Found ${detailedAttempts.length} detailed attempts for courseId: ${courseId}`);
+        // console.log(`[getExamResults] Found ${detailedAttempts.length} detailed attempts for courseId: ${courseId}`);
         if (detailedAttempts.length > 0) {
-          console.log(`[getExamResults] First attempt answers count: ${detailedAttempts[0].answers?.length || 0}`);
+          // console.log(`[getExamResults] First attempt answers count: ${detailedAttempts[0].answers?.length || 0}`);
         } else {
           // Fallback: If no records in ExamAttempt collection, use embedded courseProgress.examAttempts
-          console.log(`[getExamResults] No ExamAttempt records found, using fallback from courseProgress`);
+          // console.log(`[getExamResults] No ExamAttempt records found, using fallback from courseProgress`);
           if (progress.examAttempts && progress.examAttempts.length > 0) {
             detailedAttempts = progress.examAttempts.map((attempt, index) => ({
               ...attempt,
@@ -208,7 +208,7 @@ export const getExamResults = async (req, res) => {
               // Use attemptId if not present
               attemptId: attempt.examAttemptId || `${userId}_${courseId}_${index}`,
             }));
-            console.log(`[getExamResults] Using ${detailedAttempts.length} attempts from courseProgress`);
+            // console.log(`[getExamResults] Using ${detailedAttempts.length} attempts from courseProgress`);
           }
         }
 
