@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import axios from "axios";
+import apiClient from "../utils/axiosConfig";
 import { toast } from "react-toastify";
 import { chaptersData } from "./courseCatalog";
 import {
@@ -132,8 +132,8 @@ const Exam = () => {
     if (!user?.userid || !chapterId || !subject) return null;
 
     try {
-      const response = await axios.post(
-        "http://localhost:8000/api/exam/attempt-database",
+      const response = await apiClient.post(
+        "/exam/attempt-database",
         {
           userId: user.userid,
           courseId: courseId,
@@ -159,8 +159,8 @@ const Exam = () => {
   const fetchExamAttempts = async () => {
     if (user?.userid && chapterId && subject) {
       try {
-        const response = await axios.get(
-          `http://localhost:8000/api/exam/results/${user.userid}`,
+        const response = await apiClient.get(
+          `/exam/results/${user.userid}`,
         );
 
         if (response.data.success && Array.isArray(response.data.data)) {
@@ -188,8 +188,8 @@ const Exam = () => {
         const newAttemptId = await createAttemptDatabase();
 
         if (chapterId && subject) {
-          const response = await axios.get(
-            "http://localhost:8000/api/exam/questions",
+          const response = await apiClient.get(
+            "/exam/questions",
             {
               params: {
                 chapterId,
@@ -310,8 +310,8 @@ const Exam = () => {
 
       if (user?.userid) {
         try {
-          const response = await axios.post(
-            "http://localhost:8000/api/exam/results",
+          const response = await apiClient.post(
+            "/exam/results",
             {
               userId: user.userid,
               courseId: courseId,
@@ -319,13 +319,6 @@ const Exam = () => {
               totalQuestions: safeTotal,
               answers: answers,
               attemptId: attemptId, // Include attemptId for tracking
-            },
-            {
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-              timeout: 10000, // 10 second timeout
             },
           );
           if (response.data.success) {

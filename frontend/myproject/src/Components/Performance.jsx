@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import apiClient from "../utils/axiosConfig";
 import { toast } from "react-toastify";
 import {
   FaArrowLeft,
@@ -35,39 +35,19 @@ const Performance = () => {
 
   useEffect(() => {
     const fetchPerformanceData = async () => {
-      if (!user?.userid) {
+      const userData = JSON.parse(localStorage.getItem("user"));
+      if (!userData?.userid) {
         toast.error("User not logged in");
         navigate("/home");
         return;
       }
 
       try {
-        const response = await axios.get(
-          `http://localhost:8000/api/exam/results/${user.userid}`,
+        const response = await apiClient.get(
+          `/exam/results/${userData.userid}`,
         );
 
         if (response.data.success && Array.isArray(response.data.data)) {
-          console.log("Raw exam data:", response.data.data);
-          if (response.data.data.length > 0) {
-            console.log("First course:", response.data.data[0]);
-            console.log(
-              "First course examAttempts:",
-              response.data.data[0].examAttempts,
-            );
-            if (
-              response.data.data[0].examAttempts &&
-              response.data.data[0].examAttempts.length > 0
-            ) {
-              console.log(
-                "First exam attempt:",
-                response.data.data[0].examAttempts[0],
-              );
-              console.log(
-                "First exam answers:",
-                response.data.data[0].examAttempts[0].answers,
-              );
-            }
-          }
           setAllExamData(response.data.data);
 
           if (isOverallView) {
@@ -115,7 +95,7 @@ const Performance = () => {
     };
 
     fetchPerformanceData();
-  }, [user?.userid, subject, navigate, isOverallView, category, user]);
+  }, [subject, isOverallView, category]); // Removed user and navigate from dependencies to prevent unnecessary re-renders
 
   const toggleQuestionExpansion = (questionIndex) => {
     const newExpanded = new Set(expandedQuestions);
@@ -214,7 +194,6 @@ const Performance = () => {
 
   const globalStats = React.useMemo(() => {
     if (!isOverallView || allExamData.length === 0) return null;
-    console.log("allExamData:", allExamData);
     const allAttempts = allExamData
       .flatMap((course) =>
         (course.examAttempts || []).map((attempt) => ({
@@ -224,7 +203,6 @@ const Performance = () => {
         })),
       )
       .sort((a, b) => new Date(b.attemptDate) - new Date(a.attemptDate));
-    console.log("allAttempts:", allAttempts);
     const totalAttempts = allAttempts.length;
     const avgScore =
       totalAttempts > 0
@@ -358,7 +336,6 @@ const Performance = () => {
                   All Exam Attempts - Unified View
                 </h3>
                 <div className="space-y-4">
-                  {console.log("Rendering attempts:", globalStats?.allAttempts)}
                   {globalStats?.allAttempts?.map((attempt, index) => (
                     <div
                       key={index}

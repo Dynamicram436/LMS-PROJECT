@@ -1,5 +1,5 @@
-import axios from "axios";
-import React, { useEffect, useState } from "react";
+import apiClient from "../utils/axiosConfig";
+import React, { useEffect, useState} from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Helmet } from "react-helmet-async";
@@ -10,7 +10,12 @@ const Home = () => {
   const [examResults, setExamResults] = useState([]);
   const [loading, setLoading] = useState(true);
 
+
+
   useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+
     const fetchUserData = async () => {
       const storedUser = localStorage.getItem("user");
       if (!storedUser) {
@@ -29,8 +34,9 @@ const Home = () => {
 
         // Fetch user info (no auth required for this endpoint)
         try {
-          const userResponse = await axios.get(
-            `http://localhost:8000/api/auth/user/${userData.userid}`,
+          const userResponse = await apiClient.get(
+            `/auth/user/${userData.userid}`,
+            { signal }
           );
 
           if (userResponse?.data?.data) {
@@ -47,8 +53,9 @@ const Home = () => {
 
         // Fetch exam results (optional - don't show error if it fails)
         try {
-          const resultsResponse = await axios.get(
-            `http://localhost:8000/api/exam/results/${userData.userid}`,
+          const resultsResponse = await apiClient.get(
+            `/exam/results/${userData.userid}`,
+            { signal }
           );
           if (
             resultsResponse?.data?.success &&
@@ -58,10 +65,6 @@ const Home = () => {
           }
         } catch (resultsErr) {
           // Silently fail for exam results - user might not have taken any exams yet
-          console.log(
-            "Exam results not available:",
-            resultsErr.response?.data?.message || resultsErr.message,
-          );
           setExamResults([]);
         }
       } catch (err) {
@@ -76,6 +79,10 @@ const Home = () => {
     };
 
     fetchUserData();
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   const getScoreEmoji = (percentage) => {
