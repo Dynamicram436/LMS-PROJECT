@@ -167,7 +167,7 @@ const Courses = () => {
                 <div className="relative">
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full bg-white border-2 border-slate-100 rounded-[1.5rem] p-5 flex items-center justify-between shadow-sm hover:border-slate-300 transition-all text-left group"
+                    className="w-full bg-white border-2 border-slate-100 rounded-3xl p-5 flex items-center justify-between shadow-sm hover:border-slate-300 transition-all text-left group"
                   >
                     <div className="flex items-center gap-4 cursor-pointer">
                       <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 font-bold group-hover:bg-slate-800 group-hover:text-white transition-colors">
@@ -202,9 +202,8 @@ const Courses = () => {
                       </svg>
                     </div>
                   </button>
-
                   {isDropdownOpen && (
-                    <div className="absolute top-full left-0 right-0 mt-4 bg-white/95 backdrop-blur-xl border border-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300">
+                    <div className="absolute top-full left-0 right-0 mt-4 bg-white/95 backdrop-blur-xl border border-white rounded-4xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300">
                       <div className="max-h-[450px] overflow-y-auto custom-scrollbar p-3">
                         {chapters.map((chapter, index) => (
                           <div
