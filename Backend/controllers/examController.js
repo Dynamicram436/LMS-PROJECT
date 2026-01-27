@@ -520,8 +520,40 @@ export const getExamQuestions = async (req, res) => {
       });
     }
 
+    // Normalize questions to handle both old and new schema formats
+    const normalizedQuestions = examData.questions.map((q, index) => {
+      // If question is in the old format (question, options, correctAnswer)
+      if (q.question && Array.isArray(q.options) && q.correctAnswer !== undefined) {
+        return {
+          qType: "MCQ",
+          qId: `Q${index + 1}`,
+          qDesc: q.question,
+          choices: q.options,
+          correctAns: q.options[q.correctAnswer],
+          // Also preserve the original fields for compatibility
+          question: q.question,
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+        };
+      }
+      // If question is in the new format (qType, qId, qDesc, choices, correctAns)
+      else if (q.qType && q.qId && q.qDesc && Array.isArray(q.choices) && q.correctAns) {
+        return q;
+      }
+      // Fallback
+      else {
+        return {
+          qType: "MCQ",
+          qId: `Q${index + 1}`,
+          qDesc: q.question || `Question ${index + 1}`,
+          choices: q.options || [],
+          correctAns: q.options ? q.options[q.correctAnswer] : "",
+        };
+      }
+    });
+
     // Randomize questions order for each exam attempt
-    const shuffledQuestions = [...examData.questions].sort(
+    const shuffledQuestions = [...normalizedQuestions].sort(
       () => Math.random() - 0.5
     );
 

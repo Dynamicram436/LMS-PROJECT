@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import apiClient from "../utils/axiosConfig";
 import { toast } from "react-toastify";
 import { chaptersData } from "./courseCatalog";
+
 import {
   FaArrowLeft,
   FaCheckCircle,
@@ -81,24 +82,44 @@ const DEFAULT_QUESTIONS = [
 ];
 
 const normalizeQuestions = (rawQuestions = [], fallbackTitle = "Practice") => {
-  const cleaned = (Array.isArray(rawQuestions) ? rawQuestions : []).filter(
-    (q) => q?.question && Array.isArray(q?.options) && q.options.length > 1,
-  );
+  // Handle both new and old question formats
+  const cleaned = (Array.isArray(rawQuestions) ? rawQuestions : [])
+    .filter((q) => {
+      // Check for new format (qType, qDesc, choices) or old format (question, options)
+      const hasNewFormat = q?.qDesc && Array.isArray(q?.choices);
+      const hasOldFormat = q?.question && Array.isArray(q?.options);
+      return hasNewFormat || hasOldFormat;
+    })
+    .map((q) => {
+      // Convert to a consistent format
+      if (q.qDesc && Array.isArray(q.choices)) {
+        // New format
+        return {
+          question: q.qDesc, // Use qDesc as question text
+          options: q.choices, // Use choices as options
+          correctAnswer: q.correctAnswer ?? 0, // Fallback to 0 if not provided
+          ...q, // Keep all other properties
+        };
+      }
+      // Old format
+      return q;
+    });
 
   // Add unique IDs to questions to track them after shuffling
   const questionsWithIds = cleaned.map((q, index) => ({
     ...q,
-    originalIndex: index, // Store original index for tracking
-    id: `${q.question.substring(0, 20).replace(/[^a-zA-Z0-9]/g, "")}-${index}`, // Create unique ID
+    originalIndex: index,
+    id: `${String(q.question || '').substring(0, 20).replace(/[^a-zA-Z0-9]/g, '')}-${index}`,
   }));
 
   if (questionsWithIds.length > 0) return questionsWithIds;
 
+  // Fallback to default questions if none found
   const defaultQuestions = makeDefaultChapterQuestions(fallbackTitle);
   return defaultQuestions.map((q, index) => ({
     ...q,
     originalIndex: index,
-    id: `${q.question.substring(0, 20).replace(/[^a-zA-Z0-9]/g, "")}-${index}`,
+    id: `${String(q.question).substring(0, 20).replace(/[^a-zA-Z0-9]/g, '')}-${index}`,
   }));
 };
 
@@ -382,8 +403,8 @@ const Exam = () => {
       const newAttemptId = await createAttemptDatabase();
 
       if (chapterId && subject) {
-        const response = await axios.get(
-          "http://localhost:8000/api/exam/questions",
+        const response = await apiClient.get(
+          "/exam/questions",
           {
             params: {
               chapterId,
