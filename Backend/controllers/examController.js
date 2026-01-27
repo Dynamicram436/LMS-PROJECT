@@ -3,9 +3,9 @@ import ExamQuestion from "../models/examQuestionSchema.js";
 import ExamAttempt from "../models/examAttemptSchema.js";
 import ExamAttemptDatabase from "../models/examAttemptDatabaseSchema.js";
 import  seedQuestions  from "../seedExamQuestions.js";
+import asyncHandler from "express-async-handler";
 
-export const saveExamResult = async (req, res) => {
-  try {
+export const saveExamResult = asyncHandler(async (req, res) => {
     const { userId, courseId, score, totalQuestions, answers, attemptId } =
       req.body;
 
@@ -124,17 +124,10 @@ export const saveExamResult = async (req, res) => {
         attemptId: finalAttemptId,
       },
     });
-  } catch (error) {
-    console.error("[SaveExamResult] Error saving exam result:", error);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error", error: error.message });
-  }
-};
+});
 
 // Get all exam attempts for a user from the ExamAttempt collection
-export const getAllExamAttempts = async (req, res) => {
-  try {
+export const getAllExamAttempts = asyncHandler(async (req, res) => {
     const { userId } = req.params;
     const { courseId } = req.query;
 
@@ -151,16 +144,9 @@ export const getAllExamAttempts = async (req, res) => {
       success: true,
       data: examAttempts,
     });
-  } catch (error) {
-    console.error("Error fetching exam attempts:", error);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error", error: error.message });
-  }
-};
+});
 
-export const getExamResults = async (req, res) => {
-  try {
+export const getExamResults = asyncHandler(async (req, res) => {
     const { userId } = req.params;
 
     // Find user by userid field
@@ -257,13 +243,7 @@ export const getExamResults = async (req, res) => {
       success: true,
       data: examResults,
     });
-  } catch (error) {
-    console.error("Error fetching exam results:", error);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error", error: error.message });
-  }
-};
+});
 
 // Create exam questions for a category/course/video
 export const createExamQuestions = async (req, res) => {
