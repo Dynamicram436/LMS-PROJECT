@@ -9,9 +9,11 @@ import {
   FaCheckCircle,
   FaRedo,
   FaHome,
-  FaTrophy,
   FaClock,
+  FaTrophy,
   FaQuestionCircle,
+  FaCheck,
+  FaTimes,
 } from "react-icons/fa";
 import { Helmet } from "react-helmet-async";
 
@@ -93,16 +95,31 @@ const normalizeQuestions = (rawQuestions = [], fallbackTitle = "Practice") => {
     .map((q) => {
       // Convert to a consistent format
       if (q.qDesc && Array.isArray(q.choices)) {
-        // New format
+        // New format - handle different correctAnswer formats
+        let correctAnswer = 0; // Default to first option
+        if (q.correctAnswer !== undefined) {
+          correctAnswer = q.correctAnswer;
+        } else if (q.correctAns !== undefined) {
+          // If correctAns is the actual answer text, find its index in choices
+          const answerIndex = q.choices.findIndex(choice =>
+            String(choice).toLowerCase() === String(q.correctAns).toLowerCase()
+          );
+          correctAnswer = answerIndex !== -1 ? answerIndex : 0;
+        }
+
         return {
           question: q.qDesc, // Use qDesc as question text
           options: q.choices, // Use choices as options
-          correctAnswer: q.correctAnswer ?? 0, // Fallback to 0 if not provided
+          correctAnswer: correctAnswer, // Use the determined correct answer index
+          explanation: q.explanation || "", // Include explanation
           ...q, // Keep all other properties
         };
       }
-      // Old format
-      return q;
+      // Old format - ensure correctAnswer is a number
+      return {
+        ...q,
+        correctAnswer: typeof q.correctAnswer === 'number' ? q.correctAnswer : 0
+      };
     });
 
   // Add unique IDs to questions to track them after shuffling
@@ -178,24 +195,44 @@ const Exam = () => {
   };
 
   const fetchExamAttempts = async () => {
-    if (user?.userid && chapterId && subject) {
+    if (user?.userid && courseId) {
       try {
+        console.log(`[Exam] Fetching results for userId: ${user.userid}, courseId: ${courseId}`);
         const response = await apiClient.get(
           `/exam/results/${user.userid}`,
         );
 
         if (response.data.success && Array.isArray(response.data.data)) {
-          const courseResult = response.data.data.find(
-            (result) => result.courseId === courseId,
-          );
+          console.log(`[Exam] Received ${response.data.data.length} course results`);
+          console.log(`[Exam] Course IDs in response:`, response.data.data.map(r => r.courseId));
+          
+          // Normalize courseId for comparison (handle both string and number formats)
+          const normalizedCourseId = String(courseId).toLowerCase().trim();
+          
+          const courseResult = response.data.data.find((result) => {
+            const resultCourseId = String(result.courseId).toLowerCase().trim();
+            const matches = resultCourseId === normalizedCourseId;
+            console.log(`[Exam] Comparing "${resultCourseId}" with "${normalizedCourseId}": ${matches}`);
+            return matches;
+          });
 
           if (courseResult && Array.isArray(courseResult.examAttempts)) {
             setExamAttempts(courseResult.examAttempts);
+            console.log(`[Exam] Found ${courseResult.examAttempts.length} exam attempts for courseId: ${courseId}`);
+          } else {
+            console.log(`[Exam] No matching course result found for courseId: ${courseId}`);
+            setExamAttempts([]);
           }
+        } else {
+          console.log(`[Exam] Response not successful or data is not an array`);
+          setExamAttempts([]);
         }
       } catch (err) {
         console.error("Error fetching exam attempts:", err);
+        setExamAttempts([]);
       }
+    } else {
+      console.log(`[Exam] Skipping fetch - missing userid (${user?.userid}) or courseId (${courseId})`);
     }
   };
 
@@ -256,8 +293,9 @@ const Exam = () => {
   }, [chapterId, subject, chapter]);
 
   useEffect(() => {
+    console.log(`[Exam] Fetching exam attempts for courseId: ${courseId}`);
     fetchExamAttempts();
-  }, [user?.userid, chapterId, subject, chapter]);
+  }, [user?.userid, courseId]);
 
   const safeQuestions = Array.isArray(questions) ? questions : [];
   const safeTotal = safeQuestions.length;
@@ -310,17 +348,28 @@ const Exam = () => {
     setShowScore(true);
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async () => {
+    if (isSubmitting) {
+      console.log('Submit already in progress');
+      return;
+    }
+
+    setIsSubmitting(true);
+    
     try {
       let newScore = 0;
       const user = JSON.parse(localStorage.getItem("user"));
       const answers = [];
+      
+      // Calculate score and prepare answers
       selectedOptions.forEach((selected, index) => {
         const question = safeQuestions[index];
         const isCorrect = question && selected === question.correctAnswer;
         if (isCorrect) newScore++;
         answers.push({
-          questionIndex: question?.originalIndex ?? index, // Use original index to track the question
+          questionIndex: question?.originalIndex ?? index,
           selectedOption: selected,
           isCorrect,
           question: question?.question,
@@ -339,53 +388,72 @@ const Exam = () => {
               score: newScore,
               totalQuestions: safeTotal,
               answers: answers,
-              attemptId: attemptId, // Include attemptId for tracking
+              attemptId: attemptId,
             },
+            {
+              timeout: 10000, // 10 second timeout
+              headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+              }
+            }
           );
+          
           if (response.data.success) {
             toast.success("Exam submitted successfully!");
-            // Refresh exam attempts to include the new attempt
-            fetchExamAttempts();
+            await fetchExamAttempts();
           } else {
             toast.warning("Exam submitted but server returned an error.");
           }
         } catch (submitErr) {
           console.error("Submit Error Details:", submitErr);
-
-          // Check if it's a network error (server not reachable)
+          
+          // Handle cancellation errors specifically
+          if (submitErr.isCancelled) {
+            console.log('Request was cancelled:', submitErr.message);
+            toast.info('Previous request was cancelled. Please try submitting again.');
+            return;
+          }
+          
+          // Check if it's a network error
           if (
             submitErr.code === "ECONNABORTED" ||
             submitErr.code === "ERR_NETWORK" ||
             submitErr.message?.includes("Network Error")
           ) {
             toast.error(
-              "Cannot connect to server. Please check if the backend server is running on port 8000.",
+              "Cannot connect to server. Please check your internet connection and try again.",
+              { autoClose: 5000 }
             );
           }
-          // Check if it's a response error (server returned an error)
+          // Check if it's a response error
           else if (submitErr.response) {
             const errorMessage =
               submitErr.response?.data?.message ||
               submitErr.response?.data?.error ||
               "Server error occurred";
-            toast.error(`Failed to save exam: ${errorMessage}`);
+            toast.error(`Failed to save exam: ${errorMessage}`, { autoClose: 5000 });
           }
           // Other errors
           else {
             toast.error(
               `Failed to save exam: ${submitErr.message || "Unknown error"}`,
+              { autoClose: 5000 }
             );
           }
         }
       } else {
         toast.warning("User not logged in. Score calculated locally only.");
       }
+      
       setScore(newScore);
       setShowScore(true);
     } catch (err) {
-      console.error("Submit Error:", err);
-      toast.error("An error occurred while submitting the exam.");
+      console.error("Unexpected error in handleSubmit:", err);
+      toast.error("An unexpected error occurred. Please try again.", { autoClose: 5000 });
       calculateFinish();
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -564,6 +632,8 @@ const Exam = () => {
                     </button>
                   </div>
 
+
+
                   {/* Show exam attempts if user is logged in */}
                   {user && (
                     <div className="mt-8 p-4 rounded-2xl bg-slate-800/50 border border-white/10">
@@ -600,11 +670,10 @@ const Exam = () => {
                                   {attempt.score}%
                                 </span>
                                 <span
-                                  className={`ml-2 text-xs ${
-                                    attempt.passed
-                                      ? "text-slate-400"
-                                      : "text-slate-500"
-                                  }`}
+                                  className={`ml-2 text-xs ${attempt.passed
+                                    ? "text-slate-400"
+                                    : "text-slate-500"
+                                    }`}
                                 >
                                   {attempt.passed ? "PASSED" : "FAILED"}
                                 </span>
@@ -658,38 +727,34 @@ const Exam = () => {
                         <button
                           key={index}
                           onClick={() => handleAnswerOptionClick(index)}
-                          className={`w-full relative p-4 rounded-xl border-2 text-left transition-all duration-200 flex items-center justify-between ${
-                            selectedOptions[safeCurrentIndex] === index
-                              ? "bg-slate-700 border-slate-500 shadow-lg transform -translate-y-0.5"
-                              : "bg-slate-800/40 border-white/5 hover:border-white/10 hover:bg-slate-800/60"
-                          }`}
+                          className={`w-full relative p-4 rounded-xl border-2 text-left transition-all duration-200 flex items-center justify-between ${selectedOptions[safeCurrentIndex] === index
+                            ? "bg-slate-700 border-slate-500 shadow-lg transform -translate-y-0.5"
+                            : "bg-slate-800/40 border-white/5 hover:border-white/10 hover:bg-slate-800/60"
+                            }`}
                         >
                           <div className="flex items-center gap-4">
                             <div
-                              className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center font-bold text-xs transition-all duration-200 ${
-                                selectedOptions[safeCurrentIndex] === index
-                                  ? "border-white bg-white text-slate-800 shadow-md"
-                                  : "border-white/10 text-slate-300"
-                              }`}
+                              className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center font-bold text-xs transition-all duration-200 ${selectedOptions[safeCurrentIndex] === index
+                                ? "border-white bg-white text-slate-800 shadow-md"
+                                : "border-white/10 text-slate-300"
+                                }`}
                             >
                               {String.fromCharCode(65 + index)}
                             </div>
                             <span
-                              className={`text-sm font-bold transition-colors ${
-                                selectedOptions[safeCurrentIndex] === index
-                                  ? "text-white"
-                                  : "text-slate-100"
-                              }`}
+                              className={`text-sm font-bold transition-colors ${selectedOptions[safeCurrentIndex] === index
+                                ? "text-white"
+                                : "text-slate-100"
+                                }`}
                             >
                               {option}
                             </span>
                           </div>
                           <div
-                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                              selectedOptions[safeCurrentIndex] === index
-                                ? "scale-100 opacity-100 border-white"
-                                : "scale-50 opacity-0"
-                            }`}
+                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${selectedOptions[safeCurrentIndex] === index
+                              ? "scale-100 opacity-100 border-white"
+                              : "scale-50 opacity-0"
+                              }`}
                           >
                             <div className="w-2 h-2 bg-white rounded-full" />
                           </div>
@@ -703,11 +768,10 @@ const Exam = () => {
                     <button
                       onClick={handlePrevious}
                       disabled={safeCurrentIndex === 0}
-                      className={`flex items-center cursor-pointer gap-2 font-bold px-4 py-2 rounded-lg transition-all text-xs ${
-                        safeCurrentIndex === 0
-                          ? "opacity-20 cursor-not-allowed text-white"
-                          : "text-slate-200 hover:bg-slate-700/20 active:scale-95"
-                      }`}
+                      className={`flex items-center cursor-pointer gap-2 font-bold px-4 py-2 rounded-lg transition-all text-xs ${safeCurrentIndex === 0
+                        ? "opacity-20 cursor-not-allowed text-white"
+                        : "text-slate-200 hover:bg-slate-700/20 active:scale-95"
+                        }`}
                     >
                       <FaArrowLeft className="text-[10px]" />
                       Prev
@@ -717,11 +781,24 @@ const Exam = () => {
                       {safeCurrentIndex === safeTotal - 1 ? (
                         <button
                           onClick={handleSubmit}
-                          disabled={selectedOptions[safeCurrentIndex] === null}
-                          className="flex cursor-pointer items-center gap-2 bg-gradient-to-r from-slate-600 to-slate-500 text-white font-bold px-6 py-2 rounded-xl hover:shadow-lg transition-all text-xs active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={selectedOptions[safeCurrentIndex] === null || isSubmitting}
+                          className={`flex items-center gap-2 font-bold px-6 py-2 rounded-xl hover:shadow-lg transition-all text-xs active:scale-95 ${
+                            selectedOptions[safeCurrentIndex] === null || isSubmitting
+                              ? 'bg-gray-400 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-slate-600 to-slate-500 cursor-pointer text-white'
+                          }`}
                         >
-                          <FaCheckCircle />
-                          Finish
+                          {isSubmitting ? (
+                            <>
+                              <span className="inline-block animate-spin">⟳</span>
+                              Submitting...
+                            </>
+                          ) : (
+                            <>
+                              <FaCheckCircle className="text-sm" />
+                              Submit Exam
+                            </>
+                          )}
                         </button>
                       ) : (
                         <button

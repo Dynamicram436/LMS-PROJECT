@@ -2,13 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import apiClient from "../utils/axiosConfig";
 import { toast } from "react-toastify";
+import { subjectsData } from "../Courses/courseCatalog";
 import {
   FaArrowLeft,
   FaCheckCircle,
   FaTimesCircle,
   FaTrophy,
   FaChartLine,
-  FaBrain,
   FaHistory,
   FaStar,
   FaFire,
@@ -16,8 +16,6 @@ import {
   FaAward,
   FaBookOpen,
   FaLightbulb,
-  FaThumbsUp,
-  FaThumbsDown,
 } from "react-icons/fa";
 import { Helmet } from "react-helmet-async";
 
@@ -29,83 +27,107 @@ const Performance = () => {
   const [examData, setExamData] = useState(null);
   const [allExamData, setAllExamData] = useState([]);
   const [selectedAttempt, setSelectedAttempt] = useState(null);
-  const [expandedQuestions, setExpandedQuestions] = useState(new Set());
   const user = JSON.parse(localStorage.getItem("user"));
-  const isOverallView = category === "overall" || category === "all";
+  const isOverallView =
+    !category ||
+    category === "overall" ||
+    category === "all" ||
+    category === "";
+
+  const getFullCourseName = (idOrName) => {
+    if (!idOrName) return "Course";
+    const subjectEntry = subjectsData.find(
+      (s) =>
+        s.id.toLowerCase() === idOrName.toLowerCase() ||
+        s.name.toLowerCase() === idOrName.toLowerCase(),
+    );
+    return subjectEntry ? subjectEntry.name : idOrName;
+  };
 
   useEffect(() => {
     const fetchPerformanceData = async () => {
+      setLoading(true);
       const userData = JSON.parse(localStorage.getItem("user"));
+
       if (!userData?.userid) {
-        toast.error("User not logged in");
-        navigate("/home");
+        toast.error("Please log in to view performance data");
+        navigate("/login");
+        setLoading(false);
         return;
       }
 
       try {
-        const response = await apiClient.get(
-          `/exam/results/${userData.userid}`,
-        );
+        const response = await apiClient.get(`/exam/results/${userData.userid}`);
 
-        if (response.data.success && Array.isArray(response.data.data)) {
-          setAllExamData(response.data.data);
+        if (!response?.data?.success) {
+          throw new Error(response?.data?.message || "Failed to fetch performance data");
+        }
 
-          if (isOverallView) {
-            if (response.data.data.length > 0) {
-              setExamData(response.data.data[0]);
-              if (
-                response.data.data[0].examAttempts &&
-                response.data.data[0].examAttempts.length > 0
-              ) {
-                setSelectedAttempt(response.data.data[0].examAttempts[0]);
-              }
-            }
-          } else {
-            const subjectStr = String(subject || "").trim();
-            const courseData = response.data.data.find((result) => {
-              const courseIdStr = String(result.courseId || "").trim();
-              const courseNameStr = String(result.courseName || "").trim();
-              return (
-                courseIdStr.toLowerCase() === subjectStr.toLowerCase() ||
-                courseNameStr.toLowerCase() === subjectStr.toLowerCase() ||
-                courseIdStr
-                  .toLowerCase()
-                  .startsWith(subjectStr.toLowerCase() + "-") ||
-                courseNameStr.toLowerCase().includes(subjectStr.toLowerCase())
-              );
-            });
+        const examResults = Array.isArray(response.data.data) 
+          ? response.data.data.filter(Boolean) // Remove any null/undefined entries
+          : [];
 
-            if (courseData) {
-              setExamData(courseData);
-              if (
-                courseData.examAttempts &&
-                courseData.examAttempts.length > 0
-              ) {
-                setSelectedAttempt(courseData.examAttempts[0]);
-              }
+        setAllExamData(examResults);
+
+        if (examResults.length === 0) {
+          setLoading(false);
+          return;
+        }
+
+        if (isOverallView) {
+          // For overall view, find the first course with attempts
+          const courseWithAttempts = examResults.find(
+            (course) => course.examAttempts?.length > 0
+          );
+          
+          if (courseWithAttempts) {
+            setExamData(courseWithAttempts);
+            if (courseWithAttempts.examAttempts?.[0]) {
+              setSelectedAttempt(courseWithAttempts.examAttempts[0]);
             }
           }
+        } else if (subject) {
+          // For specific subject view
+          const subjectStr = String(subject).trim().toLowerCase();
+          const courseData = examResults.find((result) => {
+            if (!result) return false;
+            const courseId = String(result.courseId || "").trim().toLowerCase();
+            const courseName = String(result.courseName || "").trim().toLowerCase();
+            return (
+              courseId === subjectStr ||
+              courseName === subjectStr ||
+              courseId.startsWith(`${subjectStr}-`) ||
+              courseName.includes(subjectStr)
+            );
+          });
+
+          if (courseData) {
+            setExamData(courseData);
+            if (courseData.examAttempts?.[0]) {
+              setSelectedAttempt(courseData.examAttempts[0]);
+            }
+          } else {
+            toast.warning("No performance data found for this course");
+          }
         }
-        setLoading(false);
-      } catch (err) {
-        console.error("Error fetching performance data:", err);
-        toast.error("Failed to load performance data");
+      } catch (error) {
+        console.error("Error fetching performance data:", error);
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to load performance data";
+        toast.error(errorMessage);
+
+        if (error.response?.status === 401) {
+          navigate("/login");
+        }
+      } finally {
         setLoading(false);
       }
     };
 
     fetchPerformanceData();
-  }, [subject, isOverallView, category]); // Removed user and navigate from dependencies to prevent unnecessary re-renders
-
-  const toggleQuestionExpansion = (questionIndex) => {
-    const newExpanded = new Set(expandedQuestions);
-    if (newExpanded.has(questionIndex)) {
-      newExpanded.delete(questionIndex);
-    } else {
-      newExpanded.add(questionIndex);
-    }
-    setExpandedQuestions(newExpanded);
-  };
+  }, [subject, isOverallView, category, navigate]);
 
   const getScoreEmoji = (percentage) => {
     if (percentage >= 90) return "🌟";
@@ -244,10 +266,10 @@ const Performance = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="relative w-16 h-16 mx-auto mb-6">
-            <div className="absolute top-0 left-0 w-full h-full border-4 border-gray-200 rounded-full" />
-            <div className="absolute top-0 left-0 w-full h-full border-4 border-t-blue-600 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin" />
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-white/10 rounded-full" />
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-t-slate-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin" />
           </div>
-          <p className="text-gray-500 animate-pulse font-medium">
+          <p className="mt-6 text-slate-400/50 animate-pulse font-medium">
             Loading performance data...
           </p>
         </div>
@@ -261,17 +283,29 @@ const Performance = () => {
         <div className="text-center p-8">
           <FaBookOpen className="text-6xl text-gray-300 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            No Performance Data
+            No Performance Data Found
           </h2>
           <p className="text-gray-500 mb-6">
-            You haven't attempted any exams for this course yet.
+            {!user?.userid
+              ? "Please log in to view your performance data."
+              : "You haven't attempted any exams for this course yet."}
           </p>
-          <button
-            onClick={() => navigate(-1)}
-            className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors"
-          >
-            Go Back
-          </button>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={() => navigate(-1)}
+              className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Go Back
+            </button>
+            {!user?.userid && (
+              <button
+                onClick={() => navigate("/login")}
+                className="px-6 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Log In
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -283,17 +317,29 @@ const Performance = () => {
         <div className="text-center p-8">
           <FaBookOpen className="text-6xl text-gray-300 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            No Performance Data
+            No Performance Data Found
           </h2>
           <p className="text-gray-500 mb-6">
-            You haven't attempted any exams yet.
+            {!user?.userid
+              ? "Please log in to view your performance data."
+              : "You haven't attempted any exams yet. Start learning to track your progress!"}
           </p>
-          <button
-            onClick={() => navigate(-1)}
-            className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors"
-          >
-            Go Back
-          </button>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={() => navigate("/viewcourses")}
+              className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Browse Courses
+            </button>
+            {!user?.userid && (
+              <button
+                onClick={() => navigate("/login")}
+                className="px-6 py-3 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Log In
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -324,7 +370,7 @@ const Performance = () => {
             <p className="text-gray-600 text-lg">
               {isOverallView
                 ? "A comprehensive overview of all your learning achievements"
-                : `${subject} - Detailed Exam Results`}
+                : `${getFullCourseName(subject)} - Detailed Exam Results`}
             </p>
           </div>
 
@@ -364,7 +410,9 @@ const Performance = () => {
                                 : "text-gray-800 group-hover:text-blue-600"
                             }`}
                           >
-                            {attempt.courseName || attempt.courseId}
+                            {getFullCourseName(
+                              attempt.courseName || attempt.courseId,
+                            )}
                           </h4>
                           <p className="text-sm text-gray-500 flex items-center gap-1">
                             <svg
@@ -395,7 +443,9 @@ const Performance = () => {
                       <div className="flex items-center gap-6">
                         <div className="flex flex-col text-right">
                           <p
-                            className={`text-xs font-bold uppercase tracking-wider ${attempt.passed ? "text-green-600" : "text-red-500"}`}
+                            className={`text-xs font-bold uppercase tracking-wider ${
+                              attempt.passed ? "text-green-600" : "text-red-500"
+                            }`}
                           >
                             {attempt.passed
                               ? "✅ Passed"
@@ -454,9 +504,17 @@ const Performance = () => {
                   </div>
                   <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
                     <div className="text-3xl font-bold text-gray-900 mb-2">
-                      {globalStats.passingRate}%
+                      {Math.round(
+                        allExamData.reduce(
+                          (sum, c) => sum + (c.completionPercentage || 0),
+                          0,
+                        ) / (allExamData.length || 1),
+                      )}
+                      %
                     </div>
-                    <div className="text-gray-500 text-sm">Passing Rate</div>
+                    <div className="text-gray-500 text-sm">
+                      Overall Curriculum Progress
+                    </div>
                   </div>
                   <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
                     <div className="text-3xl font-bold text-gray-900 mb-2">
@@ -520,15 +578,15 @@ const Performance = () => {
 
                 <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
-                    <FaTrophy className="text-3xl text-yellow-600" />
-                    <span className="text-xs font-bold px-2 py-1 rounded-full bg-yellow-50 border border-yellow-200 text-yellow-600">
-                      Record
+                    <FaBookOpen className="text-3xl text-green-600" />
+                    <span className="text-xs font-bold px-2 py-1 rounded-full bg-green-50 border border-green-200 text-green-600">
+                      Curriculum
                     </span>
                   </div>
                   <div className="text-3xl font-bold text-gray-900 mb-2">
-                    {streakInfo.best}
+                    {examData?.completionPercentage || 0}%
                   </div>
-                  <div className="text-gray-500 text-sm">Best Streak</div>
+                  <div className="text-gray-500 text-sm">Study Progress</div>
                 </div>
               </div>
 
@@ -536,7 +594,13 @@ const Performance = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <FaChartLine
-                      className={`text-2xl ${improvementTrend.trend === "up" ? "text-green-600" : improvementTrend.trend === "down" ? "text-red-600" : "text-yellow-600"}`}
+                      className={`text-2xl ${
+                        improvementTrend.trend === "up"
+                          ? "text-green-600"
+                          : improvementTrend.trend === "down"
+                            ? "text-red-600"
+                            : "text-yellow-600"
+                      }`}
                     />
                     <div>
                       <h3 className="text-lg font-bold text-gray-900">
@@ -549,7 +613,13 @@ const Performance = () => {
                   </div>
                   <div className="text-right">
                     <div
-                      className={`text-2xl font-bold ${improvementTrend.trend === "up" ? "text-green-600" : improvementTrend.trend === "down" ? "text-red-600" : "text-yellow-600"}`}
+                      className={`text-2xl font-bold ${
+                        improvementTrend.trend === "up"
+                          ? "text-green-600"
+                          : improvementTrend.trend === "down"
+                            ? "text-red-600"
+                            : "text-yellow-600"
+                      }`}
                     >
                       {improvementTrend.trend === "up"
                         ? "↑"
@@ -585,10 +655,10 @@ const Performance = () => {
                         Chapter Name
                       </th>
                       <th className="text-center py-4 px-4 font-bold text-gray-900">
-                        Best Score
+                        Exam Score
                       </th>
                       <th className="text-center py-4 px-4 font-bold text-gray-900">
-                        Attempts
+                        Study Progress
                       </th>
                       <th className="text-center py-4 px-4 font-bold text-gray-900">
                         Status
@@ -599,62 +669,89 @@ const Performance = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {allExamData.map((course, idx) => {
-                      const bestScore = course.score || 0;
-                      const totalAttempts =
-                        course.attempts ||
-                        (course.examAttempts ? course.examAttempts.length : 0);
-                      const passed = course.passed || false;
-                      return (
-                        <tr
-                          key={idx}
-                          className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                    {Array.isArray(allExamData) && allExamData.length > 0 ? (
+                      allExamData.map((course, idx) => {
+                        if (!course) return null;
+                        const bestScore = course.score || 0;
+                        const passed = course.passed || false;
+
+                        return (
+                          <tr
+                            key={`${course.courseId || "course"}-${idx}`}
+                            className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="py-4 px-4 text-gray-900 font-medium">
+                              {getFullCourseName(
+                                course.courseName || course.courseId,
+                              )}
+                            </td>
+                            <td className="text-center py-4 px-4">
+                              <div className="flex items-center justify-center gap-2">
+                                <span className="text-lg font-bold text-gray-900">
+                                  {bestScore}%
+                                </span>
+                              </div>
+                            </td>
+                            <td className="text-center py-4 px-4">
+                              <div className="w-full max-w-[100px] mx-auto bg-gray-100 h-2 rounded-full overflow-hidden border border-gray-200">
+                                <div
+                                  className="h-full bg-blue-600"
+                                  style={{
+                                    width: `${
+                                      course.completionPercentage || 0
+                                    }%`,
+                                  }}
+                                />
+                              </div>
+                              <span className="text-[10px] font-bold text-gray-500 mt-1 block">
+                                {course.completionPercentage || 0}% Complete
+                              </span>
+                            </td>
+                            <td className="text-center py-4 px-4">
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                  passed
+                                    ? "bg-green-50 border border-green-200 text-green-600"
+                                    : "bg-yellow-50 border border-yellow-200 text-yellow-600"
+                                }`}
+                              >
+                                {passed ? "✅ Passed" : "📚 Learning"}
+                              </span>
+                            </td>
+                            <td className="text-center py-4 px-4">
+                              <button
+                                onClick={() =>
+                                  navigate(
+                                    `/performance/${encodeURIComponent(
+                                      course.courseId,
+                                    )}`
+                                  )
+                                }
+                                className="text-blue-600 hover:text-blue-800 font-medium"
+                              >
+                                View Details
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="5"
+                          className="py-8 text-center text-gray-500"
                         >
-                          <td className="py-4 px-4 text-gray-900 font-medium">
-                            {course.courseName}
-                          </td>
-                          <td className="text-center py-4 px-4">
-                            <div className="flex items-center justify-center gap-2">
-                              <span className="text-2xl">
-                                {getScoreEmoji(bestScore)}
-                              </span>
-                              <span className="text-lg font-bold text-gray-900">
-                                {bestScore}%
-                              </span>
-                            </div>
-                          </td>
-                          <td className="text-center py-4 px-4 text-gray-600 font-medium">
-                            {totalAttempts}
-                          </td>
-                          <td className="text-center py-4 px-4">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-bold ${passed ? "bg-green-50 border border-green-200 text-green-600" : "bg-yellow-50 border border-yellow-200 text-yellow-600"}`}
-                            >
-                              {passed ? "✅ Passed" : "📚 Improving"}
-                            </span>
-                          </td>
-                          <td className="text-center py-4 px-4">
-                            <button
-                              onClick={() =>
-                                navigate(
-                                  `/performance/${encodeURIComponent(course.courseId)}`,
-                                )
-                              }
-                              className="px-4 py-2 bg-blue-50 text-blue-600 font-semibold rounded-lg hover:bg-blue-100 transition-colors text-sm cursor-pointer"
-                            >
-                              View Details
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                          No exam data available. Complete an exam to see your
+                          performance.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
           )}
 
-          {/* Attempt History - Only show for single course view */}
           {!isOverallView && (
             <div className="bg-white border border-gray-200 rounded-xl p-6 mb-12 shadow-sm">
               <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
@@ -662,214 +759,81 @@ const Performance = () => {
                 Attempt History
               </h3>
               <div className="space-y-3">
-                {currentAttempts.map((attempt, index) => (
-                  <div
-                    key={index}
-                    onClick={() => setSelectedAttempt(attempt)}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${selectedAttempt?.attemptId === attempt.attemptId ? "bg-blue-50 border-blue-300" : "bg-gray-50 border-gray-200 hover:border-gray-300"}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-                          <span className="text-blue-600 font-bold">
-                            {`#${attempt.attemptNumber || index + 1}`}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-900 font-bold">
-                              {attempt.score || 0}%
-                            </span>
-                          </div>
-                          <div className="text-gray-500 text-sm">
-                            {attempt.attemptDate
-                              ? new Date(attempt.attemptDate).toLocaleString()
-                              : "Recent"}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-bold ${attempt.passed ? "bg-green-50 border border-green-200 text-green-600" : "bg-red-50 border border-red-200 text-red-600"}`}
-                        >
-                          {attempt.passed ? "PASSED" : "FAILED"}
-                        </span>
-                        {selectedAttempt?.attemptId === attempt.attemptId && (
-                          <FaCheckCircle className="text-blue-600" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Detailed Question Analysis - Only show for single course view */}
-          {!isOverallView &&
-            selectedAttempt &&
-            selectedAttempt.answers &&
-            selectedAttempt.answers.length > 0 && (
-              <div
-                id="question-analysis"
-                className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mt-12 scroll-mt-24"
-              >
-                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                  <FaBrain className="text-blue-600" />
-                  Question Analysis - Attempt #{selectedAttempt.attemptNumber}
-                </h3>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <FaThumbsUp className="text-green-600 text-xl" />
-                      <span className="text-green-600 font-bold">
-                        Correct Answers
-                      </span>
-                    </div>
-                    <div className="text-3xl font-bold text-gray-900">
-                      {
-                        selectedAttempt.answers.filter((a) => a.isCorrect)
-                          .length
-                      }
-                    </div>
-                    <div className="text-sm text-gray-500 mt-2">
-                      of {selectedAttempt.answers.length} total
-                    </div>
-                  </div>
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <FaThumbsDown className="text-red-600 text-xl" />
-                      <span className="text-red-600 font-bold">
-                        Incorrect Answers
-                      </span>
-                    </div>
-                    <div className="text-3xl font-bold text-gray-900">
-                      {
-                        selectedAttempt.answers.filter((a) => !a.isCorrect)
-                          .length
-                      }
-                    </div>
-                    <div className="text-sm text-gray-500 mt-2">
-                      of {selectedAttempt.answers.length} total
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {selectedAttempt.answers.map((answer, index) => (
-                    <div
-                      key={index}
-                      className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden"
-                    >
+                {currentAttempts && currentAttempts.length > 0 ? (
+                  <div className="space-y-3">
+                    {currentAttempts.map((attempt, index) => (
                       <div
-                        onClick={() => toggleQuestionExpansion(index)}
-                        className="p-4 cursor-pointer hover:bg-gray-100 transition-colors"
+                        key={attempt.attemptId || index}
+                        onClick={() => setSelectedAttempt(attempt)}
+                        className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${
+                          selectedAttempt?.attemptId === attempt.attemptId
+                            ? "bg-blue-50 border-blue-300"
+                            : "bg-gray-50 border-gray-200 hover:border-gray-300"
+                        }`}
                       >
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`w-8 h-8 rounded-full flex items-center justify-center ${answer.isCorrect ? "bg-green-50" : "bg-red-50"}`}
-                            >
-                              {answer.isCorrect ? (
-                                <FaCheckCircle className="text-green-600 text-sm" />
-                              ) : (
-                                <FaTimesCircle className="text-red-600 text-sm" />
-                              )}
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+                              <span className="text-blue-600 font-bold">
+                                {`#${attempt.attemptNumber || index + 1}`}
+                              </span>
                             </div>
-                            <span className="text-gray-900 font-medium">
-                              Question {index + 1}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`text-sm font-bold ${answer.isCorrect ? "text-green-600" : "text-red-600"}`}
-                            >
-                              {answer.isCorrect ? "Correct" : "Incorrect"}
-                            </span>
-                            <span className="text-gray-400">
-                              {expandedQuestions.has(index) ? "−" : "+"}
-                            </span>
-                          </div>
-                        </div>
-                        {!expandedQuestions.has(index) && (
-                          <div className="mt-3 text-sm text-gray-600 pl-12">
-                            <p className="truncate max-w-2xl">
-                              {answer.question}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {expandedQuestions.has(index) && (
-                        <div className="px-4 pb-4 border-t border-gray-200">
-                          <div className="pt-4 space-y-4">
                             <div>
-                              <p className="text-gray-600 text-sm mb-2 font-medium">
-                                Question:
-                              </p>
-                              <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                                {answer.question}
-                              </p>
-                            </div>
-                            <div className="p-4 rounded-lg border bg-gray-50 border-gray-200">
-                              <p className="text-xs uppercase font-bold text-gray-600 mb-2">
-                                Your Answer
-                              </p>
-                              <p className="text-gray-900 font-semibold text-lg">
-                                {answer.selectedOption !== null &&
-                                answer.selectedOption !== undefined
-                                  ? answer.options &&
-                                    answer.options[answer.selectedOption]
-                                    ? `${String.fromCharCode(65 + answer.selectedOption)}. ${answer.options[answer.selectedOption]}`
-                                    : `Option ${String.fromCharCode(65 + answer.selectedOption)}`
-                                  : "Not answered"}
-                              </p>
-                              <p
-                                className={`text-sm mt-2 font-bold ${answer.isCorrect ? "text-green-600" : "text-red-600"}`}
-                              >
-                                {answer.isCorrect ? "✓ Correct" : "✗ Incorrect"}
-                              </p>
-                            </div>
-                            <div className="space-y-2">
-                              <p className="text-gray-600 text-sm font-medium">
-                                All Options:
-                              </p>
-                              <div className="space-y-2">
-                                {answer.options && answer.options.length > 0 ? (
-                                  answer.options.map((option, optIndex) => (
-                                    <div
-                                      key={optIndex}
-                                      className={`p-3 rounded-lg border ${optIndex === answer.selectedOption ? "bg-blue-50 border-blue-300" : "bg-white border-gray-200"}`}
-                                    >
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-gray-900">
-                                          {String.fromCharCode(65 + optIndex)}.{" "}
-                                          {option}
-                                        </span>
-                                        {optIndex === answer.selectedOption && (
-                                          <span className="text-blue-600 text-xs font-bold bg-blue-50 px-2 py-1 rounded">
-                                            YOUR ANSWER
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="text-gray-600 text-sm p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                    Options not available
-                                  </div>
-                                )}
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-900 font-bold">
+                                  {attempt.score || 0}%
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  {attempt.attemptDate
+                                    ? new Date(attempt.attemptDate).toLocaleDateString()
+                                    : "Recent"}
+                                </span>
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {attempt.totalQuestions
+                                  ? `${attempt.correctAnswers || 0} of ${attempt.totalQuestions} correct`
+                                  : "Details not available"}
                               </div>
                             </div>
                           </div>
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                attempt.passed
+                                  ? "bg-green-50 border border-green-200 text-green-600"
+                                  : "bg-red-50 border border-red-200 text-red-600"
+                              }`}
+                            >
+                              {attempt.passed ? "PASSED" : "NEEDS IMPROVEMENT"}
+                            </span>
+                            {selectedAttempt?.attemptId === attempt.attemptId && (
+                              <FaCheckCircle className="text-blue-600" />
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-5xl mb-4">📚</div>
+                    <h4 className="font-semibold text-gray-900 text-lg mb-2">
+                      No exam attempts yet
+                    </h4>
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                      You haven't taken any exams for this course yet. Complete a quiz or exam to track your progress here.
+                    </p>
+                    <button
+                      onClick={() => navigate(-1)}
+                      className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Go Back to Courses
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+          )}
         </div>
       </div>
     </>

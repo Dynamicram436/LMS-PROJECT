@@ -20,13 +20,13 @@ const withDatabaseCheck = async (operation, errorMessage) => {
 };
 
 export const register = asyncHandler(async (req, res) => {
-  const { userid, email, password, name, rollno, courseName, role } = req.body;
+  const { userid, password, name, rollno, courseName, role } = req.body;
 
   // Validate required fields
-  if (!userid || !email || !password || !name || !rollno) {
+  if (!userid || !password || !name || !rollno) {
     return res.status(400).json({
       message:
-        "Missing required fields: userid, email, password, name, rollno",
+        "Missing required fields: userid, password, name, rollno",
     });
   }
 
@@ -42,7 +42,7 @@ export const register = asyncHandler(async (req, res) => {
   const existingUser = await withDatabaseCheck(
     () =>
       User.findOne({
-        $or: [{ userid }, { email }, { rollno }],
+        $or: [{ userid }, { rollno }],
       }),
     "Failed to check existing user",
   );
@@ -51,9 +51,7 @@ export const register = asyncHandler(async (req, res) => {
     const field =
       existingUser.userid === userid
         ? "userid"
-        : existingUser.email === email
-          ? "email"
-          : "rollno";
+        : "rollno";
     return res.status(400).json({
       message: `User with this ${field} already exists`,
     });
@@ -65,7 +63,6 @@ export const register = asyncHandler(async (req, res) => {
     () =>
       User.create({
         userid,
-        email,
         password: hashedPassword,
         name,
         rollno,

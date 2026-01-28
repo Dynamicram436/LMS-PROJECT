@@ -1,5 +1,5 @@
 import express from "express";
-import { saveExamResult, getExamResults, getExamQuestions, createExamQuestions, createExamAttemptDatabase, seedExamQuestions } from "../controllers/examController.js";
+import { saveExamResult, getExamResults, getExamQuestions, createExamQuestions, createExamAttemptDatabase, seedExamQuestions, updateVideoProgress } from "../controllers/examController.js";
 import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -21,5 +21,8 @@ router.post("/results", saveExamResult);
 
 // Get user's exam results (optional auth - works without token for now)
 router.get("/results/:userId", getExamResults);
+
+// Update video progress
+router.post("/video-progress", updateVideoProgress);
 
 export default router;

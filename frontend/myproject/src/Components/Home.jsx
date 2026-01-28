@@ -41,6 +41,8 @@ const Home = () => {
 
           if (userResponse?.data?.data) {
             setUser(userResponse.data.data);
+            userData.courseProgress = userResponse.data.data.courseProgress || [];
+            localStorage.setItem("user", JSON.stringify(userData));
           } else if (userResponse?.data?.message === "User not found") {
             // User not found in database, use stored user data
             setUser(userData);
@@ -51,21 +53,45 @@ const Home = () => {
           setUser(userData);
         }
 
-        // Fetch exam results (optional - don't show error if it fails)
+        // Fetch exam results
         try {
           const resultsResponse = await apiClient.get(
             `/exam/results/${userData.userid}`,
-            { signal }
+            { 
+              signal,
+              headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+              }
+            }
           );
-          if (
-            resultsResponse?.data?.success &&
-            Array.isArray(resultsResponse.data.data)
-          ) {
-            setExamResults(resultsResponse.data.data);
+          
+          if (resultsResponse?.data?.success) {
+            const results = Array.isArray(resultsResponse.data.data) 
+              ? resultsResponse.data.data 
+              : [];
+              
+            console.log('Fetched exam results:', results);
+            setExamResults(results);
+            
+            // Update local storage with latest results
+            const updatedUser = { ...userData, examResults: results };
+            localStorage.setItem("user", JSON.stringify(updatedUser));
+          } else {
+            console.warn('No exam results found or invalid response format');
+            setExamResults(userData.examResults || []);
           }
-        } catch (resultsErr) {
-          // Silently fail for exam results - user might not have taken any exams yet
-          setExamResults([]);
+        } catch (error) {
+          console.error('Error fetching exam results:', error);
+          // Fallback to any locally stored results
+          setExamResults(userData.examResults || []);
+          
+          if (error.response?.status === 401) {
+            // Handle unauthorized - possibly log out the user
+            localStorage.removeItem("user");
+            navigate("/login");
+            toast.error("Session expired. Please log in again.");
+          }
         }
       } catch (err) {
         console.error("Error in fetchUserData:", err);
@@ -175,7 +201,7 @@ const Home = () => {
                         Exams Attempted
                       </span>
                       <span className="text-3xl font-bold text-gray-900">
-                        {examResults.length}
+                        {examResults.reduce((sum, course) => sum + (course.examAttempts?.length || 0), 0)}
                       </span>
                     </div>
                     <div className="border-t border-gray-200"></div>
@@ -184,7 +210,7 @@ const Home = () => {
                         Courses Started
                       </span>
                       <span className="text-3xl font-bold text-gray-900">
-                        --
+                        {examResults.length}
                       </span>
                     </div>
                   </div>
@@ -238,27 +264,80 @@ const Home = () => {
 
                   {examResults.length > 0 ? (
                     <div className="space-y-3">
-                      {examResults.slice(0, 3).map((result, idx) => (
-                        <div
-                          key={idx}
-                          onClick={() =>
-                            navigate(
-                              `/performance/${encodeURIComponent(result.courseId)}`,
-                            )
-                          }
-                          className="p-5 border border-gray-200 rounded-lg bg-white hover:border-gray-300 hover:shadow-sm transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
-                        >
-                          <div className="flex items-center gap-4 text-left">
-                            <div className="text-3xl bg-gray-100 w-12 h-12 rounded-lg flex items-center justify-center border border-gray-300 group-hover:scale-105 transition-transform">
-                              {getScoreEmoji(result.score)}
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-gray-900 group-hover:text-gray-700 transition-colors">
-                                {result.courseName}
-                              </h4>
-                              <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                      {examResults
+                        .slice(0, 3)
+                        .map((course, idx) => {
+                          const latestAttempt = course.examAttempts && course.examAttempts.length > 0 
+                            ? course.examAttempts[course.examAttempts.length - 1]
+                            : null;
+                          return (
+                            <div
+                              key={idx}
+                              onClick={() =>
+                                navigate(
+                                  `/performance/${encodeURIComponent(course.courseId)}`,
+                                )
+                              }
+                              className="p-5 border border-gray-200 rounded-lg bg-white hover:border-gray-300 hover:shadow-sm transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
+                            >
+                              <div className="flex items-center gap-4 text-left">
+                                <div className="text-3xl bg-gray-100 w-12 h-12 rounded-lg flex items-center justify-center border border-gray-300 group-hover:scale-105 transition-transform">
+                                  {latestAttempt ? getScoreEmoji(latestAttempt.score || 0) : "📖"}
+                                </div>
+                                <div>
+                                  <h4 className="font-semibold text-gray-900 group-hover:text-gray-700 transition-colors">
+                                    {course.courseName || course.courseId}
+                                  </h4>
+                                  {latestAttempt ? (
+                                    <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                                      <svg
+                                        className="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                        />
+                                      </svg>
+                                      {latestAttempt.score || 0}%
+                                    </p>
+                                  ) : (
+                                    <p className="text-sm text-gray-500 mt-1">Not started</p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-4">
+                                <div className="flex flex-col text-right">
+                                  {latestAttempt ? (
+                                    <>
+                                      <p
+                                        className={`text-xs font-semibold uppercase tracking-wide ${latestAttempt.passed ? "text-green-600" : "text-yellow-600"}`}
+                                      >
+                                        {latestAttempt.passed
+                                          ? "✅ Passed"
+                                          : "📚 In Progress"}
+                                      </p>
+                                      <p className="text-xs text-gray-400 mt-1">
+                                        {course.examAttempts?.length || 0} attempt
+                                        {course.examAttempts?.length !== 1 ? "s" : ""}
+                                      </p>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+                                        🚀 Start Course
+                                      </p>
+                                      <p className="text-xs text-gray-400 mt-1">0 attempts</p>
+                                    </>
+                                  )}
+                                </div>
                                 <svg
-                                  className="w-4 h-4"
+                                  className="w-5 h-5 text-gray-300 group-hover:text-gray-500 transition-colors hidden sm:block"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -267,54 +346,22 @@ const Home = () => {
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                     strokeWidth={2}
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    d="M9 5l7 7-7 7"
                                   />
                                 </svg>
-                                {result.score}%
-                              </p>
+                              </div>
                             </div>
-                          </div>
-
-                          <div className="flex items-center gap-4">
-                            <div className="flex flex-col text-right">
-                              <p
-                                className={`text-xs font-semibold uppercase tracking-wide ${result.passed ? "text-gray-700" : "text-gray-600"}`}
-                              >
-                                {result.passed
-                                  ? "✅ Passed"
-                                  : "📚 Review needed"}
-                              </p>
-                              <p className="text-xs text-gray-400 mt-1">
-                                {result.attempts} attempt
-                                {result.attempts !== 1 ? "s" : ""}
-                              </p>
-                            </div>
-                            <svg
-                              className="w-5 h-5 text-gray-300 group-hover:text-gray-500 transition-colors hidden sm:block"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 5l7 7-7 7"
-                              />
-                            </svg>
-                          </div>
-                        </div>
-                      ))}
+                          );
+                        })}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <div className="text-5xl mb-4">📚</div>
                       <h4 className="font-semibold text-gray-900 text-lg mb-2">
-                        No exams taken yet
+                        No courses started yet
                       </h4>
                       <p className="text-gray-600 max-w-sm">
-                        Start your first course and take an exam to see your
-                        performance metrics here.
+                        Explore courses to begin your learning journey and track your progress.
                       </p>
                     </div>
                   )}

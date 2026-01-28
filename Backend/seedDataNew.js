@@ -6,86 +6,93 @@ dotenv.config();
 
 const sampleQuestions = [
   {
-    category: "English",
-    course: "CE",
-    video: "V1",
+    category: "CSE",
+    course: "B.Tech",
+    video: "CSE-V1",
     questions: [
       {
         qType: "MCQ",
         qId: "Q1",
-        qDesc: "What is the synonym of 'Happy'?",
-        choices: ["Joyful", "Sad", "Angry", "Tired"],
-        correctAns: "Joyful"
+        qDesc: "What does HTML stand for?",
+        choices: ["Hyper Text Markup Language", "High Tech Multi Language", "Hyper Tabular Main Log", "None"],
+        correctAns: "Hyper Text Markup Language"
       },
       {
         qType: "MCQ",
         qId: "Q2",
-        qDesc: "Which word is the opposite of 'Dark'?",
-        choices: ["Light", "Black", "Night", "Shadow"],
-        correctAns: "Light"
-      },
-      {
-        qType: "MCQ",
-        qId: "Q3",
-        qDesc: "What is the plural of 'Child'?",
-        choices: ["Childs", "Children", "Childes", "Childern"],
-        correctAns: "Children"
+        qDesc: "Which data structure uses LIFO?",
+        choices: ["Queue", "Stack", "Linked List", "Tree"],
+        correctAns: "Stack"
       }
     ]
   },
   {
-    category: "Mathematics",
-    course: "CE",
-    video: "V1",
+    category: "ECE",
+    course: "B.Tech",
+    video: "ECE-V1",
     questions: [
       {
         qType: "MCQ",
         qId: "Q1",
-        qDesc: "What is 2 + 2?",
-        choices: ["3", "4", "5", "6"],
-        correctAns: "4"
-      },
-      {
-        qType: "MCQ",
-        qId: "Q2",
-        qDesc: "What is the square root of 16?",
-        choices: ["2", "3", "4", "5"],
-        correctAns: "4"
-      },
-      {
-        qType: "MCQ",
-        qId: "Q3",
-        qDesc: "What is 10 × 5?",
-        choices: ["45", "50", "55", "60"],
-        correctAns: "50"
+        qDesc: "What is the full form of VLSI?",
+        choices: ["Very Large Scale Integration", "Velocity Level System Index", "Variable Low Signal Interface", "None"],
+        correctAns: "Very Large Scale Integration"
       }
     ]
   },
   {
-    category: "Science",
-    course: "CE",
-    video: "V1",
+    category: "Mechanical",
+    course: "B.Tech",
+    video: "MECH-V1",
     questions: [
       {
         qType: "MCQ",
         qId: "Q1",
-        qDesc: "What is the chemical symbol for Gold?",
-        choices: ["Go", "Gd", "Au", "Ag"],
-        correctAns: "Au"
-      },
+        qDesc: "What is the unit of Force?",
+        choices: ["Watt", "Newton", "Joule", "Pascal"],
+        correctAns: "Newton"
+      }
+    ]
+  },
+  {
+    category: "Civil",
+    course: "B.Tech",
+    video: "CIVIL-V1",
+    questions: [
       {
         qType: "MCQ",
-        qId: "Q2",
-        qDesc: "What is the speed of light?",
-        choices: ["3 × 10^8 m/s", "3 × 10^7 m/s", "3 × 10^6 m/s", "3 × 10^9 m/s"],
-        correctAns: "3 × 10^8 m/s"
-      },
+        qId: "Q1",
+        qDesc: "What is the standard size of a brick?",
+        choices: ["19cm x 9cm x 9cm", "20cm x 10cm x 10cm", "15cm x 5cm x 5cm", "None"],
+        correctAns: "19cm x 9cm x 9cm"
+      }
+    ]
+  },
+  {
+    category: "EEE",
+    course: "B.Tech",
+    video: "EEE-V1",
+    questions: [
       {
         qType: "MCQ",
-        qId: "Q3",
-        qDesc: "How many bones are in the human body?",
-        choices: ["186", "206", "226", "246"],
-        correctAns: "206"
+        qId: "Q1",
+        qDesc: "Which law relates voltage, current and resistance?",
+        choices: ["Newton's Law", "Ohm's Law", "Faraday's Law", "Kirchhoff's Law"],
+        correctAns: "Ohm's Law"
+      }
+    ]
+  },
+  {
+    category: "Diploma",
+    course: "Polytechnic",
+    video: "DIP-V1",
+    questions: [
+      {
+        qType: "MCQ",
+        qId: "Q1",
+        qDesc: "What is the full form of ITI?",
+        choices: ["Industrial Training Institute", "Indian Technical Institute", "International Tech Index", "None"],
+        correctAns: "Industrial Training Institute"
       }
     ]
   }

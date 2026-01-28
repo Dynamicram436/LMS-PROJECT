@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "checkJs": false,
     "allowJs": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": false,
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "ignoreDeprecations": "6.0"
   },
   "include": ["**/*"],
   "exclude": ["node_modules"]

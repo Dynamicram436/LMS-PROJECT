@@ -20,6 +20,11 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    // Skip duplicate request check for exam submission
+    if (config.url?.includes('/exam/results') && config.method === 'post') {
+      return config;
+    }
+
     // Generate a unique key for the request to identify duplicates
     const requestKey = `${config.method?.toUpperCase()}_${config.url}_${JSON.stringify(config.params || {})}_${JSON.stringify(config.data || {})}`;
 

@@ -21,7 +21,6 @@ import { Helmet } from "react-helmet-async";
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   userid: z.string().min(3, "User ID must be at least 3 characters"),
-  email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   rollno: z.string().min(1, "Roll number is required"),
   courseName: z.string().min(1, "Class name is required"),
@@ -128,11 +127,10 @@ const Register = () => {
                           {...register("name")}
                           id="name"
                           type="text"
-                          className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${
-                            errors.name
+                          className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${errors.name
                               ? "border-red-500/50"
                               : "border-gray-200"
-                          }`}
+                            }`}
                           placeholder="John Doe"
                         />
                       </div>
@@ -159,11 +157,10 @@ const Register = () => {
                           {...register("userid")}
                           id="userid"
                           type="text"
-                          className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${
-                            errors.userid
+                          className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${errors.userid
                               ? "border-red-500/50"
                               : "border-gray-200"
-                          }`}
+                            }`}
                           placeholder="johndoe123"
                         />
                       </div>
@@ -175,34 +172,6 @@ const Register = () => {
                     </div>
                   </div>
 
-                  {/* Email */}
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="email"
-                      className="text-xs font-semibold text-gray-600 uppercase tracking-wider ml-1"
-                    >
-                      Email Address
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-500">
-                        <FaEnvelope className="text-sm" />
-                      </div>
-                      <input
-                        {...register("email")}
-                        id="email"
-                        type="email"
-                        className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${
-                          errors.email ? "border-red-500/50" : "border-gray-200"
-                        }`}
-                        placeholder="john@example.com"
-                      />
-                    </div>
-                    {errors.email && (
-                      <p className="text-[11px] text-red-400 font-medium ml-1">
-                        {errors.email.message}
-                      </p>
-                    )}
-                  </div>
 
                   {/* Password */}
                   <div className="space-y-1.5">
@@ -220,11 +189,10 @@ const Register = () => {
                         {...register("password")}
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        className={`w-full bg-gray-50 border pl-10 pr-10 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${
-                          errors.password
+                        className={`w-full bg-gray-50 border pl-10 pr-10 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${errors.password
                             ? "border-red-500/50"
                             : "border-gray-200"
-                        }`}
+                          }`}
                         placeholder="••••••••"
                       />
                       <button
@@ -263,11 +231,10 @@ const Register = () => {
                           {...register("rollno")}
                           id="rollno"
                           type="text"
-                          className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${
-                            errors.rollno
+                          className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${errors.rollno
                               ? "border-red-500/50"
                               : "border-gray-200"
-                          }`}
+                            }`}
                           placeholder="21BCE1234"
                         />
                       </div>
@@ -294,11 +261,10 @@ const Register = () => {
                           {...register("courseName")}
                           id="courseName"
                           type="text"
-                          className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${
-                            errors.courseName
+                          className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${errors.courseName
                               ? "border-red-500/50"
                               : "border-gray-200"
-                          }`}
+                            }`}
                           placeholder="B.Tech CSE"
                         />
                       </div>
@@ -313,11 +279,10 @@ const Register = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className={`w-full mt-4 py-3 cursor-pointer px-4 rounded-xl font-bold text-white transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.98] ${
-                      loading
+                    className={`w-full mt-4 py-3 cursor-pointer px-4 rounded-xl font-bold text-white transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.98] ${loading
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-600 hover:to-gray-800 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg"
-                    }`}
+                      }`}
                   >
                     {loading ? (
                       <div className="flex items-center justify-center space-x-2">

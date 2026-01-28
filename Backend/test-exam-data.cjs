@@ -19,7 +19,6 @@ mongoose
         // Create test user with exam data
         const testUser = new User({
           userid: "test123",
-          email: "test@example.com",
           password: "password123",
           name: "Test User",
           rollno: "TEST001",

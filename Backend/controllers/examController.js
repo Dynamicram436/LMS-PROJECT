@@ -2,247 +2,396 @@ import User from "../models/userSchema.js";
 import ExamQuestion from "../models/examQuestionSchema.js";
 import ExamAttempt from "../models/examAttemptSchema.js";
 import ExamAttemptDatabase from "../models/examAttemptDatabaseSchema.js";
-import  seedQuestions  from "../seedExamQuestions.js";
+import seedQuestions from "../seedExamQuestions.js";
 import asyncHandler from "express-async-handler";
 
-export const saveExamResult = asyncHandler(async (req, res) => {
-    const { userId, courseId, score, totalQuestions, answers, attemptId } =
-      req.body;
+export const updateVideoProgress = asyncHandler(async (req, res) => {
+  const { userId, courseId, videoId, isCompleted } = req.body;
 
-    // console.log(`[SaveExamResult] Received request for userId: ${userId}, courseId: ${courseId}`);
-    // console.log(`[SaveExamResult] Answers received: ${answers ? answers.length : 0} answers`);
-    if (answers && answers.length > 0) {
-      console.log(`[SaveExamResult] First answer:`, JSON.stringify(answers[0], null, 2));
-    }
-
-    // Find the user by userid field (not MongoDB _id)
-    const user = await User.findOne({ userid: userId });
-    if (!user) {
-      console.error(`[SaveExamResult] User not found: ${userId}`);
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
-
-    // Validate required fields
-    if (!courseId || score === undefined || !totalQuestions) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Missing required fields: courseId, score, and totalQuestions are required",
-      });
-    }
-
-    // Find or create course progress
-    let courseProgress = user.courseProgress.find((progress) => {
-      const progressCourseId = progress.courseId?.toString
-        ? progress.courseId.toString()
-        : String(progress.courseId);
-      return progressCourseId === String(courseId);
+  if (!userId || !courseId || !videoId) {
+    return res.status(400).json({
+      success: false,
+      message: "userId, courseId, and videoId are required",
     });
+  }
 
-    if (!courseProgress) {
-      courseProgress = {
-        courseId: courseId,
-        videos: [],
-        exam: {
-          score: 0,
-          passed: false,
-          attempts: 0,
-          answers: [],
-        },
-        examAttempts: [],
-        completionPercentage: 0,
-      };
-      user.courseProgress.push(courseProgress);
-      courseProgress = user.courseProgress[user.courseProgress.length - 1];
-    }
+  // Find the user
+  const user = await User.findOne({ userid: userId });
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: "User not found",
+    });
+  }
 
-    const percentageScore = Math.round((score / totalQuestions) * 100);
-    const passed = percentageScore >= 70;
-    const attemptNumber = (courseProgress.exam?.attempts || 0) + 1;
-    const finalAttemptId = attemptId || `${userId}_${courseId}_${Date.now()}`;
+  // Find or create course progress
+  let courseProgress = user.courseProgress.find(
+    (p) => String(p.courseId) === String(courseId)
+  );
 
-    // Create separate ExamAttempt document
-    const examAttempt = new ExamAttempt({
-      userId: userId,
+  if (!courseProgress) {
+    courseProgress = {
       courseId: courseId,
-      attemptId: finalAttemptId,
-      attemptNumber: attemptNumber,
-      score: percentageScore,
-      totalQuestions: totalQuestions,
-      correctAnswers: score,
-      passed: passed,
-      answers: answers || [],
-      attemptDate: new Date(),
-    });
-
-    await examAttempt.save();
-
-    // Update user's course progress (keep existing structure for compatibility)
-    courseProgress.examAttempts = courseProgress.examAttempts || [];
-    courseProgress.examAttempts.push({
-      examAttemptId: finalAttemptId,
-      score: percentageScore,
-      passed,
-      attemptNumber,
-      attemptDate: new Date(),
-      answers: answers || [],
-    });
-
-    courseProgress.exam = {
-      score: percentageScore,
-      passed,
-      attempts: attemptNumber,
-      lastAttempt: new Date(),
-      answers: answers || [],
+      videos: [],
+      exam: { attempts: 0, passed: false, score: 0 },
+      completionPercentage: 0,
     };
+    user.courseProgress.push(courseProgress);
+    courseProgress = user.courseProgress[user.courseProgress.length - 1];
+  }
 
-    const videoCompletion =
-      courseProgress.videos.length > 0
-        ? (courseProgress.videos.filter((v) => v.isCompleted).length /
-            courseProgress.videos.length) *
-          50
-        : 0;
-    const examCompletion = passed ? 50 : 0;
-    courseProgress.completionPercentage = Math.min(
-      100,
-      videoCompletion + examCompletion
-    );
+  // Find or create video progress
+  let videoProgress = courseProgress.videos.find((v) => v.videoId === videoId);
 
-    await user.save();
-    console.log(`[SaveExamResult] Successfully saved exam result for ${userId}`);
+  if (!videoProgress) {
+    videoProgress = {
+      videoId: videoId,
+      isCompleted: isCompleted || false,
+      lastWatched: new Date(),
+    };
+    courseProgress.videos.push(videoProgress);
+  } else {
+    videoProgress.isCompleted = isCompleted !== undefined ? isCompleted : videoProgress.isCompleted;
+    videoProgress.lastWatched = new Date();
+  }
 
-    res.status(200).json({
-      success: true,
-      data: {
-        score: percentageScore,
-        passed,
-        totalQuestions,
-        correctAnswers: score,
-        completionPercentage: courseProgress.completionPercentage,
-        attemptId: finalAttemptId,
-      },
+  // Recalculate completion percentage
+  // We'll assume for simplicity that there are 5 topics per unit/course for now
+  // In a real system, we would check how many topics the course actually has
+  // Since we are refactoring courseCatalog.js to have specific topics, 
+  // we can use the length of the videos array if we pre-populate it, 
+  // or use a fixed number for now until the frontend provides more context.
+
+  // For now, let's just count completed videos vs total in the progression
+  const completedVideos = courseProgress.videos.filter(v => v.isCompleted).length;
+
+  // Map of total topics per course category from courseCatalog.js
+  const topicCounts = {
+    "CSE": 7,
+    "ECE": 4,
+    "Mechanical": 4,
+    "Civil": 4,
+    "EEE": 4,
+    "Diploma": 2
+  };
+
+  const totalExpectedVideos = topicCounts[courseId] || 4;
+  const videoWeight = 50;
+  const examWeight = 50;
+
+  const videoScore = Math.min(videoWeight, (completedVideos / totalExpectedVideos) * videoWeight);
+  const examScore = courseProgress.exam?.passed ? examWeight : 0;
+
+  courseProgress.completionPercentage = Math.round(videoScore + examScore);
+
+  if (courseProgress.completionPercentage >= 100) {
+    courseProgress.isCourseCompleted = true;
+  }
+
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    data: {
+      completionPercentage: courseProgress.completionPercentage,
+      isCompleted: videoProgress.isCompleted,
+    },
+  });
+});
+
+export const saveExamResult = asyncHandler(async (req, res) => {
+  const { userId, courseId, score, totalQuestions, answers, attemptId } =
+    req.body;
+
+  console.log(`[SaveExamResult] Received request for userId: ${userId}, courseId: "${courseId}" (type: ${typeof courseId})`);
+  console.log(`[SaveExamResult] Answers received: ${answers ? answers.length : 0} answers`);
+  if (answers && answers.length > 0) {
+    console.log(`[SaveExamResult] First answer:`, JSON.stringify(answers[0], null, 2));
+  }
+
+  // Find the user by userid field (not MongoDB _id)
+  const user = await User.findOne({ userid: userId });
+  if (!user) {
+    console.error(`[SaveExamResult] User not found: ${userId}`);
+    return res
+      .status(404)
+      .json({ success: false, message: "User not found" });
+  }
+
+  // Validate required fields
+  if (!courseId || score === undefined || !totalQuestions) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Missing required fields: courseId, score, and totalQuestions are required",
     });
+  }
+
+  // Find or create course progress
+  let courseProgress = user.courseProgress.find((progress) => {
+    const progressCourseId = progress.courseId?.toString
+      ? progress.courseId.toString()
+      : String(progress.courseId);
+    return progressCourseId === String(courseId);
+  });
+
+  if (!courseProgress) {
+    courseProgress = {
+      courseId: courseId,
+      videos: [],
+      exam: {
+        score: 0,
+        passed: false,
+        attempts: 0,
+        answers: [],
+      },
+      examAttempts: [],
+      completionPercentage: 0,
+    };
+    user.courseProgress.push(courseProgress);
+    courseProgress = user.courseProgress[user.courseProgress.length - 1];
+  }
+
+  const percentageScore = Math.round((score / totalQuestions) * 100);
+  const passed = percentageScore >= 70;
+  const attemptNumber = (courseProgress.exam?.attempts || 0) + 1;
+  const finalAttemptId = attemptId || `${userId}_${courseId}_${Date.now()}`;
+
+  console.log(`[SaveExamResult] Saving exam attempt - courseId: "${courseId}", attemptNumber: ${attemptNumber}, score: ${percentageScore}%`);
+
+  // Create separate ExamAttempt document
+  const examAttempt = new ExamAttempt({
+    userId: userId,
+    courseId: courseId,
+    attemptId: finalAttemptId,
+    attemptNumber: attemptNumber,
+    score: percentageScore,
+    totalQuestions: totalQuestions,
+    correctAnswers: score,
+    passed: passed,
+    answers: answers || [],
+    attemptDate: new Date(),
+  });
+
+  await examAttempt.save();
+  console.log(`[SaveExamResult] ExamAttempt saved with ID: ${examAttempt._id}`);
+
+  // Update user's course progress (keep existing structure for compatibility)
+  courseProgress.examAttempts = courseProgress.examAttempts || [];
+  courseProgress.examAttempts.push({
+    examAttemptId: finalAttemptId,
+    score: percentageScore,
+    passed,
+    attemptNumber,
+    attemptDate: new Date(),
+    answers: answers || [],
+  });
+
+  courseProgress.exam = {
+    score: percentageScore,
+    passed,
+    attempts: attemptNumber,
+    lastAttempt: new Date(),
+    answers: answers || [],
+  };
+
+  const videoCompletion =
+    courseProgress.videos.length > 0
+      ? (courseProgress.videos.filter((v) => v.isCompleted).length /
+        courseProgress.videos.length) *
+      50
+      : 0;
+  const examCompletion = passed ? 50 : 0;
+  courseProgress.completionPercentage = Math.min(
+    100,
+    videoCompletion + examCompletion
+  );
+
+  await user.save();
+  console.log(`[SaveExamResult] Successfully saved exam result for ${userId}`);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      score: percentageScore,
+      passed,
+      totalQuestions,
+      correctAnswers: score,
+      completionPercentage: courseProgress.completionPercentage,
+      attemptId: finalAttemptId,
+    },
+  });
 });
 
 // Get all exam attempts for a user from the ExamAttempt collection
 export const getAllExamAttempts = asyncHandler(async (req, res) => {
-    const { userId } = req.params;
-    const { courseId } = req.query;
+  const { userId } = req.params;
+  const { courseId } = req.query;
 
-    let query = { userId: userId };
-    if (courseId) {
-      query.courseId = courseId;
-    }
+  let query = { userId: userId };
+  if (courseId) {
+    query.courseId = courseId;
+  }
 
-    const examAttempts = await ExamAttempt.find(query)
-      .sort({ attemptDate: -1 })
-      .lean();
+  const examAttempts = await ExamAttempt.find(query)
+    .sort({ attemptDate: -1 })
+    .lean();
 
-    res.status(200).json({
-      success: true,
-      data: examAttempts,
-    });
+  res.status(200).json({
+    success: true,
+    data: examAttempts,
+  });
 });
 
 export const getExamResults = asyncHandler(async (req, res) => {
-    const { userId } = req.params;
+  const { userId } = req.params;
 
-    // Find user by userid field
-    const user = await User.findOne({ userid: userId });
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+  // Find user by userid field
+  const user = await User.findOne({ userid: userId });
+  if (!user) {
+    return res
+      .status(404)
+      .json({ success: false, message: "User not found" });
+  }
+
+  // Create a map of all courses (both from selectedCourses and courseProgress)
+  const courseMap = new Map();
+
+  // FIRST: Add all courses that have ExamAttempts in the collection (most reliable source)
+  const allUserExamAttempts = await ExamAttempt.find({ userId: userId }).lean();
+  console.log(`[getExamResults] Found ${allUserExamAttempts.length} total ExamAttempt records for user ${userId}`);
+  
+  allUserExamAttempts.forEach((attempt) => {
+    const courseId = String(attempt.courseId);
+    if (!courseMap.has(courseId)) {
+      courseMap.set(courseId, {
+        courseId: courseId,
+        courseName: null,
+        progress: null,
+      });
     }
+  });
 
-    // Filter courses that have at least one attempt recorded in courseProgress
-    const attemptedCourses = user.courseProgress.filter(
-      (progress) =>
-        progress.exam?.attempts > 0 ||
-        (progress.examAttempts && progress.examAttempts.length > 0)
+  // Add selected courses to the map
+  if (user.selectedCourses && Array.isArray(user.selectedCourses)) {
+    user.selectedCourses.forEach((selected) => {
+      if (!courseMap.has(String(selected.courseId))) {
+        courseMap.set(String(selected.courseId), {
+          courseId: selected.courseId,
+          courseName: selected.courseName,
+          progress: null,
+        });
+      }
+    });
+  }
+
+  // Add courses from courseProgress
+  user.courseProgress.forEach((progress) => {
+    const courseId = String(
+      progress.courseId?.toString ? progress.courseId.toString() : progress.courseId
     );
+    const existing = courseMap.get(courseId) || {
+      courseId: courseId,
+      courseName: null,
+      progress: null,
+    };
+    existing.progress = progress;
+    courseMap.set(courseId, existing);
+  });
 
-    const examResults = await Promise.all(
-      attemptedCourses.map(async (progress) => {
-        const courseId = progress.courseId?.toString
-          ? progress.courseId.toString()
-          : String(progress.courseId);
+  // Convert map to array - include all courses (they're already filtered by having ExamAttempts, selectedCourses, or progress)
+  const coursesToDisplay = Array.from(courseMap.values());
 
-        // console.log(`[getExamResults] Fetching attempts for userId: ${userId}, courseId: ${courseId}`);
+  const examResults = await Promise.all(
+    coursesToDisplay.map(async (course) => {
+      const courseId = String(course.courseId);
+      const progress = course.progress;
 
-        // Fetch full attempt details from ExamAttempt collection
-        let detailedAttempts = await ExamAttempt.find({
+      // Use courseName from selectedCourses first, then from examInfo
+      let courseName = course.courseName || courseId;
+      if (!courseName || courseName === courseId) {
+        const examInfo = await ExamQuestion.findOne({
+          $or: [{ chapterId: parseInt(courseId) }, { category: courseId }]
+        }).select('chapterName category course');
+
+        if (examInfo) {
+          courseName = examInfo.chapterName || examInfo.category || examInfo.course;
+        }
+      }
+
+      // Filter the already-fetched attempts for this course (more efficient than querying again)
+      let detailedAttempts = allUserExamAttempts.filter(
+        (attempt) => String(attempt.courseId) === courseId
+      ).sort((a, b) => (a.attemptNumber || 0) - (b.attemptNumber || 0));
+
+      console.log(`[getExamResults] courseId: "${courseId}" - Found ${detailedAttempts.length} detailed attempts from ExamAttempt collection`);
+      
+      if (detailedAttempts.length > 0) {
+        console.log(`[getExamResults] First attempt details:`, {
+          attemptNumber: detailedAttempts[0].attemptNumber,
+          score: detailedAttempts[0].score,
+          answersCount: detailedAttempts[0].answers?.length || 0
+        });
+      } else if (progress && progress.examAttempts && progress.examAttempts.length > 0) {
+        // Fallback: If no records in ExamAttempt collection, use embedded courseProgress.examAttempts
+        console.log(`[getExamResults] No ExamAttempt records found in collection, using courseProgress.examAttempts fallback`);
+        detailedAttempts = progress.examAttempts.map((attempt, index) => ({
+          ...attempt,
           userId: userId,
           courseId: courseId,
-        })
-          .sort({ attemptNumber: 1 })
-          .lean();
-        
-        // console.log(`[getExamResults] Found ${detailedAttempts.length} detailed attempts for courseId: ${courseId}`);
-        if (detailedAttempts.length > 0) {
-          // console.log(`[getExamResults] First attempt answers count: ${detailedAttempts[0].answers?.length || 0}`);
-        } else {
-          // Fallback: If no records in ExamAttempt collection, use embedded courseProgress.examAttempts
-          // console.log(`[getExamResults] No ExamAttempt records found, using fallback from courseProgress`);
-          if (progress.examAttempts && progress.examAttempts.length > 0) {
-            detailedAttempts = progress.examAttempts.map((attempt, index) => ({
-              ...attempt,
-              userId: userId,
-              courseId: courseId,
-              // Use attemptId if not present
-              attemptId: attempt.examAttemptId || `${userId}_${courseId}_${index}`,
-            }));
-            // console.log(`[getExamResults] Using ${detailedAttempts.length} attempts from courseProgress`);
-          }
-        }
-
-        // Map attempts to the format expected by the frontend
-        const enrichedExamAttempts = detailedAttempts.map((attempt) => ({
-          ...attempt,
-          // Ensure attemptDate is a Date object for the frontend
-          attemptDate: attempt.attemptDate || attempt.createdAt,
-          // The answers are already in the ExamAttempt document
-          answers: (attempt.answers || []).map((answer) => ({
-            ...answer,
-            // Ensure fallback values if for some reason question text is missing
-            question: answer.question || `Question ${answer.questionIndex + 1}`,
-            options: answer.options || [],
-          })),
+          attemptId: attempt.examAttemptId || `${userId}_${courseId}_${index}`,
         }));
+        console.log(`[getExamResults] Using ${detailedAttempts.length} attempts from courseProgress fallback`);
+      } else {
+        console.log(`[getExamResults] No attempts found for courseId: ${courseId}`);
+        detailedAttempts = [];
+      }
 
-        // Get the latest attempt to represent the overall course result
-        const latestAttempt =
-          enrichedExamAttempts.length > 0
-            ? enrichedExamAttempts[enrichedExamAttempts.length - 1]
-            : null;
+      // Map attempts to the format expected by the frontend
+      const enrichedExamAttempts = detailedAttempts.map((attempt) => ({
+        ...attempt,
+        // Ensure attemptDate is a Date object for the frontend
+        attemptDate: attempt.attemptDate || attempt.createdAt,
+        // The answers are already in the ExamAttempt document
+        answers: (attempt.answers || []).map((answer) => ({
+          ...answer,
+          // Ensure fallback values if for some reason question text is missing
+          question: answer.question || `Question ${answer.questionIndex + 1}`,
+          options: answer.options || [],
+        })),
+      }));
 
-        return {
-          courseId: courseId,
-          courseName: progress.courseName || courseId, // Fallback to courseId if name missing
-          score: latestAttempt
-            ? latestAttempt.score
-            : progress.exam?.score || 0,
-          passed: latestAttempt
-            ? latestAttempt.passed
-            : progress.exam?.passed || false,
-          attempts: enrichedExamAttempts.length,
-          lastAttempt: latestAttempt
-            ? latestAttempt.attemptDate
-            : progress.exam?.lastAttempt,
-          completionPercentage: progress.completionPercentage,
-          // Use answers from the latest attempt or the enriched ones
-          answers: latestAttempt ? latestAttempt.answers : [],
-          examAttempts: enrichedExamAttempts,
-        };
-      })
-    );
+      // Get the latest attempt to represent the overall course result
+      const latestAttempt =
+        enrichedExamAttempts.length > 0
+          ? enrichedExamAttempts[enrichedExamAttempts.length - 1]
+          : null;
 
-    res.status(200).json({
-      success: true,
-      data: examResults,
-    });
+      return {
+        courseId: courseId,
+        courseName: courseName, // Use the determined course name
+        score: latestAttempt
+          ? latestAttempt.score
+          : progress?.exam?.score || 0,
+        passed: latestAttempt
+          ? latestAttempt.passed
+          : progress?.exam?.passed || false,
+        attempts: enrichedExamAttempts.length,
+        lastAttempt: latestAttempt
+          ? latestAttempt.attemptDate
+          : progress?.exam?.lastAttempt || null,
+        completionPercentage: progress?.completionPercentage || 0,
+        // Use answers from the latest attempt or the enriched ones
+        answers: latestAttempt ? latestAttempt.answers : [],
+        examAttempts: enrichedExamAttempts,
+      };
+    })
+  );
+
+  res.status(200).json({
+    success: true,
+    data: examResults,
+  });
 });
 
 // Create exam questions for a category/course/video
@@ -294,9 +443,8 @@ export const createExamQuestions = async (req, res) => {
       ) {
         return res.status(400).json({
           success: false,
-          message: `Question ${
-            i + 1
-          } is invalid. Each question must have: qType (string), qId (string), qDesc (string), choices (array of at least 2 strings), and correctAns (string)`,
+          message: `Question ${i + 1
+            } is invalid. Each question must have: qType (string), qId (string), qDesc (string), choices (array of at least 2 strings), and correctAns (string)`,
         });
       }
     }
@@ -488,7 +636,7 @@ export const getExamQuestions = async (req, res) => {
     if (!examData || !examData.questions || examData.questions.length === 0) {
       console.log("No questions found, attempting to seed database...");
       const seedResult = await seedQuestions();
-      
+
       if (seedResult.success) {
         console.log("Database seeded successfully, trying to fetch questions again...");
         if (queryChapterId) {

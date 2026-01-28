@@ -1,4 +1,4 @@
-import seedDatabase from './Backend/seedExamQuestions.js';
+import seedDatabase from './seedExamQuestions.js';
 
 console.log('Seeding database with exam questions...');
 const result = await seedDatabase();

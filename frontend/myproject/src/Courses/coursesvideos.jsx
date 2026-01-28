@@ -1,9 +1,20 @@
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, Routes, Route, useNavigate } from "react-router-dom";
 import Exam from "./Exam";
-import { chaptersData } from "./courseCatalog";
-import { FiArrowLeft, FiBookOpen, FiPlayCircle, FiEdit3 } from "react-icons/fi";
+import { syllabusData } from "./courseCatalog";
+import ProgressService from "../utils/ProgressService";
+import {
+  FiArrowLeft,
+  FiBookOpen,
+  FiPlayCircle,
+  FiEdit3,
+  FiCheckCircle,
+  FiChevronDown,
+  FiChevronUp,
+  FiAward,
+} from "react-icons/fi";
 import { Helmet } from "react-helmet-async";
+import { toast } from "react-toastify";
 
 const Highlighter = ({ children, color = "bg-slate-200/60" }) => (
   <span className="relative inline-block px-1">
@@ -14,280 +25,400 @@ const Highlighter = ({ children, color = "bg-slate-200/60" }) => (
   </span>
 );
 
+const ProgressBar = ({ percentage, color = "bg-slate-800" }) => (
+  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200/50">
+    <div
+      className={`h-full ${color} transition-all duration-1000 ease-out`}
+      style={{ width: `${percentage}%` }}
+    />
+  </div>
+);
+
 const Courses = () => {
   const { category } = useParams();
   const subject = decodeURIComponent(category || "");
-  const chapters = chaptersData.filter((c) => c.category === subject);
   const navigate = useNavigate();
 
-  const [activeVideo, setActiveVideo] = React.useState(null);
-  const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
-
-  const activeIndex = chapters.findIndex(
-    (c) => c.id === activeVideo?.chapter?.id,
+  const branchSyllabus = useMemo(
+    () => syllabusData.find((s) => s.category === subject) || { units: [] },
+    [subject],
   );
-  const displayIndex = activeIndex !== -1 ? activeIndex + 1 : 1;
 
-  React.useEffect(() => {
-    if (chapters.length > 0 && !activeVideo) {
-      setActiveVideo({
-        chapter: chapters[0],
-        videoId: chapters[0].youtubeIds?.[0] || null,
-      });
+  const [activeTopic, setActiveTopic] = useState(null);
+  const [openUnits, setOpenUnits] = useState({});
+  const [completedVideos, setCompletedVideos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [overallProgress, setOverallProgress] = useState(0);
+
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  useEffect(() => {
+    const fetchProgress = async () => {
+      if (user?.userid) {
+        try {
+          const results = await ProgressService.getUserProgress(user.userid);
+          if (results.success && results.data) {
+            const courseResult = results.data.find(
+              (r) => r.courseId === subject,
+            );
+            if (courseResult) {
+              setCompletedVideos(
+                courseResult.videos
+                  ?.filter((v) => v.isCompleted)
+                  .map((v) => v.videoId) || [],
+              );
+              setOverallProgress(courseResult.completionPercentage || 0);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch progress:", err);
+        }
+      }
+      setLoading(false);
+    };
+
+    fetchProgress();
+
+    // Auto-select first incomplete topic or first topic
+    const selectInitialTopic = () => {
+      if (branchSyllabus.units.length > 0) {
+        // Flatten all topics to find the first incomplete one
+        const allTopics = branchSyllabus.units.flatMap((u) => u.topics);
+        const firstIncomplete =
+          allTopics.find((t) => !completedVideos.includes(t.id)) ||
+          allTopics[0];
+
+        if (firstIncomplete) {
+          setActiveTopic(firstIncomplete);
+
+          // Find which unit contains this topic and expand it
+          const parentUnit = branchSyllabus.units.find((u) =>
+            u.topics.some((t) => t.id === firstIncomplete.id),
+          );
+          if (parentUnit) {
+            setOpenUnits({ [parentUnit.id]: true });
+          }
+        }
+      }
+    };
+
+    if (!activeTopic && branchSyllabus.units.length > 0) {
+      selectInitialTopic();
     }
-  }, [chapters, activeVideo]);
+  }, [subject, branchSyllabus, completedVideos.length]);
 
-  const handleVideoSelect = (chapter) => {
-    setActiveVideo({
-      chapter: chapter,
-      videoId: chapter.youtubeIds?.[0] || null,
-    });
-    setIsDropdownOpen(false);
+  const toggleUnit = (unitId) => {
+    setOpenUnits((prev) => ({
+      ...prev,
+      [unitId]: !prev[unitId],
+    }));
+  };
+
+  const handleTopicSelect = (topic) => {
+    setActiveTopic(topic);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const handleMarkAsCompleted = async () => {
+    if (!user?.userid || !activeTopic) return;
+
+    try {
+      const result = await ProgressService.updateVideoProgress(
+        user.userid,
+        subject,
+        activeTopic.id,
+        true,
+      );
+
+      if (result.success) {
+        toast.success("Progress saved!");
+        setCompletedVideos((prev) => [...new Set([...prev, activeTopic.id])]);
+        setOverallProgress(result.data.completionPercentage);
+      }
+    } catch (err) {
+      toast.error("Failed to save progress");
+    }
+  };
+
+  const isCompleted = (topicId) => completedVideos.includes(topicId);
 
   return (
     <>
       <Helmet>
-        <title>Course Videos - SkillTrack</title>
-        <meta
-          name="Course Videos page"
-          content="Watch video lessons and practice exams on SkillTrack"
-        />
+        <title>{subject} - Learning Modules</title>
       </Helmet>
       <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-900 pb-20">
         {/* Navigation Header */}
         <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
           <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/viewcourses")}
               className="flex items-center gap-2 cursor-pointer text-slate-600 hover:text-slate-900 transition-colors font-semibold"
             >
               <FiArrowLeft className="w-5 h-5" />
               <span>Back to Subjects</span>
             </button>
-            <div className="flex items-center gap-2 text-slate-400 text-sm font-medium">
-              <FiBookOpen className="w-4 h-4" />
-              <span>Learning Dashboard</span>
+            <div className="flex items-center gap-6">
+              <div className="hidden md:flex flex-col items-end">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  Your Progress
+                </span>
+                <div className="flex items-center gap-3 w-32">
+                  <ProgressBar percentage={overallProgress} />
+                  <span className="text-xs font-bold text-slate-700">
+                    {overallProgress}%
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-slate-400 text-sm font-medium">
+                <FiBookOpen className="w-4 h-4" />
+                <span>Learning Dashboard</span>
+              </div>
             </div>
           </div>
         </nav>
 
         <main className="max-w-7xl mx-auto px-4 pt-24">
-          {/* Page Header */}
           <header className="mb-10">
             <div className="flex items-center gap-3 mb-3">
               <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-[10px] font-bold uppercase tracking-wider border border-slate-200">
-                {subject || "Unknown Subject"}
+                {subject}
+              </span>
+              <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-[10px] font-bold uppercase tracking-wider border border-green-100 flex items-center gap-1">
+                <FiAward className="w-3 h-3" />
+                {overallProgress}% Complete
               </span>
             </div>
             <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-              Level Up Your{" "}
-              <Highlighter color="bg-slate-200/50">Knowledge</Highlighter>
+              Master the{" "}
+              <Highlighter color="bg-slate-200/50">Curriculum</Highlighter>
             </h1>
           </header>
 
           <div className="flex flex-col lg:flex-row gap-10 items-start">
-            {/* Left Side: Video Player (Main content) */}
+            {/* Main Content Area */}
             <div className="flex-1 w-full order-1">
-              <section className="">
-                {activeVideo?.videoId ? (
-                  <div className="relative group">
-                    <div className="aspect-video rounded-[2.5rem] overflow-hidden bg-slate-900 shadow-2xl shadow-slate-100 border-8 border-white">
-                      <iframe
-                        src={`https://www.youtube.com/embed/${activeVideo.videoId}?rel=0&modestbranding=1`}
-                        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        title={activeVideo.chapter.name}
-                        className="w-full h-full"
-                      />
-                    </div>
+              {activeTopic ? (
+                <div className="relative group">
+                  <div className="aspect-video rounded-[2.5rem] overflow-hidden bg-slate-900 shadow-2xl shadow-slate-100 border-8 border-white">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${activeTopic.videoId}?rel=0&modestbranding=1`}
+                      allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title={activeTopic.name}
+                      className="w-full h-full"
+                    />
+                  </div>
 
-                    {/* Now Playing Info */}
-                    <div className="mt-8 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                  <div className="mt-8 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="flex h-2 w-2 rounded-full bg-slate-500 animate-ping"></span>
+                          <span className="flex h-2 w-2 rounded-full bg-slate-500 animate-pulse"></span>
                           <span className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em]">
-                            Currently Learning
+                            Active Topic
                           </span>
                         </div>
-                        <h2 className="text-2xl font-bold text-slate-900">
-                          {activeVideo.chapter.name}
+                        <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+                          {activeTopic.name}
+                          {isCompleted(activeTopic.id) && (
+                            <FiCheckCircle className="text-green-500 w-6 h-6" />
+                          )}
                         </h2>
-                        <p className="text-slate-500 mt-2 font-medium italic leading-relaxed">
-                          {activeVideo.chapter.description ||
-                            "In this module, we'll dive deep into core concepts and practical applications."}
+                        <div className="flex items-center gap-4 mt-2">
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md border border-slate-200">
+                            {activeTopic.duration}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                              activeTopic.difficulty === "Beginner"
+                                ? "bg-blue-50 text-blue-600 border-blue-100"
+                                : activeTopic.difficulty === "Intermediate"
+                                  ? "bg-orange-50 text-orange-600 border-orange-100"
+                                  : "bg-purple-50 text-purple-600 border-purple-100"
+                            }`}
+                          >
+                            {activeTopic.difficulty}
+                          </span>
+                        </div>
+                        <p className="text-slate-500 mt-4 font-medium leading-relaxed">
+                          {activeTopic.description}
                         </p>
                       </div>
-                      <button
-                        onClick={() =>
-                          navigate(
-                            `/courses/${encodeURIComponent(
-                              subject,
-                            )}/exam?chapterId=${activeVideo.chapter.id}`,
-                          )
-                        }
-                        className="inline-flex cursor-pointer shrink-0 items-center justify-center gap-3 bg-slate-800 hover:bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-xl hover:scale-[1.05] active:scale-95 text-sm"
-                      >
-                        <FiEdit3 className="w-5 h-5" />
-                        Take Assessment
-                      </button>
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          onClick={handleMarkAsCompleted}
+                          disabled={isCompleted(activeTopic.id)}
+                          className={`inline-flex cursor-pointer items-center justify-center gap-3 px-6 py-3 rounded-2xl font-bold transition-all shadow-md active:scale-95 text-sm ${
+                            isCompleted(activeTopic.id)
+                              ? "bg-green-100 text-green-700 border border-green-200 cursor-default"
+                              : "bg-white text-slate-800 border-2 border-slate-100 hover:border-slate-300"
+                          }`}
+                        >
+                          <FiCheckCircle className="w-5 h-5" />
+                          {isCompleted(activeTopic.id)
+                            ? "Completed"
+                            : "Mark as Done"}
+                        </button>
+                        <button
+                          onClick={() =>
+                            navigate(
+                              `/courses/${encodeURIComponent(subject)}/exam?chapterId=${activeTopic.id}`,
+                            )
+                          }
+                          className="inline-flex cursor-pointer items-center justify-center gap-3 bg-slate-800 hover:bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-xl hover:scale-[1.05] active:scale-95 text-sm"
+                        >
+                          <FiEdit3 className="w-5 h-5" />
+                          Take Quiz
+                        </button>
+                        {(() => {
+                          const flattenedTopics = branchSyllabus.units.flatMap(
+                            (u) => u.topics,
+                          );
+                          const currentIndex = flattenedTopics.findIndex(
+                            (t) => t.id === activeTopic.id,
+                          );
+                          const nextTopic = flattenedTopics[currentIndex + 1];
+                          if (nextTopic) {
+                            return (
+                              <button
+                                onClick={() => handleTopicSelect(nextTopic)}
+                                className="inline-flex cursor-pointer items-center justify-center gap-3 bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-xl hover:scale-[1.05] active:scale-95 text-sm"
+                              >
+                                <span>Next Lesson</span>
+                                <FiArrowLeft className="rotate-180" />
+                              </button>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="aspect-video rounded-[2.5rem] bg-white border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-center p-8">
-                    <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                      <FiPlayCircle className="w-10 h-10 text-slate-300" />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-3">
-                      Select a Lesson
-                    </h3>
-                    <p className="text-slate-500 max-w-xs">
-                      Pick a chapter from the modules list to begin your study
-                      session.
-                    </p>
-                  </div>
-                )}
-              </section>
+                </div>
+              ) : (
+                <div className="aspect-video rounded-[2.5rem] bg-white border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-center p-8">
+                  <FiPlayCircle className="w-16 h-16 text-slate-200 mb-4" />
+                  <h3 className="text-xl font-bold text-slate-900">
+                    Select a topic to start learning
+                  </h3>
+                </div>
+              )}
             </div>
 
-            {/* Right Side: Chapter Selection (On Desktop) or Bottom (On Mobile) */}
-            <div className="w-full lg:w-[380px] order-2 sticky top-24">
-              <section className="relative z-40">
-                <div className="mb-5 flex items-center justify-between px-2">
+            {/* Syllabus Sidebar */}
+            <div className="w-full lg:w-[400px] order-2 sticky top-24">
+              <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden p-6">
+                <div className="mb-6 flex items-center justify-between">
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
                     Course Syllabus
                   </h3>
-                  <span className="text-[10px] font-black text-slate-600 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
-                    {chapters.length} LESSONS
+                  <span className="text-[10px] font-black text-slate-600 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
+                    {branchSyllabus.units.reduce(
+                      (acc, unit) => acc + unit.topics.length,
+                      0,
+                    )}{" "}
+                    LESSONS
                   </span>
                 </div>
 
-                <div className="relative">
-                  <button
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full bg-white border-2 border-slate-100 rounded-3xl p-5 flex items-center justify-between shadow-sm hover:border-slate-300 transition-all text-left group"
-                  >
-                    <div className="flex items-center gap-4 cursor-pointer">
-                      <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 font-bold group-hover:bg-slate-800 group-hover:text-white transition-colors">
-                        {displayIndex.toString().padStart(2, "0")}
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-0.5">
-                          Active Module
-                        </p>
-                        <p className="font-bold text-slate-900 truncate max-w-[150px] md:max-w-none">
-                          {activeVideo?.chapter?.name || "Choose a chapter"}
-                        </p>
-                      </div>
-                    </div>
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                  {branchSyllabus.units.map((unit) => (
                     <div
-                      className={`transition-transform duration-500 ${
-                        isDropdownOpen ? "rotate-180" : ""
-                      }`}
+                      key={unit.id}
+                      className="border-b border-slate-50 last:border-0 pb-2"
                     >
-                      <svg
-                        className="w-5 h-5 text-slate-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                      <button
+                        onClick={() => toggleUnit(unit.id)}
+                        className="w-full flex items-center justify-between py-3 px-2 hover:bg-slate-50 rounded-xl transition-colors group"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={3}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </div>
-                  </button>
-                  {isDropdownOpen && (
-                    <div className="absolute top-full left-0 right-0 mt-4 bg-white/95 backdrop-blur-xl border border-white rounded-4xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300">
-                      <div className="max-h-[450px] overflow-y-auto custom-scrollbar p-3">
-                        {chapters.map((chapter, index) => (
-                          <div
-                            key={chapter.id}
-                            className={`group flex items-center justify-between p-4 rounded-2xl transition-all cursor-pointer mb-2 ${
-                              activeVideo?.chapter?.id === chapter.id
-                                ? "bg-slate-800 text-white shadow-lg shadow-slate-200"
-                                : "hover:bg-slate-50 border border-transparent"
-                            }`}
-                            onClick={() => handleVideoSelect(chapter)}
-                          >
-                            <div className="flex items-center gap-4 flex-1">
-                              <span
-                                className={`text-xs font-black ${
-                                  activeVideo?.chapter?.id === chapter.id
-                                    ? "text-slate-300"
-                                    : "text-slate-300 group-hover:text-slate-500"
-                                }`}
-                              >
-                                {(index + 1).toString().padStart(2, "0")}
-                              </span>
-                              <div className="min-w-0">
-                                <p
-                                  className={`font-bold transition-colors truncate ${
-                                    activeVideo?.chapter?.id === chapter.id
-                                      ? "text-white"
-                                      : "text-slate-700"
-                                  }`}
-                                >
-                                  {chapter.name}
-                                </p>
-                                <p
-                                  className={`text-[10px] truncate ${
-                                    activeVideo?.chapter?.id === chapter.id
-                                      ? "text-slate-200"
-                                      : "text-slate-400"
-                                  }`}
-                                >
-                                  {chapter.description || "Video Lecture"}
-                                </p>
-                              </div>
-                            </div>
-                            <button
-                              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shrink-0 ml-4 ${
-                                activeVideo?.chapter?.id === chapter.id
-                                  ? "bg-white text-slate-800 scale-110 shadow-md"
-                                  : "bg-slate-100 text-slate-400 group-hover:bg-slate-700 group-hover:text-white"
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="font-extrabold text-slate-800 text-sm flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-slate-300 group-hover:bg-slate-500" />
+                            {unit.name}
+                          </span>
+                          <div className="ml-4 w-24">
+                            <ProgressBar
+                              percentage={Math.round(
+                                (unit.topics.filter((t) => isCompleted(t.id))
+                                  .length /
+                                  unit.topics.length) *
+                                  100,
+                              )}
+                              color="bg-green-500"
+                            />
+                          </div>
+                        </div>
+                        {openUnits[unit.id] ? (
+                          <FiChevronUp />
+                        ) : (
+                          <FiChevronDown />
+                        )}
+                      </button>
+
+                      {openUnits[unit.id] && (
+                        <div className="mt-2 ml-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                          {unit.topics.map((topic) => (
+                            <div
+                              key={topic.id}
+                              onClick={() => handleTopicSelect(topic)}
+                              className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${
+                                activeTopic?.id === topic.id
+                                  ? "bg-slate-800 border-slate-800 text-white shadow-md shadow-slate-200"
+                                  : "bg-transparent border-transparent hover:bg-slate-50 text-slate-600"
                               }`}
                             >
-                              <FiPlayCircle className="w-4 h-4 fill-current" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
+                              <div className="flex-1 overflow-hidden">
+                                <div className="flex items-center gap-2 mb-1">
+                                  {isCompleted(topic.id) ? (
+                                    <FiCheckCircle className="text-green-500 w-3 h-3" />
+                                  ) : (
+                                    <span
+                                      className={`text-[8px] font-black px-1.5 py-0.5 rounded border ${
+                                        activeTopic?.id === topic.id
+                                          ? "bg-white/10 border-white/20"
+                                          : "bg-slate-100 border-slate-200"
+                                      }`}
+                                    >
+                                      QUIZ
+                                    </span>
+                                  )}
+                                  <span className="font-bold text-xs truncate">
+                                    {topic.name}
+                                  </span>
+                                </div>
+                                <div className="flex gap-2 ml-5">
+                                  <span
+                                    className={`text-[8px] font-medium opacity-60`}
+                                  >
+                                    {topic.duration}
+                                  </span>
+                                  <span
+                                    className={`text-[8px] font-medium opacity-60`}
+                                  >
+                                    •
+                                  </span>
+                                  <span
+                                    className={`text-[8px] font-medium opacity-60`}
+                                  >
+                                    {topic.difficulty}
+                                  </span>
+                                </div>
+                              </div>
+                              <FiPlayCircle
+                                className={`w-4 h-4 shrink-0 ${activeTopic?.id === topic.id ? "text-white" : "text-slate-300"}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
-              </section>
-            </div>
-          </div>
-
-          {/* Empty State */}
-          {chapters.length === 0 && (
-            <div className="bg-white rounded-[3rem] border-2 border-dashed border-slate-200 p-20 text-center mt-10">
-              <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-8 text-5xl">
-                �
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-3">
-                No Course Material Found
-              </h3>
-              <p className="text-slate-500 max-w-sm mx-auto text-lg leading-relaxed font-medium">
-                We're currently preparing the content for this subject. Please
-                check back later!
-              </p>
             </div>
-          )}
-        </main>
-
-        {/* Decorative elements */}
-        <div className="fixed bottom-0 right-10 p-8 pointer-events-none opacity-[0.03] hidden xl:block">
-          <div className="text-[15rem] font-black select-none tracking-tighter">
-            STUDY
           </div>
-        </div>
+        </main>
       </div>
     </>
   );

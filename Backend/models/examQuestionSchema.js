@@ -5,7 +5,7 @@ const examQuestionSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: ["English", "Telugu", "Hindi", "Mathematics", "Science", "Social Studies"],
+      enum: ["CSE", "ECE", "Mechanical", "Civil", "EEE", "Diploma", "English", "Telugu", "Hindi", "Mathematics", "Science", "Social Studies"],
     },
     course: {
       type: String,
@@ -48,6 +48,10 @@ const examQuestionSchema = new mongoose.Schema(
         correctAns: {
           type: String,
           required: true,
+        },
+        explanation: {
+          type: String,
+          required: false,
         },
       },
     ],
