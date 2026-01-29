@@ -5,97 +5,156 @@ import seedQuestions from "../seedExamQuestions.js";
 import asyncHandler from "express-async-handler";
 
 export const updateVideoProgress = asyncHandler(async (req, res) => {
-  const { userId, courseId, videoId, isCompleted } = req.body;
+  const { userId, courseId, videoId, isCompleted, progressPercentage } = req.body;
+
+  console.log('[updateVideoProgress] Received request:', { userId, courseId, videoId, isCompleted, progressPercentage });
 
   if (!userId || !courseId || !videoId) {
+    console.log('[updateVideoProgress] Missing required fields');
     return res.status(400).json({
       success: false,
       message: "userId, courseId, and videoId are required",
     });
   }
 
-  // Find the user
-  const user = await User.findOne({ userid: userId });
-  if (!user) {
-    return res.status(404).json({
+  try {
+    // Find the user
+    const user = await User.findOne({ userid: userId });
+    console.log('[updateVideoProgress] User lookup result:', user ? 'Found user' : 'User not found');
+
+    if (!user) {
+      // Log all existing users for debugging
+      const allUsers = await User.find({}, 'userid email');
+      console.log('[updateVideoProgress] All users in database:', allUsers);
+
+      return res.status(404).json({
+        success: false,
+        message: `User with ID '${userId}' not found. Available users: ${allUsers.map(u => u.userid).join(', ') || 'None'}`,
+      });
+    }
+
+    // Extract base course ID if it follows the pattern "course-chapter-id"
+    const getBaseCourseId = (fullCourseId) => {
+      const strId = String(fullCourseId);
+      // If it follows pattern like "CSE-chapter-101", extract "CSE"
+      const match = strId.match(/^([A-Za-z]+)(?:-chapter-\d+)?/);
+      return match ? match[1] : strId;
+    };
+
+    // Find or create course progress - ensure consistent string comparison
+    let courseProgress = user.courseProgress.find((p) => {
+      const progressCourseId = String(p.courseId);
+      const requestCourseId = String(courseId);
+
+      // Try exact match first
+      if (progressCourseId.toLowerCase().trim() === requestCourseId.toLowerCase().trim()) {
+        return true;
+      }
+
+      // If exact match fails, try base course ID match (for cases like "CSE" vs "CSE-chapter-101")
+      const baseProgressCourseId = getBaseCourseId(progressCourseId);
+      const baseRequestCourseId = getBaseCourseId(requestCourseId);
+
+      return baseProgressCourseId.toLowerCase().trim() === baseRequestCourseId.toLowerCase().trim();
+    });
+
+    if (!courseProgress) {
+      courseProgress = {
+        courseId: courseId,
+        videos: [],
+        exam: { attempts: 0, passed: false, score: 0 },
+        completionPercentage: 0,
+      };
+      user.courseProgress.push(courseProgress);
+      courseProgress = user.courseProgress[user.courseProgress.length - 1];
+    }
+
+    // Check if this is for an exam (videoId starts with 'exam_')
+    if (videoId.startsWith('exam_')) {
+      // For exam progress, we use the progressPercentage from the request
+      if (progressPercentage !== undefined) {
+        // Only update if progress is higher than current (don't let it go backwards)
+        if (progressPercentage > courseProgress.completionPercentage) {
+          courseProgress.completionPercentage = progressPercentage;
+        }
+      }
+    } else {
+      // Original video progress handling
+      // Find or create video progress
+      let videoProgress = courseProgress.videos.find((v) => v.videoId === videoId);
+
+      if (!videoProgress) {
+        videoProgress = {
+          videoId: videoId,
+          isCompleted: isCompleted || false,
+          lastWatched: new Date(),
+        };
+        courseProgress.videos.push(videoProgress);
+      } else {
+        videoProgress.isCompleted = isCompleted !== undefined ? isCompleted : videoProgress.isCompleted;
+        videoProgress.lastWatched = new Date();
+      }
+
+      // Recalculate completion percentage
+      // Count completed videos vs total in the progression
+      // Exclude exam videos from the video completion calculation
+      const nonExamVideos = courseProgress.videos.filter(v => !v.videoId.startsWith('exam_'));
+      const completedNonExamVideos = nonExamVideos.filter(v => v.isCompleted).length;
+
+      // Map of total topics per course category from courseCatalog.js
+      const topicCounts = {
+        "CSE": 7,
+        "ECE": 4,
+        "Mechanical": 4,
+        "Civil": 4,
+        "EEE": 4,
+        "Diploma": 2
+      };
+
+      // Convert courseId to string and extract base course ID to ensure proper lookup
+      const courseIdStr = String(courseId);
+      const baseCourseId = getBaseCourseId(courseIdStr);  // Use the function defined above
+      const totalExpectedVideos = topicCounts[baseCourseId] || nonExamVideos.length || 4;
+
+      const videoWeight = 50;
+      const examWeight = 50;
+
+      // Calculate video score based on completed videos
+      let videoScore = 0;
+      if (totalExpectedVideos > 0) {
+        videoScore = Math.min(videoWeight, (completedNonExamVideos / totalExpectedVideos) * videoWeight);
+      }
+
+      // Get exam score if exam exists
+      if (!courseProgress.exam) {
+        courseProgress.exam = { attempts: 0, passed: false, score: 0 };
+      }
+      const examScore = courseProgress.exam?.passed ? examWeight : 0;
+
+      courseProgress.completionPercentage = Math.round(videoScore + examScore);
+    }
+
+    if (courseProgress.completionPercentage >= 100) {
+      courseProgress.isCourseCompleted = true;
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        completionPercentage: courseProgress.completionPercentage,
+        isCompleted: videoId.startsWith('exam_') ? (progressPercentage === 100) : courseProgress.videos.some(v => v.videoId === videoId && v.isCompleted),
+      },
+    });
+  } catch (error) {
+    console.error('[updateVideoProgress] Error processing request:', error);
+    res.status(500).json({
       success: false,
-      message: "User not found",
+      message: 'Internal server error occurred while updating video progress',
+      error: error.message
     });
   }
-
-  // Find or create course progress
-  let courseProgress = user.courseProgress.find(
-    (p) => String(p.courseId) === String(courseId)
-  );
-
-  if (!courseProgress) {
-    courseProgress = {
-      courseId: courseId,
-      videos: [],
-      exam: { attempts: 0, passed: false, score: 0 },
-      completionPercentage: 0,
-    };
-    user.courseProgress.push(courseProgress);
-    courseProgress = user.courseProgress[user.courseProgress.length - 1];
-  }
-
-  // Find or create video progress
-  let videoProgress = courseProgress.videos.find((v) => v.videoId === videoId);
-
-  if (!videoProgress) {
-    videoProgress = {
-      videoId: videoId,
-      isCompleted: isCompleted || false,
-      lastWatched: new Date(),
-    };
-    courseProgress.videos.push(videoProgress);
-  } else {
-    videoProgress.isCompleted = isCompleted !== undefined ? isCompleted : videoProgress.isCompleted;
-    videoProgress.lastWatched = new Date();
-  }
-
-  // Recalculate completion percentage
-  // We'll assume for simplicity that there are 5 topics per unit/course for now
-  // In a real system, we would check how many topics the course actually has
-  // Since we are refactoring courseCatalog.js to have specific topics, 
-  // we can use the length of the videos array if we pre-populate it, 
-  // or use a fixed number for now until the frontend provides more context.
-
-  // For now, let's just count completed videos vs total in the progression
-  const completedVideos = courseProgress.videos.filter(v => v.isCompleted).length;
-
-  // Map of total topics per course category from courseCatalog.js
-  const topicCounts = {
-    "CSE": 7,
-    "ECE": 4,
-    "Mechanical": 4,
-    "Civil": 4,
-    "EEE": 4,
-    "Diploma": 2
-  };
-
-  const totalExpectedVideos = topicCounts[courseId] || 4;
-  const videoWeight = 50;
-  const examWeight = 50;
-
-  const videoScore = Math.min(videoWeight, (completedVideos / totalExpectedVideos) * videoWeight);
-  const examScore = courseProgress.exam?.passed ? examWeight : 0;
-
-  courseProgress.completionPercentage = Math.round(videoScore + examScore);
-
-  if (courseProgress.completionPercentage >= 100) {
-    courseProgress.isCourseCompleted = true;
-  }
-
-  await user.save();
-
-  res.status(200).json({
-    success: true,
-    data: {
-      completionPercentage: courseProgress.completionPercentage,
-      isCompleted: videoProgress.isCompleted,
-    },
-  });
 });
 
 export const saveExamResult = asyncHandler(async (req, res) => {
@@ -129,12 +188,29 @@ export const saveExamResult = asyncHandler(async (req, res) => {
     });
   }
 
-  // Find or create course progress
+  // Extract base course ID if it follows the pattern "course-chapter-id"
+  const getBaseCourseId = (fullCourseId) => {
+    const strId = String(fullCourseId);
+    // If it follows pattern like "CSE-chapter-101", extract "CSE"
+    const match = strId.match(/^([A-Za-z]+)(?:-chapter-\d+)?/);
+    return match ? match[1] : strId;
+  };
+
+  // Find or create course progress - ensure consistent string comparison
   let courseProgress = user.courseProgress.find((progress) => {
-    const progressCourseId = progress.courseId?.toString
-      ? progress.courseId.toString()
-      : String(progress.courseId);
-    return progressCourseId === String(courseId);
+    const progressCourseId = String(progress.courseId);
+    const requestCourseId = String(courseId);
+
+    // Try exact match first
+    if (progressCourseId.toLowerCase().trim() === requestCourseId.toLowerCase().trim()) {
+      return true;
+    }
+
+    // If exact match fails, try base course ID match (for cases like "CSE" vs "CSE-chapter-101")
+    const baseProgressCourseId = getBaseCourseId(progressCourseId);
+    const baseRequestCourseId = getBaseCourseId(requestCourseId);
+
+    return baseProgressCourseId.toLowerCase().trim() === baseRequestCourseId.toLowerCase().trim();
   });
 
   if (!courseProgress) {
@@ -197,17 +273,57 @@ export const saveExamResult = asyncHandler(async (req, res) => {
     answers: answers || [],
   };
 
+  // Extract base course ID if it follows the pattern "course-chapter-id"
+  const getBaseCourseIdForExam = (fullCourseId) => {
+    const strId = String(fullCourseId);
+    // If it follows pattern like "CSE-chapter-101", extract "CSE"
+    const match = strId.match(/^([A-Za-z]+)(?:-chapter-\d+)?/);
+    return match ? match[1] : strId;
+  };
+
+  // Map of total topics per course category from courseCatalog.js
+  const topicCounts = {
+    "CSE": 7,
+    "ECE": 4,
+    "Mechanical": 4,
+    "Civil": 4,
+    "EEE": 4,
+    "Diploma": 2
+  };
+
+  // Recalculate completion percentage based on videos completed and exam passed
+  // Exclude exam videos from video completion calculation to avoid double counting
+  const nonExamVideos = courseProgress.videos.filter(v => !v.videoId.startsWith('exam_'));
+  const completedNonExamVideos = nonExamVideos.filter(v => v.isCompleted).length;
+
+  // Use base course ID to get expected total videos
+  const baseCourseId = getBaseCourseIdForExam(courseId);  // Use the local function
+  const totalExpectedVideos = topicCounts[baseCourseId] || nonExamVideos.length || 4;
+
   const videoCompletion =
-    courseProgress.videos.length > 0
-      ? (courseProgress.videos.filter((v) => v.isCompleted).length /
-        courseProgress.videos.length) *
-      50
+    totalExpectedVideos > 0
+      ? (completedNonExamVideos / totalExpectedVideos) * 50
       : 0;
   const examCompletion = passed ? 50 : 0;
   courseProgress.completionPercentage = Math.min(
     100,
     videoCompletion + examCompletion
   );
+  
+  // If exam is passed, also mark the exam video as completed for this course
+  const examVideoId = `exam_${courseId}`;
+  let examVideoProgress = courseProgress.videos.find((v) => v.videoId === examVideoId);
+  if (!examVideoProgress) {
+    examVideoProgress = {
+      videoId: examVideoId,
+      isCompleted: passed,
+      lastWatched: new Date(),
+    };
+    courseProgress.videos.push(examVideoProgress);
+  } else {
+    examVideoProgress.isCompleted = passed;
+    examVideoProgress.lastWatched = new Date();
+  }
 
   await user.save();
   console.log(`[SaveExamResult] Successfully saved exam result for ${userId}`);

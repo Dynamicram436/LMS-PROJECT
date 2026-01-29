@@ -165,6 +165,12 @@ const Exam = () => {
   const [examAttempts, setExamAttempts] = useState([]);
   const user = JSON.parse(localStorage.getItem("user"));
 
+  // Storage key for local persistence
+  const storageKey = useMemo(() => {
+    if (!user?.userid || !courseId) return null;
+    return `exam_progress_${user.userid}_${courseId}`;
+  }, [user?.userid, courseId]);
+
 
   const fetchExamAttempts = async () => {
     if (user?.userid && courseId) {
@@ -315,12 +321,80 @@ const Exam = () => {
 
   useEffect(() => {
     if (!loading && safeTotal > 0) {
-      setCurrentQuestion(0);
+      // Try to load saved progress
+      let initialQuestion = 0;
+      let initialOptions = Array(safeTotal).fill(null);
+
+      if (storageKey) {
+        const savedProgress = localStorage.getItem(storageKey);
+        if (savedProgress) {
+          try {
+            const { currentQuestion: savedQ, selectedOptions: savedO } = JSON.parse(savedProgress);
+            if (typeof savedQ === 'number' && savedQ < safeTotal) {
+              initialQuestion = savedQ;
+            }
+            if (Array.isArray(savedO) && savedO.length === safeTotal) {
+              initialOptions = savedO;
+            }
+            console.log(`[Exam] Loaded progress from localStorage for ${courseId}`);
+          } catch (e) {
+            console.error("Error parsing saved progress", e);
+          }
+        }
+      }
+
+      setCurrentQuestion(initialQuestion);
       setScore(0);
       setShowScore(false);
-      setSelectedOptions(Array(safeTotal).fill(null));
+      setSelectedOptions(initialOptions);
     }
-  }, [subject, chapterId, safeTotal, loading, chapter]);
+  }, [subject, chapterId, safeTotal, loading, chapter, storageKey]);
+
+  // Sync progress to localStorage and database
+  useEffect(() => {
+    if (storageKey && !showScore && !loading && safeTotal > 0) {
+      const progress = {
+        currentQuestion,
+        selectedOptions,
+        lastUpdated: new Date().toISOString()
+      };
+      localStorage.setItem(storageKey, JSON.stringify(progress));
+      
+      // Also save progress to database if user is logged in
+      if (user?.userid && courseId) {
+        const answeredCount = selectedOptions.filter(option => option !== null).length;
+        const progressPercentage = Math.round((answeredCount / safeTotal) * 100);
+        
+        // Update progress in database
+        const updateProgress = async () => {
+          try {
+            const response = await apiClient.post('/exam/video-progress', {
+              userId: user.userid,
+              courseId: courseId,
+              videoId: `exam_${courseId}`,
+              isCompleted: false,
+              progressPercentage
+            });
+            
+            // If progress was successfully updated, dispatch event to update UI
+            if (response.data.success) {
+              window.dispatchEvent(new CustomEvent('progressUpdated', {
+                detail: {
+                  userId: user.userid,
+                  courseId: courseId,
+                  completionPercentage: response.data.data?.completionPercentage || progressPercentage
+                }
+              }));
+            }
+          } catch (error) {
+            console.error('Error saving progress to database:', error);
+          }
+        };
+        
+        updateProgress();
+      }
+    }
+  }, [selectedOptions, storageKey, showScore, loading, safeTotal, user?.userid, courseId]);
 
   const handleAnswerOptionClick = (answerIndex) => {
     setSelectedOptions((prev) => {
@@ -328,11 +402,91 @@ const Exam = () => {
       next[safeCurrentIndex] = answerIndex;
       return next;
     });
+    
+    // Trigger immediate progress update when answer is selected
+    if (user?.userid && courseId && storageKey) {
+      // Use setTimeout to ensure state is updated before calculating progress
+      setTimeout(() => {
+        const updatedSelectedOptions = [...selectedOptions];
+        updatedSelectedOptions[safeCurrentIndex] = answerIndex;
+        
+        const answeredCount = updatedSelectedOptions.filter(option => option !== null).length;
+        const progressPercentage = Math.round((answeredCount / safeTotal) * 100);
+        
+        // Save to localStorage
+        const progress = {
+          currentQuestion,
+          selectedOptions: updatedSelectedOptions,
+          lastUpdated: new Date().toISOString()
+        };
+        localStorage.setItem(storageKey, JSON.stringify(progress));
+        
+        // Update database progress
+        const updateProgress = async () => {
+          try {
+            const response = await apiClient.post('/exam/video-progress', {
+              userId: user.userid,
+              courseId: courseId,
+              videoId: `exam_${courseId}`,
+              isCompleted: false,
+              progressPercentage
+            });
+            
+            // Dispatch event to update UI
+            if (response.data.success) {
+              window.dispatchEvent(new CustomEvent('progressUpdated', {
+                detail: {
+                  userId: user.userid,
+                  courseId: courseId,
+                  completionPercentage: response.data.data?.completionPercentage || progressPercentage
+                }
+              }));
+            }
+          } catch (error) {
+            console.error('Error saving progress to database:', error);
+          }
+        };
+        
+        updateProgress();
+      }, 0);
+    }
   };
 
   const handleNext = () => {
     if (safeCurrentIndex < safeTotal - 1) {
       setCurrentQuestion(safeCurrentIndex + 1);
+      
+      // Update progress when moving to next question
+      if (user?.userid && courseId && storageKey) {
+        const answeredCount = selectedOptions.filter(option => option !== null).length;
+        const progressPercentage = Math.round((answeredCount / safeTotal) * 100);
+        
+        const updateProgress = async () => {
+          try {
+            const response = await apiClient.post('/exam/video-progress', {
+              userId: user.userid,
+              courseId: courseId,
+              videoId: `exam_${courseId}`,
+              isCompleted: false,
+              progressPercentage
+            });
+            
+            if (response.data.success) {
+              window.dispatchEvent(new CustomEvent('progressUpdated', {
+                detail: {
+                  userId: user.userid,
+                  courseId: courseId,
+                  completionPercentage: response.data.data?.completionPercentage || progressPercentage
+                }
+              }));
+            }
+          } catch (error) {
+            console.error('Error saving progress to database:', error);
+          }
+        };
+        
+        updateProgress();
+      }
     } else {
       calculateFinish();
     }
@@ -341,6 +495,38 @@ const Exam = () => {
   const handlePrevious = () => {
     if (safeCurrentIndex > 0) {
       setCurrentQuestion(safeCurrentIndex - 1);
+      
+      // Update progress when moving to previous question
+      if (user?.userid && courseId && storageKey) {
+        const answeredCount = selectedOptions.filter(option => option !== null).length;
+        const progressPercentage = Math.round((answeredCount / safeTotal) * 100);
+        
+        const updateProgress = async () => {
+          try {
+            const response = await apiClient.post('/exam/video-progress', {
+              userId: user.userid,
+              courseId: courseId,
+              videoId: `exam_${courseId}`,
+              isCompleted: false,
+              progressPercentage
+            });
+            
+            if (response.data.success) {
+              window.dispatchEvent(new CustomEvent('progressUpdated', {
+                detail: {
+                  userId: user.userid,
+                  courseId: courseId,
+                  completionPercentage: response.data.data?.completionPercentage || progressPercentage
+                }
+              }));
+            }
+          } catch (error) {
+            console.error('Error saving progress to database:', error);
+          }
+        };
+        
+        updateProgress();
+      }
     }
   };
 
@@ -505,6 +691,11 @@ const Exam = () => {
 
       setScore(newScore);
       setShowScore(true);
+
+      // Clear saved progress after successful submission
+      if (storageKey) {
+        localStorage.removeItem(storageKey);
+      }
     } catch (err) {
       console.error("Unexpected error in handleSubmit:", err);
       toast.error("An unexpected error occurred. Please try again.", { autoClose: 5000 });
@@ -522,6 +713,11 @@ const Exam = () => {
     setScore(0);
     setLoading(true);
     setError(null);
+
+    // Clear saved progress on retake
+    if (storageKey) {
+      localStorage.removeItem(storageKey);
+    }
 
     try {
       if (chapterId && subject) {
@@ -577,7 +773,7 @@ const Exam = () => {
           content="Take exams and test your knowledge on SkillTrack"
         />
       </Helmet>
-      <div className="min-h-screen bg-slate-950 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
+      <div className="py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
         {/* Decorative Background Glows */}
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-slate-700/10 rounded-full blur-[120px]" />
@@ -587,13 +783,13 @@ const Exam = () => {
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="fixed top-24 left-24 cursor-pointer z-50 flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white border border-white/10 rounded-full transition-all duration-300 group shadow-2xl"
+          className="fixed top-24 left-72 cursor-pointer z-50 flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white border border-white/10 rounded-full transition-all duration-300 group shadow-2xl"
         >
           <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" />
           <span className="font-bold text-sm">Close Exam</span>
         </button>
 
-        <div className="w-full max-w-lg relative z-10">
+        <div className="w-full max-w-2xl relative z-10"> {/* Increased max-width */}
           <div className="relative bg-slate-900 border border-white/10 rounded-3xl shadow-[0_24px_80px_-16px_rgba(0,0,0,0.8)] overflow-hidden">
             <div className="p-6 sm:p-8">
               <header className="mb-8 text-center">
@@ -701,7 +897,7 @@ const Exam = () => {
                                 `/performance/${encodeURIComponent(courseId)}`,
                               )
                             }
-                            className="text-xs font-bold px-3 py-1 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all flex items-center gap-1"
+                            className="text-xs cursor-pointer font-bold px-3 py-1 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all flex items-center gap-1"
                           >
                             View All
                             <FaArrowLeft className="rotate-180 text-[8px]" />
@@ -772,7 +968,7 @@ const Exam = () => {
 
                   {/* Question Body */}
                   <div className="mb-8 relative">
-                    <h3 className="text-lg sm:text-xl font-bold text-white mb-6 leading-tight">
+                    <h3 className="text-lg sm:text-xl font-bold text-white mb-6 leading-tight min-h-[60px]"> {/* Added min-height */}
                       {current.question}
                     </h3>
                     <div className="space-y-3">
@@ -780,10 +976,7 @@ const Exam = () => {
                         <button
                           key={index}
                           onClick={() => handleAnswerOptionClick(index)}
-                          className={`w-full relative p-4 rounded-xl border-2 text-left transition-all duration-200 flex items-center justify-between ${selectedOptions[safeCurrentIndex] === index
-                            ? "bg-slate-700 border-slate-500 shadow-lg transform -translate-y-0.5"
-                            : "bg-slate-800/40 border-white/5 hover:border-white/10 hover:bg-slate-800/60"
-                            }`}
+                          className={`w-full relative p-4 rounded-xl border-2 text-left transition-all duration-200 flex items-center justify-between min-h-[60px]`} 
                         >
                           <div className="flex items-center gap-4">
                             <div
@@ -836,8 +1029,8 @@ const Exam = () => {
                           onClick={handleSubmit}
                           disabled={selectedOptions[safeCurrentIndex] === null || isSubmitting}
                           className={`flex items-center gap-2 font-bold px-6 py-2 rounded-xl hover:shadow-lg transition-all text-xs active:scale-95 ${selectedOptions[safeCurrentIndex] === null || isSubmitting
-                              ? 'bg-gray-400 cursor-not-allowed'
-                              : 'bg-gradient-to-r from-slate-600 to-slate-500 cursor-pointer text-white'
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-slate-600 to-slate-500 cursor-pointer text-white'
                             }`}
                         >
                           {isSubmitting ? (

@@ -1,5 +1,7 @@
+
+
 import React, { useState, useEffect, useMemo } from "react";
-import { useParams, Routes, Route, useNavigate } from "react-router-dom";
+import { useParams, Routes, Route, useNavigate, } from "react-router-dom";
 import Exam from "./Exam";
 import { syllabusData } from "./courseCatalog";
 import ProgressService from "../utils/ProgressService";
@@ -59,13 +61,13 @@ const Courses = () => {
           const results = await ProgressService.getUserProgress(user.userid);
           if (results.success && results.data) {
             const courseResult = results.data.find(
-              (r) => r.courseId === subject,
+              (r) => String(r.courseId) === String(subject),
             );
             if (courseResult) {
               setCompletedVideos(
                 courseResult.videos
                   ?.filter((v) => v.isCompleted)
-                  .map((v) => v.videoId) || [],
+                  .map((v) => String(v.videoId)) || [], // Ensure video IDs are strings
               );
               setOverallProgress(courseResult.completionPercentage || 0);
             }
@@ -85,7 +87,7 @@ const Courses = () => {
         // Flatten all topics to find the first incomplete one
         const allTopics = branchSyllabus.units.flatMap((u) => u.topics);
         const firstIncomplete =
-          allTopics.find((t) => !completedVideos.includes(t.id)) ||
+          allTopics.find((t) => !completedVideos.includes(String(t.id))) ||
           allTopics[0];
 
         if (firstIncomplete) {
@@ -93,7 +95,7 @@ const Courses = () => {
 
           // Find which unit contains this topic and expand it
           const parentUnit = branchSyllabus.units.find((u) =>
-            u.topics.some((t) => t.id === firstIncomplete.id),
+            u.topics.some((t) => String(t.id) === String(firstIncomplete.id)),
           );
           if (parentUnit) {
             setOpenUnits({ [parentUnit.id]: true });
@@ -105,7 +107,70 @@ const Courses = () => {
     if (!activeTopic && branchSyllabus.units.length > 0) {
       selectInitialTopic();
     }
-  }, [subject, branchSyllabus, completedVideos.length]);
+
+    // Add event listener to update progress when it changes from other components (like exam)
+    const handleProgressUpdate = (event) => {
+      if (event.detail.courseId === subject) {
+        setOverallProgress(event.detail.completionPercentage || 0);
+
+        // Refresh the completed videos list to ensure consistency
+        if (user?.userid) {
+          ProgressService.getUserProgress(user.userid).then(results => {
+            if (results.success && results.data) {
+              const courseResult = results.data.find(
+                (r) => String(r.courseId) === String(subject),
+              );
+              if (courseResult) {
+                setCompletedVideos(
+                  courseResult.videos
+                    ?.filter((v) => v.isCompleted)
+                    .map((v) => String(v.videoId)) || []
+                );
+              }
+            }
+          }).catch(err => {
+            console.error("Failed to refresh progress after update:", err);
+          });
+        }
+      }
+    };
+
+    window.addEventListener('progressUpdated', handleProgressUpdate);
+
+    // Also listen for exam submissions to update progress
+    const handleExamSubmission = (event) => {
+      if (event.detail.userId === user?.userid) {
+        // Refresh progress after exam submission
+        if (user?.userid) {
+          ProgressService.getUserProgress(user.userid).then(results => {
+            if (results.success && results.data) {
+              const courseResult = results.data.find(
+                (r) => String(r.courseId) === String(subject),
+              );
+              if (courseResult) {
+                setOverallProgress(courseResult.completionPercentage || 0);
+                setCompletedVideos(
+                  courseResult.videos
+                    ?.filter((v) => v.isCompleted)
+                    .map((v) => String(v.videoId)) || []
+                );
+              }
+            }
+          }).catch(err => {
+            console.error("Failed to refresh progress after exam submission:", err);
+          });
+        }
+      }
+    };
+
+    window.addEventListener('examSubmitted', handleExamSubmission);
+
+    // Cleanup function to remove event listeners
+    return () => {
+      window.removeEventListener('progressUpdated', handleProgressUpdate);
+      window.removeEventListener('examSubmitted', handleExamSubmission);
+    };
+  }, [subject, branchSyllabus, completedVideos.length, user?.userid, activeTopic]);
 
   const toggleUnit = (unitId) => {
     setOpenUnits((prev) => ({
@@ -120,27 +185,127 @@ const Courses = () => {
   };
 
   const handleMarkAsCompleted = async () => {
-    if (!user?.userid || !activeTopic) return;
+    if (!user?.userid || !activeTopic) {
+      console.error("User or active topic is missing:", { user: !!user, activeTopic: !!activeTopic });
+      toast.error("User or topic information is missing");
+      return;
+    }
 
     try {
+      console.log("Attempting to update video progress:", {
+        userId: user.userid,
+        subject,
+        videoId: activeTopic.id,
+        isCompleted: true
+      });
+
       const result = await ProgressService.updateVideoProgress(
         user.userid,
-        subject,
-        activeTopic.id,
+        String(subject), // Ensure subject is a string
+        String(activeTopic.id), // Ensure topic ID is a string
         true,
       );
+
+      console.log("Progress update result:", result);
 
       if (result.success) {
         toast.success("Progress saved!");
         setCompletedVideos((prev) => [...new Set([...prev, activeTopic.id])]);
         setOverallProgress(result.data.completionPercentage);
+
+        // Update user's localStorage with latest progress
+        try {
+          const updatedUser = JSON.parse(localStorage.getItem("user"));
+          if (updatedUser) {
+            // Initialize examResults if it doesn't exist
+            if (!updatedUser.examResults) {
+              updatedUser.examResults = [];
+            }
+
+            // Find and update the specific course in examResults
+            const courseIndex = updatedUser.examResults.findIndex(course => String(course.courseId) === String(subject));
+            if (courseIndex !== -1) {
+              updatedUser.examResults[courseIndex].completionPercentage = result.data.completionPercentage;
+            } else {
+              // If course doesn't exist in examResults, add it
+              updatedUser.examResults.push({
+                courseId: subject,
+                completionPercentage: result.data.completionPercentage
+              });
+            }
+
+            // Also update the courseProgress in the user object to ensure consistency
+            if (!updatedUser.courseProgress) {
+              updatedUser.courseProgress = [];
+            }
+
+            const courseProgressIndex = updatedUser.courseProgress.findIndex(cp => String(cp.courseId) === String(subject));
+            if (courseProgressIndex !== -1) {
+              updatedUser.courseProgress[courseProgressIndex].completionPercentage = result.data.completionPercentage;
+            } else {
+              updatedUser.courseProgress.push({
+                courseId: subject,
+                completionPercentage: result.data.completionPercentage,
+                videos: [], // Will be updated when fetching progress next time
+                exam: { attempts: 0, passed: false, score: 0 }
+              });
+            }
+
+            localStorage.setItem("user", JSON.stringify(updatedUser));
+
+            // Dispatch a custom event to notify other components about the progress update
+            window.dispatchEvent(new CustomEvent('progressUpdated', {
+              detail: {
+                userId: updatedUser.userid,
+                courseId: subject,
+                completionPercentage: result.data.completionPercentage
+              }
+            }));
+          }
+        } catch (storageErr) {
+          console.error("Error updating user data in localStorage:", storageErr);
+        }
+      } else {
+        console.error("Progress update failed:", result);
+        toast.error(result.message || "Failed to save progress");
       }
-    } catch (err) {
-      toast.error("Failed to save progress");
+    } catch (error) {
+      console.error("Error marking topic as completed:", error);
+
+      // More detailed error reporting
+      if (error.response) {
+        // Server responded with error status
+        console.error("Server error:", error.response.status, error.response.data);
+        toast.error(`Server error: ${error.response.data.message || 'Failed to save progress'}`);
+      } else if (error.request) {
+        // Request was made but no response received
+        console.error("Network error:", error.request);
+        toast.error("Network error: Unable to connect to server");
+      } else {
+        // Something else happened
+        console.error("General error:", error.message);
+        toast.error(`Error: ${error.message || 'Failed to save progress'}`);
+      }
     }
   };
 
-  const isCompleted = (topicId) => completedVideos.includes(topicId);
+  const isCompleted = (topicId) => completedVideos.includes(String(topicId));
+
+  // Validate video ID to prevent injection attacks
+  const isValidYouTubeId = (id) => {
+    return /^[a-zA-Z0-9_-]{11}$/.test(id);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-900 pb-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-800 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Loading course content...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -201,13 +366,19 @@ const Courses = () => {
               {activeTopic ? (
                 <div className="relative group">
                   <div className="aspect-video rounded-3xl overflow-hidden bg-slate-900 shadow-2xl shadow-slate-100 border-4 border-white">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${activeTopic.videoId}?rel=0&modestbranding=1`}
-                      allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      title={activeTopic.name}
-                      className="w-full h-full"
-                    />
+                    {isValidYouTubeId(activeTopic.videoId) ? (
+                      <iframe
+                        src={`https://www.youtube.com/embed/${activeTopic.videoId}?rel=0&modestbranding=1&showinfo=0`}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        title={activeTopic.name}
+                        className="w-full h-full"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-slate-800 text-white">
+                        <p>Invalid video ID</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-8 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100">
@@ -230,12 +401,13 @@ const Courses = () => {
                             {activeTopic.duration}
                           </span>
                           <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${activeTopic.difficulty === "Beginner"
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                              activeTopic.difficulty === "Beginner"
                                 ? "bg-blue-50 text-blue-600 border-blue-100"
                                 : activeTopic.difficulty === "Intermediate"
-                                  ? "bg-orange-50 text-orange-600 border-orange-100"
-                                  : "bg-purple-50 text-purple-600 border-purple-100"
-                              }`}
+                                ? "bg-orange-50 text-orange-600 border-orange-100"
+                                : "bg-purple-50 text-purple-600 border-purple-100"
+                            }`}
                           >
                             {activeTopic.difficulty}
                           </span>
@@ -248,10 +420,11 @@ const Courses = () => {
                         <button
                           onClick={handleMarkAsCompleted}
                           disabled={isCompleted(activeTopic.id)}
-                          className={`inline-flex cursor-pointer items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 text-sm ${isCompleted(activeTopic.id)
+                          className={`inline-flex cursor-pointer items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 text-sm ${
+                            isCompleted(activeTopic.id)
                               ? "bg-green-100 text-green-700 border border-green-200 cursor-default"
                               : "bg-white text-slate-800 border-2 border-slate-100 hover:border-slate-300"
-                            }`}
+                          }`}
                         >
                           <FiCheckCircle className="w-5 h-5" />
                           {isCompleted(activeTopic.id)
@@ -274,7 +447,7 @@ const Courses = () => {
                             (u) => u.topics,
                           );
                           const currentIndex = flattenedTopics.findIndex(
-                            (t) => t.id === activeTopic.id,
+                            (t) => String(t.id) === String(activeTopic.id),
                           );
                           const nextTopic = flattenedTopics[currentIndex + 1];
                           if (nextTopic) {
@@ -360,10 +533,11 @@ const Courses = () => {
                             <div
                               key={topic.id}
                               onClick={() => handleTopicSelect(topic)}
-                              className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${activeTopic?.id === topic.id
+                              className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${
+                                activeTopic?.id === topic.id
                                   ? "bg-slate-800 border-slate-800 text-white shadow-md shadow-slate-200"
                                   : "bg-transparent border-transparent hover:bg-slate-50 text-slate-600"
-                                }`}
+                              }`}
                             >
                               <div className="flex-1 overflow-hidden">
                                 <div className="flex items-center gap-2 mb-1">
@@ -371,10 +545,11 @@ const Courses = () => {
                                     <FiCheckCircle className="text-green-500 w-3 h-3" />
                                   ) : (
                                     <span
-                                      className={`text-[8px] font-black px-1.5 py-0.5 rounded border ${activeTopic?.id === topic.id
+                                      className={`text-[8px] font-black px-1.5 py-0.5 rounded border ${
+                                        activeTopic?.id === topic.id
                                           ? "bg-white/10 border-white/20"
                                           : "bg-slate-100 border-slate-200"
-                                        }`}
+                                      }`}
                                     >
                                       QUIZ
                                     </span>
@@ -402,7 +577,9 @@ const Courses = () => {
                                 </div>
                               </div>
                               <FiPlayCircle
-                                className={`w-4 h-4 shrink-0 ${activeTopic?.id === topic.id ? "text-white" : "text-slate-300"}`}
+                                className={`w-4 h-4 shrink-0 ${
+                                  activeTopic?.id === topic.id ? "text-white" : "text-slate-300"
+                                }`}
                               />
                             </div>
                           ))}
@@ -429,3 +606,4 @@ const CoursesWithExam = () => (
 
 export { CoursesWithExam };
 export default Courses;
+

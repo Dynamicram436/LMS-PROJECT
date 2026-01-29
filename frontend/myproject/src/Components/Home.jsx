@@ -253,7 +253,7 @@ const Home = () => {
                   {examResults.length > 0 && (
                     <button
                       onClick={() => navigate("/performance/all")}
-                      className="text-indigo-600 text-sm font-bold hover:text-indigo-700 transition-colors flex items-center gap-2 group"
+                      className="text-indigo-600 text-sm cursor-pointer font-bold hover:text-indigo-700 transition-colors flex items-center gap-2 group"
                     >
                       View All
                       <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -304,8 +304,8 @@ const Home = () => {
                                 Passed
                               </span>
                             ) : (
-                              <span className="px-3 py-1 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-100">
-                                Pending
+                              <span className="px-3 py-1 bg-red-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-100">
+                                Still need to improve
                               </span>
                             )}
                             <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-300 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all border border-transparent group-hover:border-indigo-100">
