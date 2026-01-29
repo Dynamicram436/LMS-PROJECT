@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FaUserCircle, FaEnvelope, FaGraduationCap, FaTrophy, FaCalendarAlt } from "react-icons/fa";
+import { FaUserCircle, FaGraduationCap, FaTrophy, FaCalendarAlt } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 const Profile = () => {
@@ -49,10 +49,6 @@ const Profile = () => {
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
                                 <h1 className="text-2xl font-semibold text-slate-900">{user.name}</h1>
-                                <div className="flex items-center gap-2 mt-1 text-slate-500">
-                                    <FaEnvelope className="text-sm" />
-                                    <span className="text-sm">{user.email}</span>
-                                </div>
                             </div>
                             <button className="px-5 py-2 text-sm font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors">
                                 Edit Profile
