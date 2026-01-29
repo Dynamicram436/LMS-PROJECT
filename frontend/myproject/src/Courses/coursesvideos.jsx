@@ -200,7 +200,7 @@ const Courses = () => {
             <div className="flex-1 w-full order-1">
               {activeTopic ? (
                 <div className="relative group">
-                  <div className="aspect-video rounded-[2.5rem] overflow-hidden bg-slate-900 shadow-2xl shadow-slate-100 border-8 border-white">
+                  <div className="aspect-video rounded-3xl overflow-hidden bg-slate-900 shadow-2xl shadow-slate-100 border-4 border-white">
                     <iframe
                       src={`https://www.youtube.com/embed/${activeTopic.videoId}?rel=0&modestbranding=1`}
                       allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -210,7 +210,7 @@ const Courses = () => {
                     />
                   </div>
 
-                  <div className="mt-8 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                  <div className="mt-8 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
@@ -230,13 +230,12 @@ const Courses = () => {
                             {activeTopic.duration}
                           </span>
                           <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                              activeTopic.difficulty === "Beginner"
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${activeTopic.difficulty === "Beginner"
                                 ? "bg-blue-50 text-blue-600 border-blue-100"
                                 : activeTopic.difficulty === "Intermediate"
                                   ? "bg-orange-50 text-orange-600 border-orange-100"
                                   : "bg-purple-50 text-purple-600 border-purple-100"
-                            }`}
+                              }`}
                           >
                             {activeTopic.difficulty}
                           </span>
@@ -249,11 +248,10 @@ const Courses = () => {
                         <button
                           onClick={handleMarkAsCompleted}
                           disabled={isCompleted(activeTopic.id)}
-                          className={`inline-flex cursor-pointer items-center justify-center gap-3 px-6 py-3 rounded-2xl font-bold transition-all shadow-md active:scale-95 text-sm ${
-                            isCompleted(activeTopic.id)
+                          className={`inline-flex cursor-pointer items-center justify-center gap-2.5 px-5 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 text-sm ${isCompleted(activeTopic.id)
                               ? "bg-green-100 text-green-700 border border-green-200 cursor-default"
                               : "bg-white text-slate-800 border-2 border-slate-100 hover:border-slate-300"
-                          }`}
+                            }`}
                         >
                           <FiCheckCircle className="w-5 h-5" />
                           {isCompleted(activeTopic.id)
@@ -266,7 +264,7 @@ const Courses = () => {
                               `/courses/${encodeURIComponent(subject)}/exam?chapterId=${activeTopic.id}`,
                             )
                           }
-                          className="inline-flex cursor-pointer items-center justify-center gap-3 bg-slate-800 hover:bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-xl hover:scale-[1.05] active:scale-95 text-sm"
+                          className="inline-flex cursor-pointer items-center justify-center gap-2.5 bg-slate-800 hover:bg-slate-900 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-xl hover:scale-[1.02] active:scale-95 text-sm"
                         >
                           <FiEdit3 className="w-5 h-5" />
                           Take Quiz
@@ -283,7 +281,7 @@ const Courses = () => {
                             return (
                               <button
                                 onClick={() => handleTopicSelect(nextTopic)}
-                                className="inline-flex cursor-pointer items-center justify-center gap-3 bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-xl hover:scale-[1.05] active:scale-95 text-sm"
+                                className="inline-flex cursor-pointer items-center justify-center gap-2.5 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-xl hover:scale-[1.02] active:scale-95 text-sm"
                               >
                                 <span>Next Lesson</span>
                                 <FiArrowLeft className="rotate-180" />
@@ -307,8 +305,8 @@ const Courses = () => {
             </div>
 
             {/* Syllabus Sidebar */}
-            <div className="w-full lg:w-[400px] order-2 sticky top-24">
-              <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden p-6">
+            <div className="w-full lg:w-[360px] order-2 sticky top-24">
+              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden p-5 md:p-6">
                 <div className="mb-6 flex items-center justify-between">
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
                     Course Syllabus
@@ -322,7 +320,7 @@ const Courses = () => {
                   </span>
                 </div>
 
-                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-4 max-h-[calc(100vh-320px)] overflow-y-auto pr-2 custom-scrollbar">
                   {branchSyllabus.units.map((unit) => (
                     <div
                       key={unit.id}
@@ -343,7 +341,7 @@ const Courses = () => {
                                 (unit.topics.filter((t) => isCompleted(t.id))
                                   .length /
                                   unit.topics.length) *
-                                  100,
+                                100,
                               )}
                               color="bg-green-500"
                             />
@@ -362,11 +360,10 @@ const Courses = () => {
                             <div
                               key={topic.id}
                               onClick={() => handleTopicSelect(topic)}
-                              className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${
-                                activeTopic?.id === topic.id
+                              className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${activeTopic?.id === topic.id
                                   ? "bg-slate-800 border-slate-800 text-white shadow-md shadow-slate-200"
                                   : "bg-transparent border-transparent hover:bg-slate-50 text-slate-600"
-                              }`}
+                                }`}
                             >
                               <div className="flex-1 overflow-hidden">
                                 <div className="flex items-center gap-2 mb-1">
@@ -374,11 +371,10 @@ const Courses = () => {
                                     <FiCheckCircle className="text-green-500 w-3 h-3" />
                                   ) : (
                                     <span
-                                      className={`text-[8px] font-black px-1.5 py-0.5 rounded border ${
-                                        activeTopic?.id === topic.id
+                                      className={`text-[8px] font-black px-1.5 py-0.5 rounded border ${activeTopic?.id === topic.id
                                           ? "bg-white/10 border-white/20"
                                           : "bg-slate-100 border-slate-200"
-                                      }`}
+                                        }`}
                                     >
                                       QUIZ
                                     </span>

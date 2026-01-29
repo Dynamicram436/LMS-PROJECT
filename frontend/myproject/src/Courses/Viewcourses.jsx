@@ -50,7 +50,7 @@ const Viewcourses = () => {
           <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl md:text-6xl">
             B.Tech & <span className="text-indigo-600">Diploma</span>
           </h1>
-          <p className="mt-4 max-w-2xl text-xl text-gray-600 mx-auto">
+          <p className="mt-4 max-w-3xl text-xl text-gray-600 mx-auto">
             Explore your technical branch and start learning with our comprehensive
             study guides
           </p>
@@ -58,8 +58,8 @@ const Viewcourses = () => {
 
         {/* Search and Filter Section */}
         <div className="mb-12 bg-white rounded-xl shadow-sm p-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="relative flex-1">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="relative flex-1 max-w-2xl">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg
                   className="h-5 w-5 text-gray-400"
@@ -82,10 +82,10 @@ const Viewcourses = () => {
               />
             </div>
 
-            <div className="flex items-center space-x-2">
-              <FiFilter className="h-5 w-5 text-gray-400" />
+            <div className="flex items-center space-x-3 w-full lg:w-auto">
+              <FiFilter className="h-5 w-5 text-gray-400 shrink-0" />
               <select
-                className="block w-48 cursor-pointer pl-3 pr-10 py-3 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg"
+                className="block w-full lg:w-64 cursor-pointer pl-3 pr-10 py-3 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg"
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
               >
@@ -99,14 +99,14 @@ const Viewcourses = () => {
           </div>
 
           {/* Category Chips */}
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-6 flex flex-wrap gap-2">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 cursor-pointer rounded-full text-sm font-medium transition-colors ${
+                className={`px-5 py-2 cursor-pointer rounded-full text-sm font-medium transition-all ${
                   selectedCategory === cat
-                    ? "bg-indigo-600 text-white"
+                    ? "bg-indigo-600 text-white shadow-sm"
                     : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
                 }`}
               >
@@ -118,37 +118,37 @@ const Viewcourses = () => {
 
         {/* Courses Grid */}
         {filteredCourses.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {filteredCourses.map((course) => (
               <div
                 key={course.id}
-                className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col"
+                className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col min-h-[320px]"
               >
-                <div className="p-6 flex flex-col flex-1">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="p-8 flex flex-col flex-1">
+                  <div className="flex items-center justify-between mb-6">
                     <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase ${getCategoryColor(
                         course.category
                       )}`}
                     >
                       {course.category}
                     </span>
-                    <div className="h-10 w-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
-                      <FiBook className="h-5 w-5" />
+                    <div className="h-12 w-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
+                      <FiBook className="h-6 w-6" />
                     </div>
                   </div>
 
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 leading-tight">
                     {course.name}
                   </h3>
-                  <p className="text-gray-600 text-sm mb-6 line-clamp-3 flex-1">
+                  <p className="text-gray-600 text-sm mb-8 line-clamp-3 flex-1 leading-relaxed">
                     {course.description}
                   </p>
 
-                  <div className="mt-auto flex items-center justify-end">
+                  <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-end">
                     <Link
                       to={`/courses/${encodeURIComponent(course.category)}`}
-                      className="inline-flex items-center cursor-pointer px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
+                      className="inline-flex items-center cursor-pointer px-6 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 shadow-sm hover:shadow-md transition-all"
                     >
                       View course
                       <FiArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -159,26 +159,27 @@ const Viewcourses = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-            <svg
-              className="mx-auto h-12 w-12 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <h3 className="mt-2 text-lg font-medium text-gray-900">
+          <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="h-20 w-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="h-10 w-10 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900">
               No branches found
             </h3>
-            <p className="mt-1 text-gray-500">
-              Try adjusting your search or filter to find what you're looking for.
+            <p className="mt-2 text-gray-500 max-w-xs mx-auto">
+              We couldn't find any branches matching your current search or filters.
             </p>
           </div>
         )}
