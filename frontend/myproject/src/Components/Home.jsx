@@ -217,7 +217,7 @@ const Home = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Banner */}
-        <div className="mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-lg">
+        <div className="mb-8 bg-slate-900 rounded-2xl p-8 text-white shadow-lg">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.name || "Student"}! 👋</h1>
@@ -328,10 +328,20 @@ const Home = () => {
 
             {/* Recent Activity */}
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-900 mb-6">Recent Activity</h3>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
+                {examResults.length > 3 && (
+                  <button 
+                    onClick={() => navigate("/performance/all")}
+                    className="text-indigo-600 hover:text-indigo-800 text-sm font-medium cursor-pointer hover:underline"
+                  >
+                    View All
+                  </button>
+                )}
+              </div>
               {examResults.length > 0 ? (
                 <div className="space-y-4">
-                  {examResults.slice(0, 3).map((course, idx) => {
+                  {(examResults.length > 3 ? examResults.slice(0, 3) : examResults).map((course, idx) => {
                     const latestAttempt =
                       course.examAttempts?.length > 0
                         ? course.examAttempts[course.examAttempts.length - 1]
