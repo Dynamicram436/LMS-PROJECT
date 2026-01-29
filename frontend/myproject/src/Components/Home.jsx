@@ -40,7 +40,8 @@ const Home = () => {
 
           if (userResponse?.data?.data) {
             setUser(userResponse.data.data);
-            userData.courseProgress = userResponse.data.data.courseProgress || [];
+            userData.courseProgress =
+              userResponse.data.data.courseProgress || [];
             localStorage.setItem("user", JSON.stringify(userData));
           } else if (userResponse?.data?.message === "User not found") {
             setUser(userData);
@@ -57,9 +58,9 @@ const Home = () => {
             {
               signal,
               headers: {
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
-              }
+                "Cache-Control": "no-cache",
+                Pragma: "no-cache",
+              },
             }
           );
 
@@ -73,10 +74,10 @@ const Home = () => {
           } else {
             setExamResults(userData.examResults || []);
           }
-        } catch (error) {
-          console.error('Error fetching exam results:', error);
+        } catch (_error) {
+          console.error("Error fetching exam results:", _error);
           setExamResults(userData.examResults || []);
-          if (error.response?.status === 401) {
+          if (_error.response?.status === 401) {
             localStorage.removeItem("user");
             navigate("/login");
             toast.error("Session expired. Please log in again.");
@@ -98,11 +99,22 @@ const Home = () => {
       }
     };
 
-    window.addEventListener('examSubmitted', handleExamSubmission);
+    window.addEventListener("examSubmitted", handleExamSubmission);
+
+    // Listen for progress updates from exams
+    const handleProgressUpdate = (event) => {
+      const currentUser = JSON.parse(localStorage.getItem("user"));
+      if (currentUser?.userid === event.detail.userId) {
+        fetchUserData();
+      }
+    };
+
+    window.addEventListener("progressUpdated", handleProgressUpdate);
 
     return () => {
       controller.abort();
-      window.removeEventListener('examSubmitted', handleExamSubmission);
+      window.removeEventListener("examSubmitted", handleExamSubmission);
+      window.removeEventListener("progressUpdated", handleProgressUpdate);
     };
   }, []);
 
@@ -123,34 +135,39 @@ const Home = () => {
         `/exam/results/${userData.userid}`,
         {
           headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-          }
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache",
+          },
         }
       );
 
       if (resultsResponse?.data?.success) {
-        const results = Array.isArray(resultsResponse.data.data) ? resultsResponse.data.data : [];
+        const results = Array.isArray(resultsResponse.data.data)
+          ? resultsResponse.data.data
+          : [];
         setExamResults(results);
         const updatedUser = { ...userData, examResults: results };
         localStorage.setItem("user", JSON.stringify(updatedUser));
         toast.success("Exam data refreshed!");
       }
-    } catch (error) {
-      toast.error("Failed to refresh exam data");
+    } catch (_error) {
+      toast.error("Failed to refresh exam data", _error);
     }
   };
 
   // Prepare chart data
-  const chartData = examResults.map(course => {
-    const latestAttempt = course.examAttempts && course.examAttempts.length > 0
-      ? course.examAttempts[course.examAttempts.length - 1]
-      : { score: 0 };
-    return {
-      course: course.courseName || course.courseId,
-      score: latestAttempt.score || 0
-    };
-  }).slice(0, 5); // Show only top 5 for better visualization
+  const chartData = examResults
+    .map((course) => {
+      const latestAttempt =
+        course.examAttempts && course.examAttempts.length > 0
+          ? course.examAttempts[course.examAttempts.length - 1]
+          : { score: 0 };
+      return {
+        course: course.courseName || course.courseId,
+        score: latestAttempt.score || 0,
+      };
+    })
+    .slice(0, 5); // Show only top 5 for better visualization
 
   if (loading) {
     return (
@@ -176,8 +193,8 @@ const Home = () => {
             Elevate your potential.
           </h1>
           <p className="text-lg text-slate-500 max-w-2xl leading-relaxed">
-            Your personalized learning dashboard. Monitor your progress,
-            achieve your milestones, and master new skills.
+            Your personalized learning dashboard. Monitor your progress, achieve
+            your milestones, and master new skills.
           </p>
         </div>
 
@@ -187,24 +204,35 @@ const Home = () => {
             <div className="lg:col-span-1 space-y-6">
               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
                 <div className="flex justify-between items-center mb-8">
-                  <h3 className="text-xl font-bold text-slate-900">Statistics</h3>
+                  <h3 className="text-xl font-bold text-slate-900">
+                    Statistics
+                  </h3>
                   <button
                     onClick={refreshExamResults}
                     className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                    title="Refresh exam data"
                   >
                     
                   </button>
                 </div>
                 <div className="space-y-6">
                   <div className="flex justify-between items-end">
-                    <span className="text-slate-500 font-medium">Exams Attempted</span>
+                    <span className="text-slate-500 font-medium">
+                      Exams Attempted
+                    </span>
                     <span className="text-4xl font-black text-slate-900 leading-none">
-                      {examResults.reduce((sum, course) => sum + (course.examAttempts?.length || 0), 0)}
+                      {examResults.reduce(
+                        (sum, course) =>
+                          sum + (course.examAttempts?.length || 0),
+                        0
+                      )}
                     </span>
                   </div>
                   <div className="h-px bg-slate-100"></div>
                   <div className="flex justify-between items-end">
-                    <span className="text-slate-500 font-medium">Courses Started</span>
+                    <span className="text-slate-500 font-medium">
+                      Courses Started
+                    </span>
                     <span className="text-4xl font-black text-slate-900 leading-none">
                       {examResults.length}
                     </span>
@@ -215,12 +243,20 @@ const Home = () => {
               {/* Chart Card */}
               {chartData.length > 0 && (
                 <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
-                  <h3 className="text-lg font-bold text-slate-900 mb-4">Performance Comparison</h3>
+                  <h3 className="text-lg font-bold text-slate-900 mb-4">
+                    Performance Comparison
+                  </h3>
                   <div className="h-64">
                     <BarChart
                       dataset={chartData}
-                      xAxis={[{ scaleType: 'band', dataKey: 'course' }]}
-                      series={[{ dataKey: 'score', label: 'Score %', color: '#4f46e5' }]}
+                      xAxis={[{ scaleType: "band", dataKey: "course" }]}
+                      series={[
+                        {
+                          dataKey: "score",
+                          label: "Score %",
+                          color: "#4f46e5",
+                        },
+                      ]}
                       height={250}
                       margin={{ top: 10, bottom: 30, left: 40, right: 10 }}
                     />
@@ -230,7 +266,9 @@ const Home = () => {
 
               <div className="bg-slate-900 p-8 rounded-3xl text-white relative overflow-hidden shadow-xl">
                 <div className="relative z-10">
-                  <h4 className="text-xl font-bold mb-2 text-white">Continue Learning</h4>
+                  <h4 className="text-xl font-bold mb-2 text-white">
+                    Continue Learning
+                  </h4>
                   <p className="text-slate-400 text-sm mb-6">
                     Consistency is key to mastery. Pick up where you left off.
                   </p>
@@ -249,15 +287,27 @@ const Home = () => {
             <div className="lg:col-span-2">
               <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
                 <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-xl font-bold text-slate-900">Recent Performance</h3>
+                  <h3 className="text-xl font-bold text-slate-900">
+                    Recent Performance
+                  </h3>
                   {examResults.length > 0 && (
                     <button
                       onClick={() => navigate("/performance/all")}
                       className="text-indigo-600 text-sm cursor-pointer font-bold hover:text-indigo-700 transition-colors flex items-center gap-2 group"
                     >
                       View All
-                      <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <svg
+                        className="w-4 h-4 group-hover:translate-x-1 transition-transform"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
                       </svg>
                     </button>
                   )}
@@ -266,18 +316,27 @@ const Home = () => {
                 {examResults.length > 0 ? (
                   <div className="space-y-4">
                     {examResults.slice(0, 4).map((course, idx) => {
-                      const latestAttempt = course.examAttempts?.length > 0
-                        ? course.examAttempts[course.examAttempts.length - 1]
-                        : null;
+                      const latestAttempt =
+                        course.examAttempts?.length > 0
+                          ? course.examAttempts[course.examAttempts.length - 1]
+                          : null;
                       return (
                         <div
                           key={idx}
-                          onClick={() => navigate(`/performance/${encodeURIComponent(course.courseId)}`)}
+                          onClick={() =>
+                            navigate(
+                              `/performance/${encodeURIComponent(
+                                course.courseId
+                              )}`
+                            )
+                          }
                           className="p-4 border border-slate-50 rounded-2xl bg-slate-50 hover:bg-white hover:border-indigo-100 hover:shadow-lg transition-all duration-300 flex items-center justify-between group cursor-pointer"
                         >
                           <div className="flex items-center gap-4">
                             <div className="text-2xl bg-white w-12 h-12 rounded-xl flex items-center justify-center border border-slate-100 group-hover:scale-110 transition-transform shadow-sm">
-                              {latestAttempt ? getScoreEmoji(latestAttempt.score || 0) : "📖"}
+                              {latestAttempt
+                                ? getScoreEmoji(latestAttempt.score || 0)
+                                : "📖"}
                             </div>
                             <div>
                               <h4 className="font-bold text-slate-900 truncate max-w-[150px] sm:max-w-xs">
@@ -293,7 +352,9 @@ const Home = () => {
                                   </span>
                                 </div>
                               ) : (
-                                <span className="text-xs text-slate-400 mt-1 italic">Not started yet</span>
+                                <span className="text-xs text-slate-400 mt-1 italic">
+                                  Not started yet
+                                </span>
                               )}
                             </div>
                           </div>
@@ -309,8 +370,18 @@ const Home = () => {
                               </span>
                             )}
                             <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-300 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all border border-transparent group-hover:border-indigo-100">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 5l7 7-7 7"
+                                />
                               </svg>
                             </div>
                           </div>
@@ -320,9 +391,15 @@ const Home = () => {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-3xl mb-4">📚</div>
-                    <h4 className="font-bold text-slate-900 mb-1">Begin your journey</h4>
-                    <p className="text-slate-500 text-sm max-w-[200px]">Start your first course to see your progress here.</p>
+                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-3xl mb-4">
+                      📚
+                    </div>
+                    <h4 className="font-bold text-slate-900 mb-1">
+                      Begin your journey
+                    </h4>
+                    <p className="text-slate-500 text-sm max-w-[200px]">
+                      Start your first course to see your progress here.
+                    </p>
                   </div>
                 )}
               </div>

@@ -3,16 +3,61 @@ import { Link, useNavigate } from "react-router-dom";
 import { FiBook, FiFilter, FiArrowRight } from "react-icons/fi";
 import { subjectsData, categories } from "./courseCatalog";
 import { Helmet } from "react-helmet-async";
+import apiClient from "../utils/axiosConfig";
 
 const Viewcourses = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [userProgress, setUserProgress] = useState({}); // eslint-disable-line no-unused-vars
 
   useEffect(() => {
     if (!localStorage.getItem("user")) {
       navigate("/login");
     }
+
+    // Load user progress
+    const loadUserProgress = async () => {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (user?.userid) {
+        try {
+          const response = await apiClient.get(`/exam/results/${user.userid}`);
+          if (response.data.success && Array.isArray(response.data.data)) {
+            const progressMap = {};
+            response.data.data.forEach(course => {
+              progressMap[course.courseId] = course.completionPercentage || 0;
+            });
+            setUserProgress(progressMap);
+          }
+        } catch (error) {
+          console.error("Error loading user progress:", error);
+        }
+      }
+    };
+
+    loadUserProgress();
+
+    // Listen for progress updates
+    const handleProgressUpdate = (event) => {
+      setUserProgress(prev => ({
+        ...prev,
+        [event.detail.courseId]: event.detail.completionPercentage
+      }));
+    };
+
+    window.addEventListener('progressUpdated', handleProgressUpdate);
+
+    // Listen for exam submissions
+    const handleExamSubmission = () => {
+      loadUserProgress(); // Refresh all progress data
+    };
+
+    window.addEventListener('examSubmitted', handleExamSubmission);
+
+    return () => {
+      window.removeEventListener('progressUpdated', handleProgressUpdate);
+      window.removeEventListener('examSubmitted', handleExamSubmission);
+    };
   }, [navigate]);
 
   const filteredCourses = subjectsData.filter((course) => {

@@ -154,8 +154,18 @@ const Performance = () => {
 
     window.addEventListener('examSubmitted', handleExamSubmission);
 
+    // Listen for progress updates
+    const handleProgressUpdate = (event) => {
+      if (user?.userid === event.detail.userId) {
+        refreshExamResults();
+      }
+    };
+
+    window.addEventListener('progressUpdated', handleProgressUpdate);
+
     return () => {
       window.removeEventListener('examSubmitted', handleExamSubmission);
+      window.removeEventListener('progressUpdated', handleProgressUpdate);
     };
   }, [subject, isOverallView, category, navigate]);
 
