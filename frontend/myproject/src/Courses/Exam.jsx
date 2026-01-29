@@ -167,9 +167,22 @@ const Exam = () => {
   const user = JSON.parse(localStorage.getItem("user"));
 
   const createAttemptDatabase = async () => {
-    if (!user?.userid || !chapterId || !subject) return null;
+    // Only create attempt database if we have all required parameters
+    if (!user?.userid || !chapterId || !subject) {
+      console.log("Skipping attempt database creation - missing required parameters");
+      console.log("userid:", user?.userid, "chapterId:", chapterId, "subject:", subject);
+      return null;
+    }
 
     try {
+      console.log("Creating attempt database with params:", {
+        userId: user.userid,
+        courseId: courseId,
+        chapterId: chapterId,
+        category: subject,
+        chapterName: chapter?.name || subject || "Exam"
+      });
+
       const response = await apiClient.post(
         "/exam/attempt-database",
         {
@@ -182,46 +195,93 @@ const Exam = () => {
       );
 
       if (response.data.success) {
-        const newAttemptId = response.data.data.attemptId;
-        setAttemptId(newAttemptId);
-        return newAttemptId;
+        const newAttemptId = response.data.data?.attemptId;
+        if (newAttemptId) {
+          setAttemptId(newAttemptId);
+          console.log("Successfully created attempt database with ID:", newAttemptId);
+          return newAttemptId;
+        } else {
+          console.warn("Attempt database created but no attemptId returned:", response.data);
+          return null;
+        }
+      } else {
+        console.warn("Attempt database creation failed:", response.data);
+        return null;
       }
     } catch (err) {
       console.error("Error creating attempt database:", err);
+      if (err.response) {
+        console.error("Response status:", err.response.status);
+        console.error("Response data:", err.response.data);
+      }
       // Fall back to using main database if attempt creation fails
       return null;
     }
-    return null;
   };
 
   const fetchExamAttempts = async () => {
     if (user?.userid && courseId) {
       try {
-        console.log(`[Exam] Fetching results for userId: ${user.userid}, courseId: ${courseId}`);
+        console.log(`[Exam] Fetching results for userId: ${user.userid}, type: ${typeof user.userid}`);
+        console.log(`[Exam] Current courseId:`, courseId, 'type:', typeof courseId);
+
+        // Ensure userId is properly formatted
+        const userId = user.userid?.toString?.() || user.userid;
+
         const response = await apiClient.get(
-          `/exam/results/${user.userid}`,
+          `/exam/results/${userId}`,
+          {
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
+          }
         );
+
+        console.log(`[Exam] API response success:`, response.data.success);
+        console.log(`[Exam] API response data:`, response.data.data);
 
         if (response.data.success && Array.isArray(response.data.data)) {
           console.log(`[Exam] Received ${response.data.data.length} course results`);
-          console.log(`[Exam] Course IDs in response:`, response.data.data.map(r => r.courseId));
-          
+          if (response.data.data.length > 0) {
+            console.log(`[Exam] Course IDs in response:`, response.data.data.map(r => ({
+              courseId: r.courseId,
+              type: typeof r.courseId,
+              examAttempts: r.examAttempts?.length || 0
+            })));
+          }
+
           // Normalize courseId for comparison (handle both string and number formats)
           const normalizedCourseId = String(courseId).toLowerCase().trim();
-          
+          console.log(`[Exam] Looking for courseId: "${normalizedCourseId}" (normalized)`);
+
           const courseResult = response.data.data.find((result) => {
             const resultCourseId = String(result.courseId).toLowerCase().trim();
             const matches = resultCourseId === normalizedCourseId;
-            console.log(`[Exam] Comparing "${resultCourseId}" with "${normalizedCourseId}": ${matches}`);
+            console.log(`[Exam] Checking result courseId: "${resultCourseId}" -> Match: ${matches}`);
             return matches;
           });
 
           if (courseResult && Array.isArray(courseResult.examAttempts)) {
             setExamAttempts(courseResult.examAttempts);
-            console.log(`[Exam] Found ${courseResult.examAttempts.length} exam attempts for courseId: ${courseId}`);
+            console.log(`[Exam] Setting ${courseResult.examAttempts.length} exam attempts for courseId: ${courseId}`);
+            console.log(`[Exam] Exam attempts details:`, courseResult.examAttempts);
           } else {
             console.log(`[Exam] No matching course result found for courseId: ${courseId}`);
+            console.log(`[Exam] Available course IDs:`, response.data.data.map(r => r.courseId));
             setExamAttempts([]);
+          }
+
+          // Update user's localStorage with all exam results to keep it current
+          try {
+            const updatedUser = JSON.parse(localStorage.getItem("user"));
+            if (updatedUser) {
+              updatedUser.examResults = response.data.data;
+              localStorage.setItem("user", JSON.stringify(updatedUser));
+              console.log(`[Exam] Updated localStorage with ${response.data.data.length} course results`);
+            }
+          } catch (storageErr) {
+            console.error("Error updating user data in localStorage:", storageErr);
           }
         } else {
           console.log(`[Exam] Response not successful or data is not an array`);
@@ -229,6 +289,11 @@ const Exam = () => {
         }
       } catch (err) {
         console.error("Error fetching exam attempts:", err);
+        console.error("Error details:", err.response || err.message);
+        if (err.response) {
+          console.error("Response status:", err.response.status);
+          console.error("Response data:", err.response.data);
+        }
         setExamAttempts([]);
       }
     } else {
@@ -380,16 +445,23 @@ const Exam = () => {
 
       if (user?.userid) {
         try {
+          // Prepare the payload, making sure attemptId is only included if it exists
+          const payload = {
+            userId: user.userid,
+            courseId: courseId,
+            score: newScore,
+            totalQuestions: safeTotal,
+            answers: answers,
+          };
+
+          // Only add attemptId if it exists
+          if (attemptId) {
+            payload.attemptId = attemptId;
+          }
+
           const response = await apiClient.post(
             "/exam/results",
-            {
-              userId: user.userid,
-              courseId: courseId,
-              score: newScore,
-              totalQuestions: safeTotal,
-              answers: answers,
-              attemptId: attemptId,
-            },
+            payload,
             {
               timeout: 10000, // 10 second timeout
               headers: {
@@ -398,23 +470,63 @@ const Exam = () => {
               }
             }
           );
-          
+
           if (response.data.success) {
             toast.success("Exam submitted successfully!");
-            await fetchExamAttempts();
+
+            // Small delay to ensure the backend has processed the submission
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Update user's localStorage with latest exam data immediately
+            const updatedUser = JSON.parse(localStorage.getItem("user"));
+            if (updatedUser) {
+              // Fetch updated exam results to ensure localStorage has the latest data
+              try {
+                const resultsResponse = await apiClient.get(
+                  `/exam/results/${updatedUser.userid}`,
+                  {
+                    headers: {
+                      'Cache-Control': 'no-cache',
+                      'Pragma': 'no-cache'
+                    }
+                  }
+                );
+
+                if (resultsResponse?.data?.success) {
+                  const results = Array.isArray(resultsResponse.data.data)
+                    ? resultsResponse.data.data
+                    : [];
+
+                  updatedUser.examResults = results;
+                  localStorage.setItem("user", JSON.stringify(updatedUser));
+
+                  // Dispatch a custom event to notify other components about the update
+                  window.dispatchEvent(new CustomEvent('examSubmitted', { detail: { userId: updatedUser.userid } }));
+
+                  // Force a complete refresh of exam attempts for this component
+                  await fetchExamAttempts();
+                }
+              } catch (updateErr) {
+                console.error("Error updating user data in localStorage:", updateErr);
+                // Even if localStorage update fails, still try to refresh the UI
+                await fetchExamAttempts();
+              }
+            }
           } else {
             toast.warning("Exam submitted but server returned an error.");
+            // Still try to refresh the UI even if the response wasn't successful
+            await fetchExamAttempts();
           }
         } catch (submitErr) {
           console.error("Submit Error Details:", submitErr);
-          
+
           // Handle cancellation errors specifically
           if (submitErr.isCancelled) {
             console.log('Request was cancelled:', submitErr.message);
             toast.info('Previous request was cancelled. Please try submitting again.');
             return;
           }
-          
+
           // Check if it's a network error
           if (
             submitErr.code === "ECONNABORTED" ||
@@ -440,6 +552,13 @@ const Exam = () => {
               `Failed to save exam: ${submitErr.message || "Unknown error"}`,
               { autoClose: 5000 }
             );
+          }
+
+          // Even if submission fails, try to refresh the data to see if anything was saved
+          try {
+            await fetchExamAttempts();
+          } catch (refreshErr) {
+            console.error("Could not refresh exam attempts after submission error:", refreshErr);
           }
         }
       } else {

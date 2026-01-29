@@ -57,7 +57,7 @@ const Home = () => {
         try {
           const resultsResponse = await apiClient.get(
             `/exam/results/${userData.userid}`,
-            { 
+            {
               signal,
               headers: {
                 'Cache-Control': 'no-cache',
@@ -65,27 +65,38 @@ const Home = () => {
               }
             }
           );
-          
+
+          console.log('Exam results API response:', resultsResponse.data);
+
           if (resultsResponse?.data?.success) {
-            const results = Array.isArray(resultsResponse.data.data) 
-              ? resultsResponse.data.data 
+            const results = Array.isArray(resultsResponse.data.data)
+              ? resultsResponse.data.data
               : [];
-              
+
             console.log('Fetched exam results:', results);
+            console.log(`Found ${results.length} exam result entries`);
+
             setExamResults(results);
-            
+
             // Update local storage with latest results
             const updatedUser = { ...userData, examResults: results };
             localStorage.setItem("user", JSON.stringify(updatedUser));
           } else {
             console.warn('No exam results found or invalid response format');
+            console.warn('Response data:', resultsResponse.data);
             setExamResults(userData.examResults || []);
           }
         } catch (error) {
           console.error('Error fetching exam results:', error);
+          console.error('Error details:', error.response || error.message);
+          if (error.response) {
+            console.error('Response status:', error.response.status);
+            console.error('Response data:', error.response.data);
+          }
+
           // Fallback to any locally stored results
           setExamResults(userData.examResults || []);
-          
+
           if (error.response?.status === 401) {
             // Handle unauthorized - possibly log out the user
             localStorage.removeItem("user");
@@ -106,8 +117,20 @@ const Home = () => {
 
     fetchUserData();
 
+    // Listen for exam submission events to refresh data
+    const handleExamSubmission = (event) => {
+      const currentUser = JSON.parse(localStorage.getItem("user"));
+      if (currentUser?.userid === event.detail.userId) {
+        console.log("Detected exam submission for current user, refreshing data...");
+        fetchUserData();
+      }
+    };
+
+    window.addEventListener('examSubmitted', handleExamSubmission);
+
     return () => {
       controller.abort();
+      window.removeEventListener('examSubmitted', handleExamSubmission);
     };
   }, []);
 
@@ -116,6 +139,61 @@ const Home = () => {
     if (percentage >= 70) return "💪";
     if (percentage >= 50) return "📚";
     return "✍️";
+  };
+
+  // Function to force refresh exam results
+  const refreshExamResults = async () => {
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) return;
+
+    try {
+      const userData = JSON.parse(storedUser);
+      if (!userData?.userid) {
+        console.error("No user ID found in localStorage");
+        return;
+      }
+
+      console.log(`Refreshing exam results for user: ${userData.userid}`);
+
+      const resultsResponse = await apiClient.get(
+        `/exam/results/${userData.userid}`,
+        {
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        }
+      );
+
+      console.log("Exam results response:", resultsResponse.data);
+
+      if (resultsResponse?.data?.success) {
+        const results = Array.isArray(resultsResponse.data.data)
+          ? resultsResponse.data.data
+          : [];
+
+        console.log(`Received ${results.length} exam result entries`);
+
+        setExamResults(results);
+
+        // Update localStorage with fresh data
+        const updatedUser = { ...userData, examResults: results };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        toast.success("Exam data refreshed successfully!");
+      } else {
+        console.error("API call succeeded but response indicates failure:", resultsResponse.data);
+        toast.error("Failed to refresh exam data - server returned error");
+      }
+    } catch (error) {
+      console.error('Error refreshing exam results:', error);
+      console.error('Error details:', error.response || error.message);
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+      }
+      toast.error("Failed to refresh exam data");
+    }
   };
 
   if (loading) {
@@ -192,9 +270,20 @@ const Home = () => {
               {/* Stats Overview */}
               <div className="lg:col-span-1 space-y-6">
                 <div className="bg-gray-50 p-8 rounded-xl border border-gray-200">
-                  <h3 className="text-lg font-semibold mb-6 text-gray-900">
-                    Overview
-                  </h3>
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Overview
+                    </h3>
+                    <button
+                      onClick={refreshExamResults}
+                      className="text-gray-500 hover:text-gray-700 text-sm font-medium flex items-center gap-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Refresh
+                    </button>
+                  </div>
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600 text-sm font-medium">

@@ -100,8 +100,11 @@ export const updateVideoProgress = asyncHandler(async (req, res) => {
 });
 
 export const saveExamResult = asyncHandler(async (req, res) => {
-  const { userId, courseId, score, totalQuestions, answers, attemptId } =
+  const { userId, score, totalQuestions, answers, attemptId } =
     req.body;
+  
+  // Ensure courseId is a string
+  const courseId = String(req.body.courseId);
 
   console.log(`[SaveExamResult] Received request for userId: ${userId}, courseId: "${courseId}" (type: ${typeof courseId})`);
   console.log(`[SaveExamResult] Answers received: ${answers ? answers.length : 0} answers`);
@@ -246,147 +249,94 @@ export const getAllExamAttempts = asyncHandler(async (req, res) => {
 export const getExamResults = asyncHandler(async (req, res) => {
   const { userId } = req.params;
 
-  // Find user by userid field
-  const user = await User.findOne({ userid: userId });
+  // Find user by userid field to get access to their course progress for completion stats
+  const user = await User.findOne({ userid: userId }).lean();
   if (!user) {
     return res
       .status(404)
       .json({ success: false, message: "User not found" });
   }
 
-  // Create a map of all courses (both from selectedCourses and courseProgress)
-  const courseMap = new Map();
-
-  // FIRST: Add all courses that have ExamAttempts in the collection (most reliable source)
+  // FIRST: Get all exam attempts from the single source of truth, the ExamAttempt collection.
   const allUserExamAttempts = await ExamAttempt.find({ userId: userId }).lean();
   console.log(`[getExamResults] Found ${allUserExamAttempts.length} total ExamAttempt records for user ${userId}`);
-  
-  allUserExamAttempts.forEach((attempt) => {
-    const courseId = String(attempt.courseId);
-    if (!courseMap.has(courseId)) {
-      courseMap.set(courseId, {
-        courseId: courseId,
-        courseName: null,
-        progress: null,
-      });
-    }
-  });
 
-  // Add selected courses to the map
-  if (user.selectedCourses && Array.isArray(user.selectedCourses)) {
-    user.selectedCourses.forEach((selected) => {
-      if (!courseMap.has(String(selected.courseId))) {
-        courseMap.set(String(selected.courseId), {
-          courseId: selected.courseId,
-          courseName: selected.courseName,
-          progress: null,
-        });
-      }
+  if (allUserExamAttempts.length === 0) {
+    // If there are no attempts, return an empty array.
+    return res.status(200).json({
+      success: true,
+      data: [],
     });
   }
 
-  // Add courses from courseProgress
-  user.courseProgress.forEach((progress) => {
-    const courseId = String(
-      progress.courseId?.toString ? progress.courseId.toString() : progress.courseId
-    );
-    const existing = courseMap.get(courseId) || {
-      courseId: courseId,
-      courseName: null,
-      progress: null,
-    };
-    existing.progress = progress;
-    courseMap.set(courseId, existing);
+  // Group attempts by courseId
+  const attemptsByCourse = new Map();
+  allUserExamAttempts.forEach((attempt) => {
+    const courseId = String(attempt.courseId);
+    if (!attemptsByCourse.has(courseId)) {
+      attemptsByCourse.set(courseId, []);
+    }
+    attemptsByCourse.get(courseId).push(attempt);
   });
 
-  // Convert map to array - include all courses (they're already filtered by having ExamAttempts, selectedCourses, or progress)
-  const coursesToDisplay = Array.from(courseMap.values());
+  const examResults = [];
 
-  const examResults = await Promise.all(
-    coursesToDisplay.map(async (course) => {
-      const courseId = String(course.courseId);
-      const progress = course.progress;
+  // Iterate over each course that has attempts and build the result object
+  for (const [courseId, attempts] of attemptsByCourse.entries()) {
+    // Sort attempts by attempt number to process them chronologically
+    const sortedAttempts = attempts.sort((a, b) => (a.attemptNumber || 0) - (b.attemptNumber || 0));
 
-      // Use courseName from selectedCourses first, then from examInfo
-      let courseName = course.courseName || courseId;
-      if (!courseName || courseName === courseId) {
-        const examInfo = await ExamQuestion.findOne({
-          $or: [{ chapterId: parseInt(courseId) }, { category: courseId }]
-        }).select('chapterName category course');
+    // Get the latest attempt to represent the overall course result
+    const latestAttempt = sortedAttempts.length > 0 ? sortedAttempts[sortedAttempts.length - 1] : null;
 
-        if (examInfo) {
-          courseName = examInfo.chapterName || examInfo.category || examInfo.course;
-        }
+    // Find the corresponding course progress for this courseId to get completion percentage
+    const courseProgress = user.courseProgress?.find(
+      (p) => String(p.courseId) === courseId
+    );
+
+    // Try to find a descriptive course name from user's other data
+    const selectedCourse = user.selectedCourses?.find(
+      (c) => String(c.courseId) === courseId
+    );
+    let courseName = selectedCourse?.courseName || courseId;
+
+    // Fallback to find course name from exam questions if needed
+    if (courseName === courseId) {
+      const query = { $or: [{ category: courseId }] };
+      const chapterId = parseInt(courseId);
+      if (!isNaN(chapterId)) {
+        query.$or.push({ chapterId: chapterId });
       }
 
-      // Filter the already-fetched attempts for this course (more efficient than querying again)
-      let detailedAttempts = allUserExamAttempts.filter(
-        (attempt) => String(attempt.courseId) === courseId
-      ).sort((a, b) => (a.attemptNumber || 0) - (b.attemptNumber || 0));
-
-      console.log(`[getExamResults] courseId: "${courseId}" - Found ${detailedAttempts.length} detailed attempts from ExamAttempt collection`);
-      
-      if (detailedAttempts.length > 0) {
-        console.log(`[getExamResults] First attempt details:`, {
-          attemptNumber: detailedAttempts[0].attemptNumber,
-          score: detailedAttempts[0].score,
-          answersCount: detailedAttempts[0].answers?.length || 0
-        });
-      } else if (progress && progress.examAttempts && progress.examAttempts.length > 0) {
-        // Fallback: If no records in ExamAttempt collection, use embedded courseProgress.examAttempts
-        console.log(`[getExamResults] No ExamAttempt records found in collection, using courseProgress.examAttempts fallback`);
-        detailedAttempts = progress.examAttempts.map((attempt, index) => ({
-          ...attempt,
-          userId: userId,
-          courseId: courseId,
-          attemptId: attempt.examAttemptId || `${userId}_${courseId}_${index}`,
-        }));
-        console.log(`[getExamResults] Using ${detailedAttempts.length} attempts from courseProgress fallback`);
-      } else {
-        console.log(`[getExamResults] No attempts found for courseId: ${courseId}`);
-        detailedAttempts = [];
+      const examInfo = await ExamQuestion.findOne(query).select('chapterName category course');
+      if (examInfo) {
+        courseName = examInfo.chapterName || examInfo.category || examInfo.course;
       }
+    }
+    
+    // Format attempts for the frontend
+    const enrichedExamAttempts = sortedAttempts.map((attempt) => ({
+      ...attempt,
+      attemptDate: attempt.attemptDate || attempt.createdAt,
+      answers: (attempt.answers || []).map((answer) => ({
+        ...answer,
+        question: answer.question || `Question ${answer.questionIndex + 1}`,
+        options: answer.options || [],
+      })),
+    }));
 
-      // Map attempts to the format expected by the frontend
-      const enrichedExamAttempts = detailedAttempts.map((attempt) => ({
-        ...attempt,
-        // Ensure attemptDate is a Date object for the frontend
-        attemptDate: attempt.attemptDate || attempt.createdAt,
-        // The answers are already in the ExamAttempt document
-        answers: (attempt.answers || []).map((answer) => ({
-          ...answer,
-          // Ensure fallback values if for some reason question text is missing
-          question: answer.question || `Question ${answer.questionIndex + 1}`,
-          options: answer.options || [],
-        })),
-      }));
-
-      // Get the latest attempt to represent the overall course result
-      const latestAttempt =
-        enrichedExamAttempts.length > 0
-          ? enrichedExamAttempts[enrichedExamAttempts.length - 1]
-          : null;
-
-      return {
-        courseId: courseId,
-        courseName: courseName, // Use the determined course name
-        score: latestAttempt
-          ? latestAttempt.score
-          : progress?.exam?.score || 0,
-        passed: latestAttempt
-          ? latestAttempt.passed
-          : progress?.exam?.passed || false,
-        attempts: enrichedExamAttempts.length,
-        lastAttempt: latestAttempt
-          ? latestAttempt.attemptDate
-          : progress?.exam?.lastAttempt || null,
-        completionPercentage: progress?.completionPercentage || 0,
-        // Use answers from the latest attempt or the enriched ones
-        answers: latestAttempt ? latestAttempt.answers : [],
-        examAttempts: enrichedExamAttempts,
-      };
-    })
-  );
+    examResults.push({
+      courseId: courseId,
+      courseName: courseName,
+      score: latestAttempt ? latestAttempt.score : 0,
+      passed: latestAttempt ? latestAttempt.passed : false,
+      attempts: enrichedExamAttempts.length,
+      lastAttempt: latestAttempt ? latestAttempt.attemptDate : null,
+      completionPercentage: courseProgress?.completionPercentage || 0,
+      answers: latestAttempt ? latestAttempt.answers : [],
+      examAttempts: enrichedExamAttempts,
+    });
+  }
 
   res.status(200).json({
     success: true,
@@ -544,7 +494,17 @@ export const createExamAttemptDatabase = async (req, res) => {
     // Generate unique attempt ID
     const attemptId = `${userId}_${courseId}_${Date.now()}`;
 
-    // Create new attempt-specific database with the same questions
+    // Transform questions to the attempt database schema
+    const transformedQuestions = originalExamData.questions.map((q) => {
+      const correctIndex = q.choices.indexOf(q.correctAns);
+      return {
+        question: q.qDesc,
+        options: q.choices,
+        correctAnswer: correctIndex > -1 ? correctIndex : -1, // handle if not found
+      };
+    });
+
+    // Create new attempt-specific database with the transformed questions
     const examAttemptDatabase = new ExamAttemptDatabase({
       attemptId: attemptId,
       userId: userId,
@@ -552,12 +512,13 @@ export const createExamAttemptDatabase = async (req, res) => {
       chapterId: chapterIdNum,
       category: category,
       chapterName: chapterName,
-      questions: originalExamData.questions,
+      questions: transformedQuestions,
       isActive: true,
     });
 
     await examAttemptDatabase.save();
 
+    // Return the original, more detailed questions to the frontend for the exam
     res.status(201).json({
       success: true,
       message: "Exam attempt database created successfully",

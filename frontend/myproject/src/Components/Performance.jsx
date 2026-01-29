@@ -57,15 +57,24 @@ const Performance = () => {
       }
 
       try {
-        const response = await apiClient.get(`/exam/results/${userData.userid}`);
+        const response = await apiClient.get(`/exam/results/${userData.userid}`, {
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+
+        console.log("Initial performance data response:", response.data);
 
         if (!response?.data?.success) {
           throw new Error(response?.data?.message || "Failed to fetch performance data");
         }
 
-        const examResults = Array.isArray(response.data.data) 
+        const examResults = Array.isArray(response.data.data)
           ? response.data.data.filter(Boolean) // Remove any null/undefined entries
           : [];
+
+        console.log(`Loaded ${examResults.length} exam result entries initially`);
 
         setAllExamData(examResults);
 
@@ -79,7 +88,7 @@ const Performance = () => {
           const courseWithAttempts = examResults.find(
             (course) => course.examAttempts?.length > 0
           );
-          
+
           if (courseWithAttempts) {
             setExamData(courseWithAttempts);
             if (courseWithAttempts.examAttempts?.[0]) {
@@ -112,6 +121,12 @@ const Performance = () => {
         }
       } catch (error) {
         console.error("Error fetching performance data:", error);
+        console.error("Error details:", error.response || error.message);
+        if (error.response) {
+          console.error("Response status:", error.response.status);
+          console.error("Response data:", error.response.data);
+        }
+
         const errorMessage =
           error.response?.data?.message ||
           error.message ||
@@ -127,6 +142,21 @@ const Performance = () => {
     };
 
     fetchPerformanceData();
+
+    // Listen for exam submission events to refresh data
+    const handleExamSubmission = (event) => {
+      const currentUser = JSON.parse(localStorage.getItem("user"));
+      if (currentUser?.userid === event.detail.userId) {
+        console.log("Detected exam submission for current user, refreshing performance data...");
+        fetchPerformanceData();
+      }
+    };
+
+    window.addEventListener('examSubmitted', handleExamSubmission);
+
+    return () => {
+      window.removeEventListener('examSubmitted', handleExamSubmission);
+    };
   }, [subject, isOverallView, category, navigate]);
 
   const getScoreEmoji = (percentage) => {
@@ -212,6 +242,97 @@ const Performance = () => {
     if (change > 5) return { trend: "up", change: Math.round(change) };
     if (change < -5) return { trend: "down", change: Math.round(change) };
     return { trend: "neutral", change: 0 };
+  };
+
+  // Function to refresh exam results
+  const refreshExamResults = async () => {
+    const userData = JSON.parse(localStorage.getItem("user"));
+
+    if (!userData?.userid) {
+      toast.error("Please log in to refresh performance data");
+      return;
+    }
+
+    try {
+      console.log(`Refreshing performance data for user: ${userData.userid}`);
+
+      const response = await apiClient.get(`/exam/results/${userData.userid}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+
+      console.log("Performance data response:", response.data);
+
+      if (!response?.data?.success) {
+        throw new Error(response?.data?.message || "Failed to fetch performance data");
+      }
+
+      const examResults = Array.isArray(response.data.data)
+        ? response.data.data.filter(Boolean)
+        : [];
+
+      console.log(`Received ${examResults.length} exam result entries`);
+
+      setAllExamData(examResults);
+
+      if (isOverallView) {
+        // For overall view, find the first course with attempts
+        const courseWithAttempts = examResults.find(
+          (course) => course.examAttempts?.length > 0
+        );
+
+        if (courseWithAttempts) {
+          setExamData(courseWithAttempts);
+          if (courseWithAttempts.examAttempts?.[0]) {
+            setSelectedAttempt(courseWithAttempts.examAttempts[0]);
+          }
+        }
+      } else if (subject) {
+        // For specific subject view
+        const subjectStr = String(subject).trim().toLowerCase();
+        const courseData = examResults.find((result) => {
+          if (!result) return false;
+          const courseId = String(result.courseId || "").trim().toLowerCase();
+          const courseName = String(result.courseName || "").trim().toLowerCase();
+          return (
+            courseId === subjectStr ||
+            courseName === subjectStr ||
+            courseId.startsWith(`${subjectStr}-`) ||
+            courseName.includes(subjectStr)
+          );
+        });
+
+        if (courseData) {
+          setExamData(courseData);
+          if (courseData.examAttempts?.[0]) {
+            setSelectedAttempt(courseData.examAttempts[0]);
+          }
+        } else {
+          toast.warning("No performance data found for this course");
+        }
+      }
+
+      // Update localStorage with fresh data
+      userData.examResults = examResults;
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      toast.success("Performance data refreshed successfully!");
+    } catch (error) {
+      console.error("Error refreshing performance data:", error);
+      console.error("Error details:", error.response || error.message);
+      if (error.response) {
+        console.error("Response status:", error.response.status);
+        console.error("Response data:", error.response.data);
+      }
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to refresh performance data";
+      toast.error(errorMessage);
+    }
   };
 
   const globalStats = React.useMemo(() => {
@@ -362,11 +483,22 @@ const Performance = () => {
 
         <div className="max-w-6xl mx-auto relative z-10 mt-12">
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              {isOverallView
-                ? "Universal Knowledge Explorer"
-                : "Performance Analytics"}
-            </h1>
+            <div className="flex justify-center items-center gap-4 mb-4">
+              <h1 className="text-4xl font-bold text-gray-900">
+                {isOverallView
+                  ? "Universal Knowledge Explorer"
+                  : "Performance Analytics"}
+              </h1>
+              <button
+                onClick={refreshExamResults}
+                className="text-gray-500 hover:text-gray-700"
+                title="Refresh data"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            </div>
             <p className="text-gray-600 text-lg">
               {isOverallView
                 ? "A comprehensive overview of all your learning achievements"
