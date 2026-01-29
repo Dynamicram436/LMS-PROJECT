@@ -50,7 +50,7 @@ const Profile = () => {
                             <div>
                                 <h1 className="text-2xl font-semibold text-slate-900">{user.name}</h1>
                             </div>
-                            <button className="px-5 py-2 text-sm font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors">
+                            <button className="px-5 cursor-pointer py-2 text-sm font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors">
                                 Edit Profile
                             </button>
                         </div>
