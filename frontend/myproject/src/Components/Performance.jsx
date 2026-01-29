@@ -350,9 +350,9 @@ const Performance = () => {
     const avgScore =
       totalAttempts > 0
         ? Math.round(
-            allAttempts.reduce((sum, a) => sum + (a.score || 0), 0) /
-              totalAttempts,
-          )
+          allAttempts.reduce((sum, a) => sum + (a.score || 0), 0) /
+          totalAttempts,
+        )
         : 0;
     const passedAttempts = allAttempts.filter((a) => a.passed).length;
     const passingRate =
@@ -472,10 +472,10 @@ const Performance = () => {
         <title>Performance - SkillTrack</title>
         <meta name="Performance page" content="Welcome to Performance page" />
       </Helmet>
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="py-6 px-4 sm:px-6 lg:px-8">
         <button
           onClick={() => navigate(-1)}
-          className="fixed top-24 left-8 cursor-pointer z-50 flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-full transition-colors duration-200 shadow-sm"
+          className="mb-8 cursor-pointer flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-full transition-colors duration-200 shadow-sm"
         >
           <FaArrowLeft />
           <span className="font-bold text-sm">Back</span>
@@ -524,11 +524,10 @@ const Performance = () => {
                         if (element)
                           element.scrollIntoView({ behavior: "smooth" });
                       }}
-                      className={`p-5 border rounded-xl transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group ${
-                        selectedAttempt?.attemptId === attempt.attemptId
-                          ? "bg-blue-50 border-blue-300 shadow-sm"
-                          : "bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50 hover:shadow-sm"
-                      }`}
+                      className={`p-5 border rounded-xl transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group ${selectedAttempt?.attemptId === attempt.attemptId
+                        ? "bg-blue-50 border-blue-300 shadow-sm"
+                        : "bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50 hover:shadow-sm"
+                        }`}
                     >
                       <div className="flex items-center gap-4 text-left rounded-xl transition">
                         <div className="text-3xl bg-gray-50 w-14 h-14 rounded-xl flex items-center justify-center border border-gray-200 group-hover:scale-110 transition-transform">
@@ -536,11 +535,10 @@ const Performance = () => {
                         </div>
                         <div>
                           <h4
-                            className={`font-bold text-lg transition-colors ${
-                              selectedAttempt?.attemptId === attempt.attemptId
-                                ? "text-blue-600"
-                                : "text-gray-800 group-hover:text-blue-600"
-                            }`}
+                            className={`font-bold text-lg transition-colors ${selectedAttempt?.attemptId === attempt.attemptId
+                              ? "text-blue-600"
+                              : "text-gray-800 group-hover:text-blue-600"
+                              }`}
                           >
                             {getFullCourseName(
                               attempt.courseName || attempt.courseId,
@@ -564,8 +562,8 @@ const Performance = () => {
                             <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
                               {attempt.attemptDate
                                 ? new Date(
-                                    attempt.attemptDate,
-                                  ).toLocaleDateString()
+                                  attempt.attemptDate,
+                                ).toLocaleDateString()
                                 : "Recent"}
                             </span>
                           </p>
@@ -575,9 +573,8 @@ const Performance = () => {
                       <div className="flex items-center gap-6">
                         <div className="flex flex-col text-right">
                           <p
-                            className={`text-xs font-bold uppercase tracking-wider ${
-                              attempt.passed ? "text-green-600" : "text-red-500"
-                            }`}
+                            className={`text-xs font-bold uppercase tracking-wider ${attempt.passed ? "text-green-600" : "text-red-500"
+                              }`}
                           >
                             {attempt.passed
                               ? "✅ Passed"
@@ -589,11 +586,10 @@ const Performance = () => {
                         </div>
                         <div className="h-10 w-0.5 bg-gray-200 hidden sm:block"></div>
                         <div
-                          className={`p-2 transition-colors ${
-                            selectedAttempt?.attemptId === attempt.attemptId
-                              ? "text-blue-600"
-                              : "text-gray-300 group-hover:text-blue-600"
-                          }`}
+                          className={`p-2 transition-colors ${selectedAttempt?.attemptId === attempt.attemptId
+                            ? "text-blue-600"
+                            : "text-gray-300 group-hover:text-blue-600"
+                            }`}
                         >
                           <svg
                             className="w-6 h-6"
@@ -726,13 +722,12 @@ const Performance = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <FaChartLine
-                      className={`text-2xl ${
-                        improvementTrend.trend === "up"
-                          ? "text-green-600"
-                          : improvementTrend.trend === "down"
-                            ? "text-red-600"
-                            : "text-yellow-600"
-                      }`}
+                      className={`text-2xl ${improvementTrend.trend === "up"
+                        ? "text-green-600"
+                        : improvementTrend.trend === "down"
+                          ? "text-red-600"
+                          : "text-yellow-600"
+                        }`}
                     />
                     <div>
                       <h3 className="text-lg font-bold text-gray-900">
@@ -745,13 +740,12 @@ const Performance = () => {
                   </div>
                   <div className="text-right">
                     <div
-                      className={`text-2xl font-bold ${
-                        improvementTrend.trend === "up"
-                          ? "text-green-600"
-                          : improvementTrend.trend === "down"
-                            ? "text-red-600"
-                            : "text-yellow-600"
-                      }`}
+                      className={`text-2xl font-bold ${improvementTrend.trend === "up"
+                        ? "text-green-600"
+                        : improvementTrend.trend === "down"
+                          ? "text-red-600"
+                          : "text-yellow-600"
+                        }`}
                     >
                       {improvementTrend.trend === "up"
                         ? "↑"
@@ -829,9 +823,8 @@ const Performance = () => {
                                 <div
                                   className="h-full bg-blue-600"
                                   style={{
-                                    width: `${
-                                      course.completionPercentage || 0
-                                    }%`,
+                                    width: `${course.completionPercentage || 0
+                                      }%`,
                                   }}
                                 />
                               </div>
@@ -841,11 +834,10 @@ const Performance = () => {
                             </td>
                             <td className="text-center py-4 px-4">
                               <span
-                                className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                  passed
-                                    ? "bg-green-50 border border-green-200 text-green-600"
-                                    : "bg-yellow-50 border border-yellow-200 text-yellow-600"
-                                }`}
+                                className={`px-3 py-1 rounded-full text-xs font-bold ${passed
+                                  ? "bg-green-50 border border-green-200 text-green-600"
+                                  : "bg-yellow-50 border border-yellow-200 text-yellow-600"
+                                  }`}
                               >
                                 {passed ? "✅ Passed" : "📚 Learning"}
                               </span>
@@ -897,11 +889,10 @@ const Performance = () => {
                       <div
                         key={attempt.attemptId || index}
                         onClick={() => setSelectedAttempt(attempt)}
-                        className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${
-                          selectedAttempt?.attemptId === attempt.attemptId
-                            ? "bg-blue-50 border-blue-300"
-                            : "bg-gray-50 border-gray-200 hover:border-gray-300"
-                        }`}
+                        className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${selectedAttempt?.attemptId === attempt.attemptId
+                          ? "bg-blue-50 border-blue-300"
+                          : "bg-gray-50 border-gray-200 hover:border-gray-300"
+                          }`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
@@ -930,11 +921,10 @@ const Performance = () => {
                           </div>
                           <div className="flex items-center gap-3">
                             <span
-                              className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                attempt.passed
-                                  ? "bg-green-50 border border-green-200 text-green-600"
-                                  : "bg-red-50 border border-red-200 text-red-600"
-                              }`}
+                              className={`px-3 py-1 rounded-full text-xs font-bold ${attempt.passed
+                                ? "bg-green-50 border border-green-200 text-green-600"
+                                : "bg-red-50 border border-red-200 text-red-600"
+                                }`}
                             >
                               {attempt.passed ? "PASSED" : "NEEDS IMPROVEMENT"}
                             </span>

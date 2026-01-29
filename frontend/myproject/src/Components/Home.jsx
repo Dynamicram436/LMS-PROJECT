@@ -1,16 +1,15 @@
 import apiClient from "../utils/axiosConfig";
-import React, { useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Helmet } from "react-helmet-async";
+import { BarChart } from "@mui/x-charts/BarChart";
 
 const Home = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [examResults, setExamResults] = useState([]);
   const [loading, setLoading] = useState(true);
-
-
 
   useEffect(() => {
     const controller = new AbortController();
@@ -32,7 +31,7 @@ const Home = () => {
 
         setLoading(true);
 
-        // Fetch user info (no auth required for this endpoint)
+        // Fetch user info
         try {
           const userResponse = await apiClient.get(
             `/auth/user/${userData.userid}`,
@@ -44,12 +43,10 @@ const Home = () => {
             userData.courseProgress = userResponse.data.data.courseProgress || [];
             localStorage.setItem("user", JSON.stringify(userData));
           } else if (userResponse?.data?.message === "User not found") {
-            // User not found in database, use stored user data
             setUser(userData);
           }
         } catch (userErr) {
           console.error("Error fetching user:", userErr);
-          // If user fetch fails, use stored user data as fallback
           setUser(userData);
         }
 
@@ -66,39 +63,20 @@ const Home = () => {
             }
           );
 
-          console.log('Exam results API response:', resultsResponse.data);
-
           if (resultsResponse?.data?.success) {
             const results = Array.isArray(resultsResponse.data.data)
               ? resultsResponse.data.data
               : [];
-
-            console.log('Fetched exam results:', results);
-            console.log(`Found ${results.length} exam result entries`);
-
             setExamResults(results);
-
-            // Update local storage with latest results
             const updatedUser = { ...userData, examResults: results };
             localStorage.setItem("user", JSON.stringify(updatedUser));
           } else {
-            console.warn('No exam results found or invalid response format');
-            console.warn('Response data:', resultsResponse.data);
             setExamResults(userData.examResults || []);
           }
         } catch (error) {
           console.error('Error fetching exam results:', error);
-          console.error('Error details:', error.response || error.message);
-          if (error.response) {
-            console.error('Response status:', error.response.status);
-            console.error('Response data:', error.response.data);
-          }
-
-          // Fallback to any locally stored results
           setExamResults(userData.examResults || []);
-
           if (error.response?.status === 401) {
-            // Handle unauthorized - possibly log out the user
             localStorage.removeItem("user");
             navigate("/login");
             toast.error("Session expired. Please log in again.");
@@ -106,10 +84,6 @@ const Home = () => {
         }
       } catch (err) {
         console.error("Error in fetchUserData:", err);
-        // Only show error for critical failures
-        if (err.message && !err.message.includes("Invalid user data")) {
-          toast.error("Failed to load user data");
-        }
       } finally {
         setLoading(false);
       }
@@ -117,11 +91,9 @@ const Home = () => {
 
     fetchUserData();
 
-    // Listen for exam submission events to refresh data
     const handleExamSubmission = (event) => {
       const currentUser = JSON.parse(localStorage.getItem("user"));
       if (currentUser?.userid === event.detail.userId) {
-        console.log("Detected exam submission for current user, refreshing data...");
         fetchUserData();
       }
     };
@@ -141,20 +113,12 @@ const Home = () => {
     return "✍️";
   };
 
-  // Function to force refresh exam results
   const refreshExamResults = async () => {
     const storedUser = localStorage.getItem("user");
     if (!storedUser) return;
 
     try {
       const userData = JSON.parse(storedUser);
-      if (!userData?.userid) {
-        console.error("No user ID found in localStorage");
-        return;
-      }
-
-      console.log(`Refreshing exam results for user: ${userData.userid}`);
-
       const resultsResponse = await apiClient.get(
         `/exam/results/${userData.userid}`,
         {
@@ -165,41 +129,33 @@ const Home = () => {
         }
       );
 
-      console.log("Exam results response:", resultsResponse.data);
-
       if (resultsResponse?.data?.success) {
-        const results = Array.isArray(resultsResponse.data.data)
-          ? resultsResponse.data.data
-          : [];
-
-        console.log(`Received ${results.length} exam result entries`);
-
+        const results = Array.isArray(resultsResponse.data.data) ? resultsResponse.data.data : [];
         setExamResults(results);
-
-        // Update localStorage with fresh data
         const updatedUser = { ...userData, examResults: results };
         localStorage.setItem("user", JSON.stringify(updatedUser));
-
-        toast.success("Exam data refreshed successfully!");
-      } else {
-        console.error("API call succeeded but response indicates failure:", resultsResponse.data);
-        toast.error("Failed to refresh exam data - server returned error");
+        toast.success("Exam data refreshed!");
       }
     } catch (error) {
-      console.error('Error refreshing exam results:', error);
-      console.error('Error details:', error.response || error.message);
-      if (error.response) {
-        console.error('Response status:', error.response.status);
-        console.error('Response data:', error.response.data);
-      }
       toast.error("Failed to refresh exam data");
     }
   };
 
+  // Prepare chart data
+  const chartData = examResults.map(course => {
+    const latestAttempt = course.examAttempts && course.examAttempts.length > 0
+      ? course.examAttempts[course.examAttempts.length - 1]
+      : { score: 0 };
+    return {
+      course: course.courseName || course.courseId,
+      score: latestAttempt.score || 0
+    };
+  }).slice(0, 5); // Show only top 5 for better visualization
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+      <div className="flex items-center justify-center p-20">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
@@ -208,257 +164,173 @@ const Home = () => {
     <>
       <Helmet>
         <title>Dashboard - SkillTrack</title>
-        <meta
-          name="Dashboard page"
-          content="Welcome to SkillTrack - Your learning platform"
-        />
       </Helmet>
-      <div className="min-h-screen bg-white font-sans text-gray-900 pb-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          {/* Welcome Section */}
-          <div className="pt-20 pb-12">
-            <div className="flex flex-col items-center md:items-start text-center md:text-left">
-              <span className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 mb-6">
-                Welcome back, {user?.name || "Student"} 👋
-              </span>
-              <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 tracking-tight">
-                Master your skills
-              </h1>
-              <p className="text-lg text-gray-600 mb-10 max-w-2xl leading-relaxed">
-                Explore comprehensive courses, track your performance, and
-                achieve your learning goals. Everything you need to succeed is
-                here.
-              </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                <button
-                  onClick={() => {
-                    if (localStorage.getItem("user")) {
-                      navigate("/viewcourses");
-                    } else {
-                      toast.error("Please log in to explore courses");
-                      navigate("/login");
-                    }
-                  }}
-                  className="px-8 py-3 cursor-pointer bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-all duration-200 flex items-center justify-center gap-2"
-                >
-                  Explore Courses
-                </button>
-                {!user && (
-                  <div className="flex gap-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Welcome Section */}
+        <div className="mb-12">
+          <span className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-bold bg-indigo-50 text-indigo-600 mb-6">
+            Welcome back, {user?.name || "Student"} 👋
+          </span>
+          <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight">
+            Elevate your potential.
+          </h1>
+          <p className="text-lg text-slate-500 max-w-2xl leading-relaxed">
+            Your personalized learning dashboard. Monitor your progress,
+            achieve your milestones, and master new skills.
+          </p>
+        </div>
+
+        {user && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Stats Overview */}
+            <div className="lg:col-span-1 space-y-6">
+              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
+                <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-xl font-bold text-slate-900">Statistics</h3>
+                  <button
+                    onClick={refreshExamResults}
+                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="space-y-6">
+                  <div className="flex justify-between items-end">
+                    <span className="text-slate-500 font-medium">Exams Attempted</span>
+                    <span className="text-4xl font-black text-slate-900 leading-none">
+                      {examResults.reduce((sum, course) => sum + (course.examAttempts?.length || 0), 0)}
+                    </span>
+                  </div>
+                  <div className="h-px bg-slate-100"></div>
+                  <div className="flex justify-between items-end">
+                    <span className="text-slate-500 font-medium">Courses Started</span>
+                    <span className="text-4xl font-black text-slate-900 leading-none">
+                      {examResults.length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chart Card */}
+              {chartData.length > 0 && (
+                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+                  <h3 className="text-lg font-bold text-slate-900 mb-4">Performance Comparison</h3>
+                  <div className="h-64">
+                    <BarChart
+                      dataset={chartData}
+                      xAxis={[{ scaleType: 'band', dataKey: 'course' }]}
+                      series={[{ dataKey: 'score', label: 'Score %', color: '#4f46e5' }]}
+                      height={250}
+                      margin={{ top: 10, bottom: 30, left: 40, right: 10 }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-slate-900 p-8 rounded-3xl text-white relative overflow-hidden shadow-xl">
+                <div className="relative z-10">
+                  <h4 className="text-xl font-bold mb-2 text-white">Continue Learning</h4>
+                  <p className="text-slate-400 text-sm mb-6">
+                    Consistency is key to mastery. Pick up where you left off.
+                  </p>
+                  <button
+                    onClick={() => navigate("/viewcourses")}
+                    className="w-full py-3 bg-white text-slate-900 font-bold rounded-xl hover:bg-indigo-50 transition-colors shadow-lg shadow-white/10"
+                  >
+                    Explore Courses
+                  </button>
+                </div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+              </div>
+            </div>
+
+            {/* Results Section */}
+            <div className="lg:col-span-2">
+              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-xl font-bold text-slate-900">Recent Performance</h3>
+                  {examResults.length > 0 && (
                     <button
-                      onClick={() => navigate("/login")}
-                      className="px-8 py-3 cursor-pointer bg-white text-gray-900 font-semibold border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center justify-center"
+                      onClick={() => navigate("/performance/all")}
+                      className="text-indigo-600 text-sm font-bold hover:text-indigo-700 transition-colors flex items-center gap-2 group"
                     >
-                      Log In
+                      View All
+                      <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </button>
-                    <button
-                      onClick={() => navigate("/register")}
-                      className="px-8 py-3 cursor-pointer bg-gray-100 text-gray-900 font-semibold rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center justify-center"
-                    >
-                      Sign Up
-                    </button>
+                  )}
+                </div>
+
+                {examResults.length > 0 ? (
+                  <div className="space-y-4">
+                    {examResults.slice(0, 4).map((course, idx) => {
+                      const latestAttempt = course.examAttempts?.length > 0
+                        ? course.examAttempts[course.examAttempts.length - 1]
+                        : null;
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => navigate(`/performance/${encodeURIComponent(course.courseId)}`)}
+                          className="p-4 border border-slate-50 rounded-2xl bg-slate-50 hover:bg-white hover:border-indigo-100 hover:shadow-lg transition-all duration-300 flex items-center justify-between group cursor-pointer"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="text-2xl bg-white w-12 h-12 rounded-xl flex items-center justify-center border border-slate-100 group-hover:scale-110 transition-transform shadow-sm">
+                              {latestAttempt ? getScoreEmoji(latestAttempt.score || 0) : "📖"}
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-slate-900 truncate max-w-[150px] sm:max-w-xs">
+                                {course.courseName || course.courseId}
+                              </h4>
+                              {latestAttempt ? (
+                                <div className="flex items-center gap-3 mt-1">
+                                  <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg">
+                                    {latestAttempt.score}%
+                                  </span>
+                                  <span className="text-xs text-slate-400">
+                                    {course.examAttempts?.length} attempt(s)
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-slate-400 mt-1 italic">Not started yet</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-4">
+                            {latestAttempt?.passed ? (
+                              <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100">
+                                Passed
+                              </span>
+                            ) : (
+                              <span className="px-3 py-1 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-100">
+                                Pending
+                              </span>
+                            )}
+                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-300 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all border border-transparent group-hover:border-indigo-100">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-3xl mb-4">📚</div>
+                    <h4 className="font-bold text-slate-900 mb-1">Begin your journey</h4>
+                    <p className="text-slate-500 text-sm max-w-[200px]">Start your first course to see your progress here.</p>
                   </div>
                 )}
               </div>
             </div>
           </div>
-
-          {/* Dashboard Content */}
-          {user && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Stats Overview */}
-              <div className="lg:col-span-1 space-y-6">
-                <div className="bg-gray-50 p-8 rounded-xl border border-gray-200">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Overview
-                    </h3>
-                    <button
-                      onClick={refreshExamResults}
-                      className="text-gray-500 hover:text-gray-700 text-sm font-medium flex items-center gap-1"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      Refresh
-                    </button>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 text-sm font-medium">
-                        Exams Attempted
-                      </span>
-                      <span className="text-3xl font-bold text-gray-900">
-                        {examResults.reduce((sum, course) => sum + (course.examAttempts?.length || 0), 0)}
-                      </span>
-                    </div>
-                    <div className="border-t border-gray-200"></div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 text-sm font-medium">
-                        Courses Started
-                      </span>
-                      <span className="text-3xl font-bold text-gray-900">
-                        {examResults.length}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-900 p-8 rounded-xl text-white relative overflow-hidden">
-                  <div className="relative z-10">
-                    <h4 className="text-lg font-semibold mb-2">Keep it up</h4>
-                    <p className="text-gray-300 text-sm mb-6">
-                      You're making great progress in your learning journey.
-                    </p>
-                    <button
-                      onClick={() => navigate("/viewcourses")}
-                      className="w-full py-2 cursor-pointer bg-white text-gray-900 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      View My Courses
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Results Section */}
-              <div className="lg:col-span-2">
-                <div className="bg-gray-50 p-8 rounded-xl border border-gray-200 h-full">
-                  <div className="flex items-center justify-between mb-8">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Recent Performance
-                    </h3>
-                    {examResults.length > 0 && (
-                      <button
-                        onClick={() => navigate("/performance/all")}
-                        className="text-gray-700 text-sm font-medium hover:text-gray-900 transition-colors flex items-center gap-1 cursor-pointer"
-                      >
-                        View All
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-
-                  {examResults.length > 0 ? (
-                    <div className="space-y-3">
-                      {examResults
-                        .slice(0, 3)
-                        .map((course, idx) => {
-                          const latestAttempt = course.examAttempts && course.examAttempts.length > 0 
-                            ? course.examAttempts[course.examAttempts.length - 1]
-                            : null;
-                          return (
-                            <div
-                              key={idx}
-                              onClick={() =>
-                                navigate(
-                                  `/performance/${encodeURIComponent(course.courseId)}`,
-                                )
-                              }
-                              className="p-5 border border-gray-200 rounded-lg bg-white hover:border-gray-300 hover:shadow-sm transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
-                            >
-                              <div className="flex items-center gap-4 text-left">
-                                <div className="text-3xl bg-gray-100 w-12 h-12 rounded-lg flex items-center justify-center border border-gray-300 group-hover:scale-105 transition-transform">
-                                  {latestAttempt ? getScoreEmoji(latestAttempt.score || 0) : "📖"}
-                                </div>
-                                <div>
-                                  <h4 className="font-semibold text-gray-900 group-hover:text-gray-700 transition-colors">
-                                    {course.courseName || course.courseId}
-                                  </h4>
-                                  {latestAttempt ? (
-                                    <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                                      <svg
-                                        className="w-4 h-4"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                        />
-                                      </svg>
-                                      {latestAttempt.score || 0}%
-                                    </p>
-                                  ) : (
-                                    <p className="text-sm text-gray-500 mt-1">Not started</p>
-                                  )}
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-4">
-                                <div className="flex flex-col text-right">
-                                  {latestAttempt ? (
-                                    <>
-                                      <p
-                                        className={`text-xs font-semibold uppercase tracking-wide ${latestAttempt.passed ? "text-green-600" : "text-yellow-600"}`}
-                                      >
-                                        {latestAttempt.passed
-                                          ? "✅ Passed"
-                                          : "📚 In Progress"}
-                                      </p>
-                                      <p className="text-xs text-gray-400 mt-1">
-                                        {course.examAttempts?.length || 0} attempt
-                                        {course.examAttempts?.length !== 1 ? "s" : ""}
-                                      </p>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
-                                        🚀 Start Course
-                                      </p>
-                                      <p className="text-xs text-gray-400 mt-1">0 attempts</p>
-                                    </>
-                                  )}
-                                </div>
-                                <svg
-                                  className="w-5 h-5 text-gray-300 group-hover:text-gray-500 transition-colors hidden sm:block"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 5l7 7-7 7"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <div className="text-5xl mb-4">📚</div>
-                      <h4 className="font-semibold text-gray-900 text-lg mb-2">
-                        No courses started yet
-                      </h4>
-                      <p className="text-gray-600 max-w-sm">
-                        Explore courses to begin your learning journey and track your progress.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </>
   );

@@ -62,7 +62,7 @@ const Navbar = () => {
                 L
               </div>
               <span className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-slate-900 to-slate-700 hidden sm:block">
-                SkillUp
+               LMS
               </span>
             </Link>
           </div>

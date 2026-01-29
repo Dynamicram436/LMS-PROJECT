@@ -9,6 +9,8 @@ import Navbar from "./Components/Navbar";
 import Home from "./Components/Home";
 import Viewcourses from "./Courses/Viewcourses";
 import Performance from "./Components/Performance";
+import DashboardLayout from "./Components/DashboardLayout";
+import Profile from "./Components/Profile";
 
 const App = () => {
   return (
@@ -25,15 +27,17 @@ const App = () => {
         pauseOnHover={true}
         theme="light"
       />
-      <Navbar />
       <Routes>
         <Route path="/" element={<Register />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/viewcourses" element={<Viewcourses />} />
-        <Route path="/courses/:category/*" element={<CoursesWithExam />} />
-        <Route path="/performance/:category" element={<Performance />} />
-        <Route path="/performance/overall" element={<Performance />} />
+
+        {/* Protected Dashboard Routes */}
+        <Route path="/home" element={<DashboardLayout><Home /></DashboardLayout>} />
+        <Route path="/viewcourses" element={<DashboardLayout><Viewcourses /></DashboardLayout>} />
+        <Route path="/profile" element={<DashboardLayout><Profile /></DashboardLayout>} />
+        <Route path="/courses/:category/*" element={<DashboardLayout><CoursesWithExam /></DashboardLayout>} />
+        <Route path="/performance/:category" element={<DashboardLayout><Performance /></DashboardLayout>} />
+        <Route path="/performance/overall" element={<DashboardLayout><Performance /></DashboardLayout>} />
       </Routes>
     </>
   );
