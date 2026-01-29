@@ -3,7 +3,8 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Helmet } from "react-helmet-async";
-import { BarChart } from "@mui/x-charts/BarChart";
+import { BarChart, PieChart } from "@mui/x-charts";
+import { FaBook, FaChalkboardTeacher, FaCertificate, FaClock, FaGraduationCap, FaTrophy, FaChartLine, FaFire, FaStar } from "react-icons/fa";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -155,6 +156,25 @@ const Home = () => {
     }
   };
 
+  // Calculate statistics
+  const totalCourses = examResults.length;
+  const totalAttempts = examResults.reduce(
+    (sum, course) => sum + (course.examAttempts?.length || 0),
+    0
+  );
+  const passedCourses = examResults.filter(course =>
+    course.examAttempts?.some(attempt => attempt.passed)
+  ).length;
+  const averageScore = totalAttempts > 0 
+    ? Math.round(examResults.reduce((sum, course) => {
+        if (course.examAttempts && course.examAttempts.length > 0) {
+          const latestAttempt = course.examAttempts[course.examAttempts.length - 1];
+          return sum + (latestAttempt.score || 0);
+        }
+        return sum;
+      }, 0) / totalAttempts)
+    : 0;
+
   // Prepare chart data
   const chartData = examResults
     .map((course) => {
@@ -169,10 +189,22 @@ const Home = () => {
     })
     .slice(0, 5); // Show only top 5 for better visualization
 
+  // Prepare pie chart data for performance breakdown
+  const performanceData = [
+    { label: 'Passed', value: passedCourses },
+    { label: 'In Progress', value: totalCourses - passedCourses },
+  ];
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="relative w-16 h-16 mx-auto mb-6">
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-white/10 rounded-full" />
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-t-slate-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-slate-500 font-medium">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -183,229 +215,318 @@ const Home = () => {
         <title>Dashboard - SkillTrack</title>
       </Helmet>
 
-      <div className="max-w-6xl mx-auto">
-        {/* Welcome Section */}
-        <div className="mb-12">
-          <span className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-bold bg-indigo-50 text-indigo-600 mb-6">
-            Welcome back, {user?.name || "Student"} 👋
-          </span>
-          <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight">
-            Elevate your potential.
-          </h1>
-          <p className="text-lg text-slate-500 max-w-2xl leading-relaxed">
-            Your personalized learning dashboard. Monitor your progress, achieve
-            your milestones, and master new skills.
-          </p>
-        </div>
-
-        {user && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Stats Overview */}
-            <div className="lg:col-span-1 space-y-6">
-              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
-                <div className="flex justify-between items-center mb-8">
-                  <h3 className="text-xl font-bold text-slate-900">
-                    Statistics
-                  </h3>
-                  <button
-                    onClick={refreshExamResults}
-                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-                    title="Refresh exam data"
-                  >
-                    
-                  </button>
-                </div>
-                <div className="space-y-6">
-                  <div className="flex justify-between items-end">
-                    <span className="text-slate-500 font-medium">
-                      Exams Attempted
-                    </span>
-                    <span className="text-4xl font-black text-slate-900 leading-none">
-                      {examResults.reduce(
-                        (sum, course) =>
-                          sum + (course.examAttempts?.length || 0),
-                        0
-                      )}
-                    </span>
-                  </div>
-                  <div className="h-px bg-slate-100"></div>
-                  <div className="flex justify-between items-end">
-                    <span className="text-slate-500 font-medium">
-                      Courses Started
-                    </span>
-                    <span className="text-4xl font-black text-slate-900 leading-none">
-                      {examResults.length}
-                    </span>
-                  </div>
-                </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Banner */}
+        <div className="mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-lg">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.name || "Student"}! 👋</h1>
+              <p className="text-indigo-100 max-w-2xl">
+                Ready to continue your learning journey? Track your progress and achieve your goals.
+              </p>
+            </div>
+            <div className="mt-4 md:mt-0 flex items-center gap-4">
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+                <div className="text-sm text-indigo-100">Courses</div>
+                <div className="text-2xl font-bold">{totalCourses}</div>
               </div>
-
-              {/* Chart Card */}
-              {chartData.length > 0 && (
-                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
-                  <h3 className="text-lg font-bold text-slate-900 mb-4">
-                    Performance Comparison
-                  </h3>
-                  <div className="h-64">
-                    <BarChart
-                      dataset={chartData}
-                      xAxis={[{ scaleType: "band", dataKey: "course" }]}
-                      series={[
-                        {
-                          dataKey: "score",
-                          label: "Score %",
-                          color: "#4f46e5",
-                        },
-                      ]}
-                      height={250}
-                      margin={{ top: 10, bottom: 30, left: 40, right: 10 }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="bg-slate-900 p-8 rounded-3xl text-white relative overflow-hidden shadow-xl">
-                <div className="relative z-10">
-                  <h4 className="text-xl font-bold mb-2 text-white">
-                    Continue Learning
-                  </h4>
-                  <p className="text-slate-400 text-sm mb-6">
-                    Consistency is key to mastery. Pick up where you left off.
-                  </p>
-                  <button
-                    onClick={() => navigate("/viewcourses")}
-                    className="w-full py-3 bg-white text-slate-900 font-bold rounded-xl hover:bg-indigo-50 transition-colors shadow-lg shadow-white/10"
-                  >
-                    Explore Courses
-                  </button>
-                </div>
-                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+                <div className="text-sm text-indigo-100">Avg. Score</div>
+                <div className="text-2xl font-bold">{averageScore}%</div>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Results Section */}
-            <div className="lg:col-span-2">
-              <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-xl font-bold text-slate-900">
-                    Recent Performance
-                  </h3>
-                  {examResults.length > 0 && (
-                    <button
-                      onClick={() => navigate("/performance/all")}
-                      className="text-indigo-600 text-sm cursor-pointer font-bold hover:text-indigo-700 transition-colors flex items-center gap-2 group"
-                    >
-                      View All
-                      <svg
-                        className="w-4 h-4 group-hover:translate-x-1 transition-transform"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </button>
-                  )}
-                </div>
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm font-medium">Total Courses</p>
+                <p className="text-3xl font-bold text-gray-900">{totalCourses}</p>
+              </div>
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <FaBook className="text-blue-600 text-xl" />
+              </div>
+            </div>
+          </div>
 
-                {examResults.length > 0 ? (
-                  <div className="space-y-4">
-                    {examResults.slice(0, 4).map((course, idx) => {
-                      const latestAttempt =
-                        course.examAttempts?.length > 0
-                          ? course.examAttempts[course.examAttempts.length - 1]
-                          : null;
-                      return (
-                        <div
-                          key={idx}
-                          onClick={() =>
-                            navigate(
-                              `/performance/${encodeURIComponent(
-                                course.courseId
-                              )}`
-                            )
-                          }
-                          className="p-4 border border-slate-50 rounded-2xl bg-slate-50 hover:bg-white hover:border-indigo-100 hover:shadow-lg transition-all duration-300 flex items-center justify-between group cursor-pointer"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="text-2xl bg-white w-12 h-12 rounded-xl flex items-center justify-center border border-slate-100 group-hover:scale-110 transition-transform shadow-sm">
-                              {latestAttempt
-                                ? getScoreEmoji(latestAttempt.score || 0)
-                                : "📖"}
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-slate-900 truncate max-w-[150px] sm:max-w-xs">
-                                {course.courseName || course.courseId}
-                              </h4>
-                              {latestAttempt ? (
-                                <div className="flex items-center gap-3 mt-1">
-                                  <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg">
-                                    {latestAttempt.score}%
-                                  </span>
-                                  <span className="text-xs text-slate-400">
-                                    {course.examAttempts?.length} attempt(s)
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-xs text-slate-400 mt-1 italic">
-                                  Not started yet
-                                </span>
-                              )}
-                            </div>
-                          </div>
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm font-medium">Exams Taken</p>
+                <p className="text-3xl font-bold text-gray-900">{totalAttempts}</p>
+              </div>
+              <div className="p-3 bg-green-100 rounded-lg">
+                <FaChalkboardTeacher className="text-green-600 text-xl" />
+              </div>
+            </div>
+          </div>
 
-                          <div className="flex items-center gap-4">
-                            {latestAttempt?.passed ? (
-                              <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100">
-                                Passed
-                              </span>
-                            ) : (
-                              <span className="px-3 py-1 bg-red-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-100">
-                                Still need to improve
-                              </span>
-                            )}
-                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-300 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all border border-transparent group-hover:border-indigo-100">
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M9 5l7 7-7 7"
-                                />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm font-medium">Passed Courses</p>
+                <p className="text-3xl font-bold text-gray-900">{passedCourses}</p>
+              </div>
+              <div className="p-3 bg-yellow-100 rounded-lg">
+                <FaTrophy className="text-yellow-600 text-xl" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm font-medium">Avg. Score</p>
+                <p className="text-3xl font-bold text-gray-900">{averageScore}%</p>
+              </div>
+              <div className="p-3 bg-purple-100 rounded-lg">
+                <FaChartLine className="text-purple-600 text-xl" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Charts */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Performance Chart */}
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold text-gray-900">Performance Overview</h3>
+                <button
+                  onClick={refreshExamResults}
+                  className="text-gray-500 hover:text-gray-700"
+                  title="Refresh exam data"
+                >
+                  
+                </button>
+              </div>
+              <div className="h-80">
+                {chartData.length > 0 ? (
+                  <BarChart
+                    dataset={chartData}
+                    xAxis={[{ scaleType: "band", dataKey: "course" }]}
+                    series={[
+                      {
+                        dataKey: "score",
+                        label: "Score %",
+                        color: "#4f46e5",
+                      },
+                    ]}
+                    margin={{ top: 10, bottom: 50, left: 60, right: 20 }}
+                  />
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-3xl mb-4">
-                      📚
-                    </div>
-                    <h4 className="font-bold text-slate-900 mb-1">
-                      Begin your journey
-                    </h4>
-                    <p className="text-slate-500 text-sm max-w-[200px]">
-                      Start your first course to see your progress here.
-                    </p>
+                  <div className="h-full flex items-center justify-center text-gray-400">
+                    No performance data available
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Recent Activity */}
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-6">Recent Activity</h3>
+              {examResults.length > 0 ? (
+                <div className="space-y-4">
+                  {examResults.slice(0, 3).map((course, idx) => {
+                    const latestAttempt =
+                      course.examAttempts?.length > 0
+                        ? course.examAttempts[course.examAttempts.length - 1]
+                        : null;
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() =>
+                          navigate(
+                            `/performance/${encodeURIComponent(
+                              course.courseId
+                            )}`
+                          )
+                        }
+                        className="p-4 border border-gray-100 rounded-lg bg-gray-50 hover:bg-white hover:shadow-sm transition-all duration-200 flex items-center justify-between group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="text-2xl bg-white w-12 h-12 rounded-lg flex items-center justify-center border border-gray-200 group-hover:scale-105 transition-transform">
+                            {latestAttempt
+                              ? getScoreEmoji(latestAttempt.score || 0)
+                              : "📖"}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900 truncate max-w-xs">
+                              {course.courseName || course.courseId}
+                            </h4>
+                            {latestAttempt ? (
+                              <div className="flex items-center gap-3 mt-1">
+                                <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                                  {latestAttempt.score}%
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {course.examAttempts?.length} attempt(s)
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400 mt-1 italic">
+                                Not started yet
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                          {latestAttempt?.passed ? (
+                            <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-bold uppercase tracking-wider rounded-full">
+                              Passed
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-bold uppercase tracking-wider rounded-full">
+                              In Progress
+                            </span>
+                          )}
+                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-all border border-transparent group-hover:border-indigo-100">
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-3xl mb-4">
+                    📚
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-1">
+                    No activity yet
+                  </h4>
+                  <p className="text-gray-500 text-sm max-w-xs">
+                    Start your first course to see your learning activity here.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
-        )}
+
+          {/* Right Column - Course Progress & Quick Actions */}
+          <div className="space-y-8">
+            {/* Course Progress */}
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-6">Course Progress</h3>
+              <div className="h-64">
+                {performanceData.some(d => d.value > 0) ? (
+                  <PieChart
+                    series={[{
+                      data: performanceData,
+                      innerRadius: 30,
+                      outerRadius: 100,
+                      paddingAngle: 2,
+                      cornerRadius: 4,
+                      highlightScope: { faded: 'global', highlighted: 'item' },
+                      faded: { innerRadius: 30, additionalRadius: -20, color: 'gray' },
+                    }]}
+                    margin={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                  />
+                ) : (
+                  <div className="h-full flex items-center justify-center text-gray-400">
+                    No data available
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-center gap-6 mt-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-[#8884d8] rounded-full"></div>
+                  <span className="text-xs text-gray-600">Passed ({passedCourses})</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-[#8dd1e1] rounded-full"></div>
+                  <span className="text-xs text-gray-600">In Progress ({totalCourses - passedCourses})</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-6">Quick Actions</h3>
+              <div className="space-y-3">
+                <button
+                  onClick={() => navigate("/viewcourses")}
+                  className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <FaBook className="text-blue-600" />
+                    </div>
+                    <span className="font-medium text-gray-900">Browse Courses</span>
+                  </div>
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+
+                <button
+                  onClick={() => navigate("/performance/all")}
+                  className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 rounded-lg">
+                      <FaChartLine className="text-green-600" />
+                    </div>
+                    <span className="font-medium text-gray-900">View Performance</span>
+                  </div>
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+
+                <button
+                  onClick={() => navigate("/profile")}
+                  className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <FaGraduationCap className="text-purple-600" />
+                    </div>
+                    <span className="font-medium text-gray-900">My Profile</span>
+                  </div>
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Learning Streak */}
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-6 text-white shadow-lg">
+              <div className="flex items-center gap-3 mb-3">
+                <FaFire className="text-xl" />
+                <h3 className="text-lg font-bold">Learning Streak</h3>
+              </div>
+              <p className="text-orange-100 text-sm mb-4">
+                Keep up the momentum! Consistent learning leads to success.
+              </p>
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                <div className="text-center">
+                  <div className="text-3xl font-bold">7</div>
+                  <div className="text-orange-100 text-sm">Days in a row</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );
