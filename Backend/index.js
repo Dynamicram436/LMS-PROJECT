@@ -6,7 +6,6 @@ import dns from "dns";
 // Fix for SRV resolution issues on some local networks
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 import authRoute from "./routes/authRoute.js";
-import courseRoute from "./routes/courseRoute.js";
 import examRoute from "./routes/examRoute.js";
 import connectDB from "./utils/db.js";
 
@@ -17,14 +16,24 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Connect to database
-connectDB();
+// Connect to database and start server
+const startServer = async () => {
+  try {
+    await connectDB();
+
+    app.listen(8000, () => console.log("Server running on port 8000"));
+  } catch (error) {
+    console.error("❌ Failed to start server:", error.message);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 // Routes
 app.get("/", (req, res) => res.send("EduTrack API is running"));
 
 app.use("/api/auth", authRoute);
-app.use("/api/courses", courseRoute);
 app.use("/api/exam", examRoute);
 
 // Global error handling middleware
@@ -69,7 +78,7 @@ app.use((err, req, res, next) => {
     });
   }
 
-  
+
   if (err.name === "TokenExpiredError") {
     return res.status(401).json({
       success: false,
@@ -98,4 +107,4 @@ app.use((req, res, next) => {
   });
 });
 
-app.listen(8000, () => console.log("Server running on port 8000"));
+// app.listen(8000, () => console.log("Server running on port 8000"));

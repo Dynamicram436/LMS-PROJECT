@@ -1,5 +1,5 @@
 import express from "express";
-import { saveExamResult, getExamResults, getExamQuestions, createExamQuestions, createExamAttemptDatabase, seedExamQuestions, updateVideoProgress } from "../controllers/examController.js";
+import { saveExamResult, getExamResults, getExamQuestions, createExamQuestions, seedExamQuestions, updateVideoProgress } from "../controllers/examController.js";
 import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -9,9 +9,6 @@ router.post("/questions", createExamQuestions);
 
 // Seed exam questions (for initial setup)
 router.post("/seed", seedExamQuestions);
-
-// Create exam attempt database (for new exam attempts)
-router.post("/attempt-database", createExamAttemptDatabase);
 
 // Get exam questions (public endpoint, no auth required)
 router.get("/questions", getExamQuestions);

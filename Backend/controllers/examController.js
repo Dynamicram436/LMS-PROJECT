@@ -1,7 +1,6 @@
+import ExamAttempt from "../models/examAttemptSchema.js";
 import User from "../models/userSchema.js";
 import ExamQuestion from "../models/examQuestionSchema.js";
-import ExamAttempt from "../models/examAttemptSchema.js";
-import ExamAttemptDatabase from "../models/examAttemptDatabaseSchema.js";
 import seedQuestions from "../seedExamQuestions.js";
 import asyncHandler from "express-async-handler";
 
@@ -102,7 +101,7 @@ export const updateVideoProgress = asyncHandler(async (req, res) => {
 export const saveExamResult = asyncHandler(async (req, res) => {
   const { userId, score, totalQuestions, answers, attemptId } =
     req.body;
-  
+
   // Ensure courseId is a string
   const courseId = String(req.body.courseId);
 
@@ -313,7 +312,7 @@ export const getExamResults = asyncHandler(async (req, res) => {
         courseName = examInfo.chapterName || examInfo.category || examInfo.course;
       }
     }
-    
+
     // Format attempts for the frontend
     const enrichedExamAttempts = sortedAttempts.map((attempt) => ({
       ...attempt,
@@ -451,95 +450,6 @@ export const createExamQuestions = async (req, res) => {
   }
 };
 
-// Create a new exam attempt database
-export const createExamAttemptDatabase = async (req, res) => {
-  try {
-    const { userId, courseId, chapterId, category, chapterName } = req.body;
-
-    // Validate required fields
-    if (!userId || !courseId || !chapterId || !category || !chapterName) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "userId, courseId, chapterId, category, and chapterName are required",
-      });
-    }
-
-    // Validate chapterId is a number
-    const chapterIdNum = parseInt(chapterId);
-    if (isNaN(chapterIdNum)) {
-      return res.status(400).json({
-        success: false,
-        message: "chapterId must be a valid number",
-      });
-    }
-
-    // Get the original questions from the main database
-    const originalExamData = await ExamQuestion.findOne({
-      chapterId: chapterIdNum,
-      category: category,
-    });
-
-    if (
-      !originalExamData ||
-      !originalExamData.questions ||
-      originalExamData.questions.length === 0
-    ) {
-      return res.status(404).json({
-        success: false,
-        message: "No questions found for this chapter in the main database",
-      });
-    }
-
-    // Generate unique attempt ID
-    const attemptId = `${userId}_${courseId}_${Date.now()}`;
-
-    // Transform questions to the attempt database schema
-    const transformedQuestions = originalExamData.questions.map((q) => {
-      const correctIndex = q.choices.indexOf(q.correctAns);
-      return {
-        question: q.qDesc,
-        options: q.choices,
-        correctAnswer: correctIndex > -1 ? correctIndex : -1, // handle if not found
-      };
-    });
-
-    // Create new attempt-specific database with the transformed questions
-    const examAttemptDatabase = new ExamAttemptDatabase({
-      attemptId: attemptId,
-      userId: userId,
-      courseId: courseId,
-      chapterId: chapterIdNum,
-      category: category,
-      chapterName: chapterName,
-      questions: transformedQuestions,
-      isActive: true,
-    });
-
-    await examAttemptDatabase.save();
-
-    // Return the original, more detailed questions to the frontend for the exam
-    res.status(201).json({
-      success: true,
-      message: "Exam attempt database created successfully",
-      data: {
-        attemptId: attemptId,
-        chapterId: chapterIdNum,
-        category: category,
-        chapterName: chapterName,
-        questions: originalExamData.questions,
-      },
-    });
-  } catch (error) {
-    console.error("Error creating exam attempt database:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message,
-    });
-  }
-};
-
 // Get exam questions by category, course, and video
 export const getExamQuestions = async (req, res) => {
   try {
@@ -567,30 +477,19 @@ export const getExamQuestions = async (req, res) => {
 
     let examData;
 
-    // If attemptId is provided, try to get questions from attempt-specific database
-    if (attemptId) {
-      examData = await ExamAttemptDatabase.findOne({
-        attemptId: attemptId,
-        isActive: true,
+    if (queryChapterId) {
+      // Search by chapterId and category
+      examData = await ExamQuestion.findOne({
+        chapterId: queryChapterId,
+        category: queryCategory,
       });
-    }
-
-    // If no attempt-specific data found, fall back to main database
-    if (!examData) {
-      if (queryChapterId) {
-        // Search by chapterId and category
-        examData = await ExamQuestion.findOne({
-          chapterId: queryChapterId,
-          category: queryCategory,
-        });
-      } else {
-        // Search by category, course, and video
-        examData = await ExamQuestion.findOne({
-          category: queryCategory,
-          course: course,
-          video: video,
-        });
-      }
+    } else {
+      // Search by category, course, and video
+      examData = await ExamQuestion.findOne({
+        category: queryCategory,
+        course: course,
+        video: video,
+      });
     }
 
     // If no questions found, try to seed the database

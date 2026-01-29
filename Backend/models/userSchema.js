@@ -118,12 +118,6 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    enrolledCourses: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Course",
-      },
-    ],
     selectedCourses: [
       {
         courseId: String,

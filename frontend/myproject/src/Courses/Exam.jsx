@@ -163,61 +163,8 @@ const Exam = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [examAttempts, setExamAttempts] = useState([]);
-  const [attemptId, setAttemptId] = useState(null);
   const user = JSON.parse(localStorage.getItem("user"));
 
-  const createAttemptDatabase = async () => {
-    // Only create attempt database if we have all required parameters
-    if (!user?.userid || !chapterId || !subject) {
-      console.log("Skipping attempt database creation - missing required parameters");
-      console.log("userid:", user?.userid, "chapterId:", chapterId, "subject:", subject);
-      return null;
-    }
-
-    try {
-      console.log("Creating attempt database with params:", {
-        userId: user.userid,
-        courseId: courseId,
-        chapterId: chapterId,
-        category: subject,
-        chapterName: chapter?.name || subject || "Exam"
-      });
-
-      const response = await apiClient.post(
-        "/exam/attempt-database",
-        {
-          userId: user.userid,
-          courseId: courseId,
-          chapterId: chapterId,
-          category: subject,
-          chapterName: chapter?.name || subject || "Exam",
-        },
-      );
-
-      if (response.data.success) {
-        const newAttemptId = response.data.data?.attemptId;
-        if (newAttemptId) {
-          setAttemptId(newAttemptId);
-          console.log("Successfully created attempt database with ID:", newAttemptId);
-          return newAttemptId;
-        } else {
-          console.warn("Attempt database created but no attemptId returned:", response.data);
-          return null;
-        }
-      } else {
-        console.warn("Attempt database creation failed:", response.data);
-        return null;
-      }
-    } catch (err) {
-      console.error("Error creating attempt database:", err);
-      if (err.response) {
-        console.error("Response status:", err.response.status);
-        console.error("Response data:", err.response.data);
-      }
-      // Fall back to using main database if attempt creation fails
-      return null;
-    }
-  };
 
   const fetchExamAttempts = async () => {
     if (user?.userid && courseId) {
@@ -307,9 +254,6 @@ const Exam = () => {
       setError(null);
 
       try {
-        // Create a new attempt database for this exam attempt
-        const newAttemptId = await createAttemptDatabase();
-
         if (chapterId && subject) {
           const response = await apiClient.get(
             "/exam/questions",
@@ -317,7 +261,6 @@ const Exam = () => {
               params: {
                 chapterId,
                 category: subject,
-                attemptId: newAttemptId, // Use the new attempt ID
               },
             },
           );
@@ -422,12 +365,12 @@ const Exam = () => {
     }
 
     setIsSubmitting(true);
-    
+
     try {
       let newScore = 0;
       const user = JSON.parse(localStorage.getItem("user"));
       const answers = [];
-      
+
       // Calculate score and prepare answers
       selectedOptions.forEach((selected, index) => {
         const question = safeQuestions[index];
@@ -445,7 +388,7 @@ const Exam = () => {
 
       if (user?.userid) {
         try {
-          // Prepare the payload, making sure attemptId is only included if it exists
+          // Prepare the payload
           const payload = {
             userId: user.userid,
             courseId: courseId,
@@ -453,11 +396,6 @@ const Exam = () => {
             totalQuestions: safeTotal,
             answers: answers,
           };
-
-          // Only add attemptId if it exists
-          if (attemptId) {
-            payload.attemptId = attemptId;
-          }
 
           const response = await apiClient.post(
             "/exam/results",
@@ -564,7 +502,7 @@ const Exam = () => {
       } else {
         toast.warning("User not logged in. Score calculated locally only.");
       }
-      
+
       setScore(newScore);
       setShowScore(true);
     } catch (err) {
@@ -586,9 +524,6 @@ const Exam = () => {
     setError(null);
 
     try {
-      // Create a new attempt database for this retake
-      const newAttemptId = await createAttemptDatabase();
-
       if (chapterId && subject) {
         const response = await apiClient.get(
           "/exam/questions",
@@ -596,7 +531,6 @@ const Exam = () => {
             params: {
               chapterId,
               category: subject,
-              attemptId: newAttemptId,
             },
           },
         );
@@ -901,11 +835,10 @@ const Exam = () => {
                         <button
                           onClick={handleSubmit}
                           disabled={selectedOptions[safeCurrentIndex] === null || isSubmitting}
-                          className={`flex items-center gap-2 font-bold px-6 py-2 rounded-xl hover:shadow-lg transition-all text-xs active:scale-95 ${
-                            selectedOptions[safeCurrentIndex] === null || isSubmitting
+                          className={`flex items-center gap-2 font-bold px-6 py-2 rounded-xl hover:shadow-lg transition-all text-xs active:scale-95 ${selectedOptions[safeCurrentIndex] === null || isSubmitting
                               ? 'bg-gray-400 cursor-not-allowed'
                               : 'bg-gradient-to-r from-slate-600 to-slate-500 cursor-pointer text-white'
-                          }`}
+                            }`}
                         >
                           {isSubmitting ? (
                             <>
