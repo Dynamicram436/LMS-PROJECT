@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiBook, FiFilter, FiArrowRight } from "react-icons/fi";
+import {
+  FiBook,
+  FiFilter,
+  FiSearch,
+  FiChevronRight,
+  FiClock,
+  FiUsers,
+  FiAward,
+} from "react-icons/fi";
 import { subjectsData, categories } from "./courseCatalog";
 import { Helmet } from "react-helmet-async";
 import apiClient from "../utils/axiosConfig";
@@ -9,14 +17,13 @@ const Viewcourses = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [userProgress, setUserProgress] = useState({}); // eslint-disable-line no-unused-vars
+  const [userProgress, setUserProgress] = useState({});
 
   useEffect(() => {
     if (!localStorage.getItem("user")) {
       navigate("/login");
     }
 
-    // Load user progress
     const loadUserProgress = async () => {
       const user = JSON.parse(localStorage.getItem("user"));
       if (user?.userid) {
@@ -24,7 +31,7 @@ const Viewcourses = () => {
           const response = await apiClient.get(`/exam/results/${user.userid}`);
           if (response.data.success && Array.isArray(response.data.data)) {
             const progressMap = {};
-            response.data.data.forEach(course => {
+            response.data.data.forEach((course) => {
               progressMap[course.courseId] = course.completionPercentage || 0;
             });
             setUserProgress(progressMap);
@@ -37,26 +44,24 @@ const Viewcourses = () => {
 
     loadUserProgress();
 
-    // Listen for progress updates
     const handleProgressUpdate = (event) => {
-      setUserProgress(prev => ({
+      setUserProgress((prev) => ({
         ...prev,
-        [event.detail.courseId]: event.detail.completionPercentage
+        [event.detail.courseId]: event.detail.completionPercentage,
       }));
     };
 
-    window.addEventListener('progressUpdated', handleProgressUpdate);
+    window.addEventListener("progressUpdated", handleProgressUpdate);
 
-    // Listen for exam submissions
     const handleExamSubmission = () => {
-      loadUserProgress(); // Refresh all progress data
+      loadUserProgress();
     };
 
-    window.addEventListener('examSubmitted', handleExamSubmission);
+    window.addEventListener("examSubmitted", handleExamSubmission);
 
     return () => {
-      window.removeEventListener('progressUpdated', handleProgressUpdate);
-      window.removeEventListener('examSubmitted', handleExamSubmission);
+      window.removeEventListener("progressUpdated", handleProgressUpdate);
+      window.removeEventListener("examSubmitted", handleExamSubmission);
     };
   }, [navigate]);
 
@@ -71,163 +76,189 @@ const Viewcourses = () => {
 
   const getCategoryColor = (category) => {
     const colors = {
-      CSE: "bg-indigo-100 text-indigo-800",
-      ECE: "bg-emerald-100 text-emerald-800",
-      Mechanical: "bg-orange-100 text-orange-800",
-      Civil: "bg-blue-100 text-blue-800",
-      EEE: "bg-pink-100 text-pink-800",
-      Diploma: "bg-teal-100 text-teal-800",
+      CSE: "bg-blue-50 text-blue-700 border-blue-200",
+      ECE: "bg-green-50 text-green-700 border-green-200",
+      Mechanical: "bg-orange-50 text-orange-700 border-orange-200",
+      Civil: "bg-cyan-50 text-cyan-700 border-cyan-200",
+      EEE: "bg-pink-50 text-pink-700 border-pink-200",
+      Diploma: "bg-purple-50 text-purple-700 border-purple-200",
     };
-    return colors[category] || "bg-gray-100 text-gray-800";
+    return colors[category] || "bg-gray-50 text-gray-700 border-gray-200";
+  };
+
+  const getProgressColor = (percentage) => {
+    if (percentage >= 80) return "bg-green-500";
+    if (percentage >= 50) return "bg-yellow-500";
+    return "bg-gray-300";
   };
 
   return (
     <>
       <Helmet>
-        <title>Courses - SkillTrack</title>
+        <title>Courses - SkillTrack LMS</title>
         <meta
           name="Courses page"
-          content="View all available courses on SkillTrack"
+          content="Explore all courses in SkillTrack Learning Management System"
         />
       </Helmet>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl md:text-6xl">
-            B.Tech & <span className="text-indigo-600">Diploma</span>
-          </h1>
-          <p className="mt-4 max-w-3xl text-xl text-gray-600 mx-auto">
-            Explore your technical branch and start learning with our comprehensive
-            study guides
-          </p>
+
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        {/* Header Section */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+                Learning <span className="text-blue-600">Dashboard</span>
+              </h1>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Access comprehensive courses and track your learning progress
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Search and Filter Section */}
-        <div className="mb-12 bg-white rounded-xl shadow-sm p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="relative flex-1 max-w-2xl">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg
-                  className="h-5 w-5 text-gray-400"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Search and Filter Bar */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Search Input */}
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiSearch className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  placeholder="Search courses..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
-              <input
-                type="text"
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Search branches..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+
+              {/* Category Filter */}
+              <div className="lg:w-64">
+                <select
+                  className="block w-full pl-3 pr-10 py-3 text-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-lg appearance-none bg-white"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat === "All" ? "All Categories" : cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="flex items-center space-x-3 w-full lg:w-auto">
-              <FiFilter className="h-5 w-5 text-gray-400 shrink-0" />
-              <select
-                className="block w-full lg:w-64 cursor-pointer pl-3 pr-10 py-3 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-              >
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat === "All" ? "All Branches" : cat}
-                  </option>
-                ))}
-              </select>
+            {/* Category Chips */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-4 py-2 text-sm font-medium rounded-full border transition-all ${
+                    selectedCategory === cat
+                      ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Category Chips */}
-          <div className="mt-6 flex flex-wrap gap-2">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-5 py-2 cursor-pointer rounded-full text-sm font-medium transition-all ${
-                  selectedCategory === cat
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
+          {/* Courses Grid */}
+          {filteredCourses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCourses.map((course) => {
+                const progress = userProgress[course.id] || 0;
+                return (
+                  <div
+                    key={course.id}
+                    className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                  >
+                    {/* Course Header */}
+                    <div className="p-6 pb-4">
+                      <div className="flex items-start justify-between mb-4">
+                        <span
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getCategoryColor(
+                            course.category
+                          )}`}
+                        >
+                          {course.category}
+                        </span>
+                        <div className="flex items-center text-sm text-gray-500">
+                          <FiUsers className="h-4 w-4 mr-1" />
+                          <span>Beginner</span>
+                        </div>
+                      </div>
 
-        {/* Courses Grid */}
-        {filteredCourses.length > 0 ? (
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredCourses.map((course) => (
-              <div
-                key={course.id}
-                className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col min-h-[320px]"
-              >
-                <div className="p-8 flex flex-col flex-1">
-                  <div className="flex items-center justify-between mb-6">
-                    <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase ${getCategoryColor(
-                        course.category
-                      )}`}
-                    >
-                      {course.category}
-                    </span>
-                    <div className="h-12 w-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
-                      <FiBook className="h-6 w-6" />
+                      <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
+                        {course.name}
+                      </h3>
+
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                        {course.description}
+                      </p>
+
+                      {/* Progress Bar */}
+                      {progress > 0 && (
+                        <div className="mb-4">
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-600">Progress</span>
+                            <span className="font-medium text-gray-900">
+                              {progress}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full ${getProgressColor(
+                                progress
+                              )} transition-all duration-300`}
+                              style={{ width: `${progress}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Course Footer */}
+                    <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center text-sm text-gray-500">
+                          <FiClock className="h-4 w-4 mr-1" />
+                          <span>Self-paced</span>
+                        </div>
+                        <Link
+                          to={`/courses/${encodeURIComponent(course.category)}`}
+                          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                        >
+                          Continue Learning
+                          <FiChevronRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      </div>
                     </div>
                   </div>
-
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 leading-tight">
-                    {course.name}
-                  </h3>
-                  <p className="text-gray-600 text-sm mb-8 line-clamp-3 flex-1 leading-relaxed">
-                    {course.description}
-                  </p>
-
-                  <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-end">
-                    <Link
-                      to={`/courses/${encodeURIComponent(course.category)}`}
-                      className="inline-flex items-center cursor-pointer px-6 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 shadow-sm hover:shadow-md transition-all"
-                    >
-                      View course
-                      <FiArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-gray-100">
-            <div className="h-20 w-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="h-10 w-10 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+                );
+              })}
             </div>
-            <h3 className="text-xl font-semibold text-gray-900">
-              No branches found
-            </h3>
-            <p className="mt-2 text-gray-500 max-w-xs mx-auto">
-              We couldn't find any branches matching your current search or filters.
-            </p>
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
+              <div className="mx-auto h-24 w-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                <FiBook className="h-12 w-12 text-gray-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                No courses found
+              </h3>
+              <p className="text-gray-600 max-w-md mx-auto">
+                We couldn't find any courses matching your search criteria. Try
+                adjusting your filters or search terms.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
