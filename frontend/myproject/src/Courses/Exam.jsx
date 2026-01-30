@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import apiClient from "../utils/axiosConfig";
 import { toast } from "react-toastify";
@@ -14,754 +14,240 @@ import {
   FaQuestionCircle,
   FaCheck,
   FaTimes,
+  FaBook,
+  FaGraduationCap,
+  FaChartLine,
+  FaUser,
+  FaListOl,
+  FaStar,
+  FaMedal,
+  FaClipboardList
 } from "react-icons/fa";
 import { Helmet } from "react-helmet-async";
 
-const makeDefaultChapterQuestions = (chapterTitle) => [
-  {
-    question: `${chapterTitle}: Which statement is true?`,
-    options: ["Option A", "Option B", "Option C", "Option D"],
-    correctAnswer: 0,
-  },
-  {
-    question: `${chapterTitle}: Pick the correct answer.`,
-    options: ["Option A", "Option B", "Option C", "Option D"],
-    correctAnswer: 1,
-  },
-  {
-    question: `${chapterTitle}: Choose the best option.`,
-    options: ["Option A", "Option B", "Option C", "Option D"],
-    correctAnswer: 2,
-  },
-  {
-    question: `${chapterTitle}: Select the correct one.`,
-    options: ["Option A", "Option B", "Option C", "Option D"],
-    correctAnswer: 3,
-  },
-  {
-    question: `${chapterTitle}: Final question.`,
-    options: ["Option A", "Option B", "Option C", "Option D"],
-    correctAnswer: 0,
-  },
-];
-
-const DEFAULT_QUESTIONS = [
-  {
-    question: "What is 2 + 2?",
-    options: ["3", "4", "5", "6"],
-    correctAnswer: 1,
-  },
-  {
-    question: "What is the capital of India?",
-    options: ["Mumbai", "Delhi", "Kolkata", "Chennai"],
-    correctAnswer: 1,
-  },
-  {
-    question: "Which planet is known as the Red Planet?",
-    options: ["Venus", "Mars", "Jupiter", "Saturn"],
-    correctAnswer: 1,
-  },
-  {
-    question: "What is the largest mammal?",
-    options: ["Elephant", "Blue Whale", "Giraffe", "Polar Bear"],
-    correctAnswer: 1,
-  },
-  {
-    question: "Who painted the Mona Lisa?",
-    options: ["Van Gogh", "Picasso", "Da Vinci", "Michelangelo"],
-    correctAnswer: 2,
-  },
-  {
-    question: "What is the chemical symbol for gold?",
-    options: ["Go", "Gd", "Au", "Ag"],
-    correctAnswer: 2,
-  },
-  {
-    question: "Which is not a primary color?",
-    options: ["Red", "Blue", "Green", "Yellow"],
-    correctAnswer: 3,
-  },
-];
-
-const normalizeQuestions = (rawQuestions = [], fallbackTitle = "Practice") => {
-  // Handle both new and old question formats
-  const cleaned = (Array.isArray(rawQuestions) ? rawQuestions : [])
-    .filter((q) => {
-      // Check for new format (qType, qDesc, choices) or old format (question, options)
-      const hasNewFormat = q?.qDesc && Array.isArray(q?.choices);
-      const hasOldFormat = q?.question && Array.isArray(q?.options);
-      return hasNewFormat || hasOldFormat;
-    })
-    .map((q) => {
-      // Convert to a consistent format
-      if (q.qDesc && Array.isArray(q.choices)) {
-        // New format - handle different correctAnswer formats
-        let correctAnswer = 0; // Default to first option
-        if (q.correctAnswer !== undefined) {
-          correctAnswer = q.correctAnswer;
-        } else if (q.correctAns !== undefined) {
-          // If correctAns is the actual answer text, find its index in choices
-          const answerIndex = q.choices.findIndex(choice =>
-            String(choice).toLowerCase() === String(q.correctAns).toLowerCase()
-          );
-          correctAnswer = answerIndex !== -1 ? answerIndex : 0;
-        }
-
-        return {
-          question: q.qDesc, // Use qDesc as question text
-          options: q.choices, // Use choices as options
-          correctAnswer: correctAnswer, // Use the determined correct answer index
-          explanation: q.explanation || "", // Include explanation
-          ...q, // Keep all other properties
-        };
-      }
-      // Old format - ensure correctAnswer is a number
-      return {
-        ...q,
-        correctAnswer: typeof q.correctAnswer === 'number' ? q.correctAnswer : 0
-      };
-    });
-
-  // Add unique IDs to questions to track them after shuffling
-  const questionsWithIds = cleaned.map((q, index) => ({
-    ...q,
-    originalIndex: index,
-    id: `${String(q.question || '').substring(0, 20).replace(/[^a-zA-Z0-9]/g, '')}-${index}`,
-  }));
-
-  if (questionsWithIds.length > 0) return questionsWithIds;
-
-  // Fallback to default questions if none found
-  const defaultQuestions = makeDefaultChapterQuestions(fallbackTitle);
-  return defaultQuestions.map((q, index) => ({
-    ...q,
-    originalIndex: index,
-    id: `${String(q.question).substring(0, 20).replace(/[^a-zA-Z0-9]/g, '')}-${index}`,
-  }));
+// Helper functions
+const getResultFeedback = (percentage) => {
+  if (percentage >= 90) return { text: "Excellent!", emoji: "🏆" };
+  if (percentage >= 80) return { text: "Great Job!", emoji: "🌟" };
+  if (percentage >= 70) return { text: "Good Work!", emoji: "👍" };
+  if (percentage >= 60) return { text: "Fair", emoji: "😊" };
+  return { text: "Needs Improvement", emoji: "💪" };
 };
 
 const Exam = () => {
-  const { category } = useParams();
-  const subject = decodeURIComponent(category || "");
-  const [searchParams] = useSearchParams();
-  const chapterIdParam = searchParams.get("chapterId");
-  const chapterId = chapterIdParam ? Number(chapterIdParam) : null;
-  const chapter =
-    typeof chapterId === "number" && Number.isFinite(chapterId)
-      ? chaptersData.find((c) => c.id === chapterId && c.category === subject)
-      : null;
   const navigate = useNavigate();
-  const courseId = useMemo(
-    () => (chapter ? `${subject}-chapter-${chapter.id}` : subject || category),
-    [chapter, subject, category],
-  );
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [score, setScore] = useState(0);
-  const [showScore, setShowScore] = useState(false);
-  const [selectedOptions, setSelectedOptions] = useState([]);
+  const { category: routeCategory } = useParams(); // Get category from route params
+  const courseId = routeCategory; // Use route category as courseId
+  const [searchParams] = useSearchParams();
+  
+  // State management
   const [questions, setQuestions] = useState([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedOptions, setSelectedOptions] = useState({});
+  const [showScore, setShowScore] = useState(false);
+  const [score, setScore] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [user, setUser] = useState(null);
   const [examAttempts, setExamAttempts] = useState([]);
-  const user = JSON.parse(localStorage.getItem("user"));
+  
+  // Extract parameters
+  const searchCategory = searchParams.get("category") || "";
+  const subject = searchParams.get("subject") || "";
+  
 
-  // Storage key for local persistence
-  const storageKey = useMemo(() => {
-    if (!user?.userid || !courseId) return null;
-    return `exam_progress_${user.userid}_${courseId}`;
-  }, [user?.userid, courseId]);
+  
+  const chapter = chaptersData.find(ch => ch.id === courseId);
+  
+  // Safe navigation helpers
+  const safeCurrentIndex = Math.max(0, Math.min(currentQuestionIndex, questions.length - 1));
+  const safeTotal = Math.max(1, questions.length);
+  
 
-
-  const fetchExamAttempts = async () => {
-    if (user?.userid && courseId) {
-      try {
-        console.log(`[Exam] Fetching results for userId: ${user.userid}, type: ${typeof user.userid}`);
-        console.log(`[Exam] Current courseId:`, courseId, 'type:', typeof courseId);
-
-        // Ensure userId is properly formatted
-        const userId = user.userid?.toString?.() || user.userid;
-
-        const response = await apiClient.get(
-          `/exam/results/${userId}`,
-          {
-            headers: {
-              'Cache-Control': 'no-cache',
-              'Pragma': 'no-cache'
-            }
-          }
-        );
-
-        console.log(`[Exam] API response success:`, response.data.success);
-        console.log(`[Exam] API response data:`, response.data.data);
-
-        if (response.data.success && Array.isArray(response.data.data)) {
-          console.log(`[Exam] Received ${response.data.data.length} course results`);
-          if (response.data.data.length > 0) {
-            console.log(`[Exam] Course IDs in response:`, response.data.data.map(r => ({
-              courseId: r.courseId,
-              type: typeof r.courseId,
-              examAttempts: r.examAttempts?.length || 0
-            })));
-          }
-
-          // Normalize courseId for comparison (handle both string and number formats)
-          const normalizedCourseId = String(courseId).toLowerCase().trim();
-          console.log(`[Exam] Looking for courseId: "${normalizedCourseId}" (normalized)`);
-
-          const courseResult = response.data.data.find((result) => {
-            const resultCourseId = String(result.courseId).toLowerCase().trim();
-            const matches = resultCourseId === normalizedCourseId;
-            console.log(`[Exam] Checking result courseId: "${resultCourseId}" -> Match: ${matches}`);
-            return matches;
-          });
-
-          if (courseResult && Array.isArray(courseResult.examAttempts)) {
-            setExamAttempts(courseResult.examAttempts);
-            console.log(`[Exam] Setting ${courseResult.examAttempts.length} exam attempts for courseId: ${courseId}`);
-            console.log(`[Exam] Exam attempts details:`, courseResult.examAttempts);
-          } else {
-            console.log(`[Exam] No matching course result found for courseId: ${courseId}`);
-            console.log(`[Exam] Available course IDs:`, response.data.data.map(r => r.courseId));
-            setExamAttempts([]);
-          }
-
-          // Update user's localStorage with all exam results to keep it current
-          try {
-            const updatedUser = JSON.parse(localStorage.getItem("user"));
-            if (updatedUser) {
-              updatedUser.examResults = response.data.data;
-              localStorage.setItem("user", JSON.stringify(updatedUser));
-              console.log(`[Exam] Updated localStorage with ${response.data.data.length} course results`);
-            }
-          } catch (storageErr) {
-            console.error("Error updating user data in localStorage:", storageErr);
-          }
-        } else {
-          console.log(`[Exam] Response not successful or data is not an array`);
-          setExamAttempts([]);
-        }
-      } catch (err) {
-        console.error("Error fetching exam attempts:", err);
-        console.error("Error details:", err.response || err.message);
-        if (err.response) {
-          console.error("Response status:", err.response.status);
-          console.error("Response data:", err.response.data);
-        }
-        setExamAttempts([]);
-      }
-    } else {
-      console.log(`[Exam] Skipping fetch - missing userid (${user?.userid}) or courseId (${courseId})`);
+  
+  // Get current question and normalize format
+  const getCurrentQuestion = () => {
+    const q = questions[safeCurrentIndex];
+    if (!q) return { question: "", options: [], answer: 0 };
+    
+    // Handle both old format (question, options, correctAnswer) and new format (qDesc, choices, correctAns)
+    if (q.question && q.options) {
+      // Old format
+      return {
+        question: q.question,
+        options: q.options,
+        answer: q.correctAnswer
+      };
+    } else if (q.qDesc && q.choices) {
+      // New format
+      const correctIndex = q.choices.indexOf(q.correctAns);
+      return {
+        question: q.qDesc,
+        options: q.choices,
+        answer: correctIndex >= 0 ? correctIndex : 0
+      };
     }
+    
+    // Fallback
+    return { question: "", options: [], answer: 0 };
   };
-
+  
+  const current = getCurrentQuestion();
+  
+  // Fetch exam data
   useEffect(() => {
-    const fetchQuestions = async () => {
-      setLoading(true);
-      setError(null);
-
+    const fetchExamData = async () => {
       try {
-        if (chapterId && subject) {
-          const response = await apiClient.get(
-            "/exam/questions",
-            {
-              params: {
-                chapterId,
-                category: subject,
-              },
-            },
-          );
-          if (
-            response.data.success &&
-            response.data.data?.questions?.length > 0
-          ) {
-            setQuestions(
-              normalizeQuestions(
-                response.data.data.questions,
-                chapter?.name || subject || "Exam",
-              ),
-            );
-            setLoading(false);
-            return;
-          } else {
-            // No questions in database
-            console.warn("No questions found in database for this chapter.");
-            setError(
-              "No questions found for this chapter in the database. Please contact support.",
-            );
-            setLoading(false);
-            return;
+        setLoading(true);
+        setError(null);
+        
+        // Fetch questions
+        const questionResponse = await apiClient.get(`/exam/questions/${courseId}`, {
+          timeout: 10000, // 10 second timeout
+        });
+        
+        // Check if response has the expected structure
+        if (!questionResponse.data) {
+          setError('Invalid response from server');
+          return;
+        }
+        
+        // Check success flag
+        if (!questionResponse.data.success) {
+          setError(questionResponse.data.message || 'Failed to fetch questions');
+          return;
+        }
+        
+        const fetchedQuestions = questionResponse.data.data?.questions || questionResponse.data.questions || [];
+        
+        if (fetchedQuestions.length === 0) {
+          setError("No questions available for this exam.");
+          return;
+        }
+        
+        setQuestions(fetchedQuestions);
+        
+        // Fetch user data if logged in
+        const token = localStorage.getItem("token");
+        if (token) {
+          try {
+            const userResponse = await apiClient.get("/auth/profile");
+            setUser(userResponse.data.user);
+            
+            // Fetch exam history
+            const historyResponse = await apiClient.get(`/exam/history/${courseId}`);
+            setExamAttempts(historyResponse.data.attempts || []);
+          } catch {
+            console.log("User not authenticated or error fetching user data");
           }
         }
-
-        setError("Invalid course or chapter selection.");
-        setLoading(false);
       } catch (err) {
-        console.error("Error fetching questions:", err);
-        setError(
-          "Failed to connect to the server. Please check your connection.",
-        );
+        setError(err.response?.data?.message || err.message || "Failed to load exam. Please try again.");
+      } finally {
         setLoading(false);
       }
     };
-    fetchQuestions();
-  }, [chapterId, subject, chapter]);
-
-  useEffect(() => {
-    console.log(`[Exam] Fetching exam attempts for courseId: ${courseId}`);
-    fetchExamAttempts();
-  }, [user?.userid, courseId]);
-
-  const safeQuestions = Array.isArray(questions) ? questions : [];
-  const safeTotal = safeQuestions.length;
-  const safeCurrentIndex = Math.min(
-    Math.max(currentQuestion, 0),
-    Math.max(0, safeTotal - 1),
-  );
-  const current = safeQuestions[safeCurrentIndex];
-
-  useEffect(() => {
-    if (!loading && safeTotal > 0) {
-      // Try to load saved progress
-      let initialQuestion = 0;
-      let initialOptions = Array(safeTotal).fill(null);
-
-      if (storageKey) {
-        const savedProgress = localStorage.getItem(storageKey);
-        if (savedProgress) {
-          try {
-            const { currentQuestion: savedQ, selectedOptions: savedO } = JSON.parse(savedProgress);
-            if (typeof savedQ === 'number' && savedQ < safeTotal) {
-              initialQuestion = savedQ;
-            }
-            if (Array.isArray(savedO) && savedO.length === safeTotal) {
-              initialOptions = savedO;
-            }
-            console.log(`[Exam] Loaded progress from localStorage for ${courseId}`);
-          } catch (e) {
-            console.error("Error parsing saved progress", e);
-          }
-        }
-      }
-
-      setCurrentQuestion(initialQuestion);
-      setScore(0);
-      setShowScore(false);
-      setSelectedOptions(initialOptions);
-    }
-  }, [subject, chapterId, safeTotal, loading, chapter, storageKey]);
-
-  // Sync progress to localStorage and database
-  useEffect(() => {
-    if (storageKey && !showScore && !loading && safeTotal > 0) {
-      const progress = {
-        currentQuestion,
-        selectedOptions,
-        lastUpdated: new Date().toISOString()
-      };
-      localStorage.setItem(storageKey, JSON.stringify(progress));
-      
-      // Also save progress to database if user is logged in
-      if (user?.userid && courseId) {
-        const answeredCount = selectedOptions.filter(option => option !== null).length;
-        const progressPercentage = Math.round((answeredCount / safeTotal) * 100);
-        
-        // Update progress in database
-        const updateProgress = async () => {
-          try {
-            const response = await apiClient.post('/exam/video-progress', {
-              userId: user.userid,
-              courseId: courseId,
-              videoId: `exam_${courseId}`,
-              isCompleted: false,
-              progressPercentage
-            });
-            
-            // If progress was successfully updated, dispatch event to update UI
-            if (response.data.success) {
-              window.dispatchEvent(new CustomEvent('progressUpdated', {
-                detail: {
-                  userId: user.userid,
-                  courseId: courseId,
-                  completionPercentage: response.data.data?.completionPercentage || progressPercentage
-                }
-              }));
-            }
-          } catch (error) {
-            console.error('Error saving progress to database:', error);
-          }
-        };
-        
-        updateProgress();
-      }
-    }
-  }, [selectedOptions, storageKey, showScore, loading, safeTotal, user?.userid, courseId]);
-
-  const handleAnswerOptionClick = (answerIndex) => {
-    setSelectedOptions((prev) => {
-      const next = [...prev];
-      next[safeCurrentIndex] = answerIndex;
-      return next;
-    });
     
-    // Trigger immediate progress update when answer is selected
-    if (user?.userid && courseId && storageKey) {
-      // Use setTimeout to ensure state is updated before calculating progress
-      setTimeout(() => {
-        const updatedSelectedOptions = [...selectedOptions];
-        updatedSelectedOptions[safeCurrentIndex] = answerIndex;
-        
-        const answeredCount = updatedSelectedOptions.filter(option => option !== null).length;
-        const progressPercentage = Math.round((answeredCount / safeTotal) * 100);
-        
-        // Save to localStorage
-        const progress = {
-          currentQuestion,
-          selectedOptions: updatedSelectedOptions,
-          lastUpdated: new Date().toISOString()
-        };
-        localStorage.setItem(storageKey, JSON.stringify(progress));
-        
-        // Update database progress
-        const updateProgress = async () => {
-          try {
-            const response = await apiClient.post('/exam/video-progress', {
-              userId: user.userid,
-              courseId: courseId,
-              videoId: `exam_${courseId}`,
-              isCompleted: false,
-              progressPercentage
-            });
-            
-            // Dispatch event to update UI
-            if (response.data.success) {
-              window.dispatchEvent(new CustomEvent('progressUpdated', {
-                detail: {
-                  userId: user.userid,
-                  courseId: courseId,
-                  completionPercentage: response.data.data?.completionPercentage || progressPercentage
-                }
-              }));
-            }
-          } catch (error) {
-            console.error('Error saving progress to database:', error);
-          }
-        };
-        
-        updateProgress();
-      }, 0);
+    if (courseId) {
+      fetchExamData();
+    } else {
+      setError("Invalid course ID");
+      setLoading(false);
     }
+  }, [courseId]);
+  
+  // Handle answer selection
+  const handleAnswerOptionClick = (selectedIndex) => {
+    setSelectedOptions(prev => ({
+      ...prev,
+      [safeCurrentIndex]: selectedIndex
+    }));
   };
-
+  
+  // Navigation handlers
   const handleNext = () => {
     if (safeCurrentIndex < safeTotal - 1) {
-      setCurrentQuestion(safeCurrentIndex + 1);
-      
-      // Update progress when moving to next question
-      if (user?.userid && courseId && storageKey) {
-        const answeredCount = selectedOptions.filter(option => option !== null).length;
-        const progressPercentage = Math.round((answeredCount / safeTotal) * 100);
-        
-        const updateProgress = async () => {
-          try {
-            const response = await apiClient.post('/exam/video-progress', {
-              userId: user.userid,
-              courseId: courseId,
-              videoId: `exam_${courseId}`,
-              isCompleted: false,
-              progressPercentage
-            });
-            
-            if (response.data.success) {
-              window.dispatchEvent(new CustomEvent('progressUpdated', {
-                detail: {
-                  userId: user.userid,
-                  courseId: courseId,
-                  completionPercentage: response.data.data?.completionPercentage || progressPercentage
-                }
-              }));
-            }
-          } catch (error) {
-            console.error('Error saving progress to database:', error);
-          }
-        };
-        
-        updateProgress();
-      }
-    } else {
-      calculateFinish();
+      setCurrentQuestionIndex(prev => prev + 1);
     }
   };
-
+  
   const handlePrevious = () => {
     if (safeCurrentIndex > 0) {
-      setCurrentQuestion(safeCurrentIndex - 1);
-      
-      // Update progress when moving to previous question
-      if (user?.userid && courseId && storageKey) {
-        const answeredCount = selectedOptions.filter(option => option !== null).length;
-        const progressPercentage = Math.round((answeredCount / safeTotal) * 100);
-        
-        const updateProgress = async () => {
-          try {
-            const response = await apiClient.post('/exam/video-progress', {
-              userId: user.userid,
-              courseId: courseId,
-              videoId: `exam_${courseId}`,
-              isCompleted: false,
-              progressPercentage
-            });
-            
-            if (response.data.success) {
-              window.dispatchEvent(new CustomEvent('progressUpdated', {
-                detail: {
-                  userId: user.userid,
-                  courseId: courseId,
-                  completionPercentage: response.data.data?.completionPercentage || progressPercentage
-                }
-              }));
-            }
-          } catch (error) {
-            console.error('Error saving progress to database:', error);
-          }
-        };
-        
-        updateProgress();
-      }
+      setCurrentQuestionIndex(prev => prev - 1);
     }
   };
-
-  const calculateFinish = () => {
-    let newScore = 0;
-    selectedOptions.forEach((selected, index) => {
-      const question = safeQuestions[index];
-      if (question && selected === question.correctAnswer) {
-        newScore++;
-      }
-    });
-    setScore(newScore);
-    setShowScore(true);
-  };
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
+  
+  // Submit exam
   const handleSubmit = async () => {
-    if (isSubmitting) {
-      console.log('Submit already in progress');
-      return;
-    }
-
+    if (isSubmitting) return;
+    
     setIsSubmitting(true);
-
+    
     try {
-      let newScore = 0;
-      const user = JSON.parse(localStorage.getItem("user"));
-      const answers = [];
-
-      // Calculate score and prepare answers
-      selectedOptions.forEach((selected, index) => {
-        const question = safeQuestions[index];
-        const isCorrect = question && selected === question.correctAnswer;
-        if (isCorrect) newScore++;
-        answers.push({
-          questionIndex: question?.originalIndex ?? index,
-          selectedOption: selected,
-          isCorrect,
-          question: question?.question,
-          correctAnswer: question?.correctAnswer,
-          options: question?.options,
-        });
-      });
-
-      if (user?.userid) {
-        try {
-          // Prepare the payload
-          const payload = {
-            userId: user.userid,
-            courseId: courseId,
-            score: newScore,
-            totalQuestions: safeTotal,
-            answers: answers,
-          };
-
-          const response = await apiClient.post(
-            "/exam/results",
-            payload,
-            {
-              timeout: 10000, // 10 second timeout
-              headers: {
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
-              }
-            }
-          );
-
-          if (response.data.success) {
-            toast.success("Exam submitted successfully!");
-
-            // Small delay to ensure the backend has processed the submission
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            // Update user's localStorage with latest exam data immediately
-            const updatedUser = JSON.parse(localStorage.getItem("user"));
-            if (updatedUser) {
-              // Fetch updated exam results to ensure localStorage has the latest data
-              try {
-                const resultsResponse = await apiClient.get(
-                  `/exam/results/${updatedUser.userid}`,
-                  {
-                    headers: {
-                      'Cache-Control': 'no-cache',
-                      'Pragma': 'no-cache'
-                    }
-                  }
-                );
-
-                if (resultsResponse?.data?.success) {
-                  const results = Array.isArray(resultsResponse.data.data)
-                    ? resultsResponse.data.data
-                    : [];
-
-                  updatedUser.examResults = results;
-                  localStorage.setItem("user", JSON.stringify(updatedUser));
-
-                  // Dispatch a custom event to notify other components about the update
-                  window.dispatchEvent(new CustomEvent('examSubmitted', { detail: { userId: updatedUser.userid } }));
-
-                  // Force a complete refresh of exam attempts for this component
-                  await fetchExamAttempts();
-                }
-              } catch (updateErr) {
-                console.error("Error updating user data in localStorage:", updateErr);
-                // Even if localStorage update fails, still try to refresh the UI
-                await fetchExamAttempts();
-              }
-            }
-          } else {
-            toast.warning("Exam submitted but server returned an error.");
-            // Still try to refresh the UI even if the response wasn't successful
-            await fetchExamAttempts();
-          }
-        } catch (submitErr) {
-          console.error("Submit Error Details:", submitErr);
-
-          // Handle cancellation errors specifically
-          if (submitErr.isCancelled) {
-            console.log('Request was cancelled:', submitErr.message);
-            toast.info('Previous request was cancelled. Please try submitting again.');
-            return;
-          }
-
-          // Check if it's a network error
-          if (
-            submitErr.code === "ECONNABORTED" ||
-            submitErr.code === "ERR_NETWORK" ||
-            submitErr.message?.includes("Network Error")
-          ) {
-            toast.error(
-              "Cannot connect to server. Please check your internet connection and try again.",
-              { autoClose: 5000 }
-            );
-          }
-          // Check if it's a response error
-          else if (submitErr.response) {
-            const errorMessage =
-              submitErr.response?.data?.message ||
-              submitErr.response?.data?.error ||
-              "Server error occurred";
-            toast.error(`Failed to save exam: ${errorMessage}`, { autoClose: 5000 });
-          }
-          // Other errors
-          else {
-            toast.error(
-              `Failed to save exam: ${submitErr.message || "Unknown error"}`,
-              { autoClose: 5000 }
-            );
-          }
-
-          // Even if submission fails, try to refresh the data to see if anything was saved
-          try {
-            await fetchExamAttempts();
-          } catch (refreshErr) {
-            console.error("Could not refresh exam attempts after submission error:", refreshErr);
-          }
+      // Calculate score
+      let correctAnswers = 0;
+      questions.forEach((question, index) => {
+        // Handle both old and new question formats
+        let correctAnswerIndex;
+        if (question.correctAnswer !== undefined) {
+          // Old format
+          correctAnswerIndex = question.correctAnswer;
+        } else if (question.correctAns && question.choices) {
+          // New format
+          correctAnswerIndex = question.choices.indexOf(question.correctAns);
+        } else {
+          // Fallback
+          correctAnswerIndex = 0;
         }
-      } else {
-        toast.warning("User not logged in. Score calculated locally only.");
+        
+        if (selectedOptions[index] === correctAnswerIndex) {
+          correctAnswers++;
+        }
+      });
+      
+      const calculatedScore = correctAnswers;
+      setScore(calculatedScore);
+      
+      // Save attempt if user is logged in
+      if (user) {
+        try {
+          const attemptData = {
+            courseId,
+            score: Math.round((calculatedScore / questions.length) * 100),
+            totalQuestions: questions.length,
+            correctAnswers: calculatedScore,
+            timestamp: new Date().toISOString()
+          };
+          
+          await apiClient.post('/exam/save-attempt', attemptData);
+          
+          // Refresh exam history
+          const historyResponse = await apiClient.get(`/exam/history/${courseId}`);
+          setExamAttempts(historyResponse.data.attempts || []);
+        } catch (saveError) {
+          console.error('Error saving exam attempt:', saveError);
+          toast.error('Could not save your exam results');
+        }
       }
-
-      setScore(newScore);
+      
       setShowScore(true);
-
-      // Clear saved progress after successful submission
-      if (storageKey) {
-        localStorage.removeItem(storageKey);
-      }
+      toast.success(`Exam completed! Score: ${calculatedScore}/${questions.length}`);
     } catch (err) {
-      console.error("Unexpected error in handleSubmit:", err);
-      toast.error("An unexpected error occurred. Please try again.", { autoClose: 5000 });
-      calculateFinish();
+      console.error('Error submitting exam:', err);
+      toast.error('Error submitting exam. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const handleRetakeExam = async () => {
-    // Reset the exam and fetch fresh random questions
-    setCurrentQuestion(0);
-    setSelectedOptions([]);
+  
+  // Retake exam
+  const handleRetakeExam = () => {
+    setCurrentQuestionIndex(0);
+    setSelectedOptions({});
     setShowScore(false);
     setScore(0);
-    setLoading(true);
-    setError(null);
-
-    // Clear saved progress on retake
-    if (storageKey) {
-      localStorage.removeItem(storageKey);
-    }
-
-    try {
-      if (chapterId && subject) {
-        const response = await apiClient.get(
-          "/exam/questions",
-          {
-            params: {
-              chapterId,
-              category: subject,
-            },
-          },
-        );
-        if (
-          response.data.success &&
-          response.data.data?.questions?.length > 0
-        ) {
-          setQuestions(
-            normalizeQuestions(
-              response.data.data.questions,
-              chapter?.name || subject || "Exam",
-            ),
-          );
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Fallback to existing questions if server fails
-      setLoading(false);
-    } catch (err) {
-      console.error("Error fetching fresh questions for retake:", err);
-      setLoading(false);
-      setError("Using existing questions. Server connection failed.");
-    }
-  };
-
-  const getResultFeedback = (percentage) => {
-    if (percentage >= 90)
-      return { emoji: "🏆", text: "Exceptional!", color: "text-slate-400" };
-    if (percentage >= 70)
-      return { emoji: "🌟", text: "Great Job!", color: "text-slate-300" };
-    if (percentage >= 50)
-      return { emoji: "📚", text: "Good Effort!", color: "text-slate-500" };
-    return { emoji: "💪", text: "Keep Practicing!", color: "text-slate-600" };
+    setIsSubmitting(false);
   };
 
   return (
@@ -773,294 +259,308 @@ const Exam = () => {
           content="Take exams and test your knowledge on SkillTrack"
         />
       </Helmet>
-      <div className="py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-sans">
-        {/* Decorative Background Glows */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-slate-700/10 rounded-full blur-[120px]" />
-          <div className="absolute top-[60%] -right-[10%] w-[50%] h-[50%] bg-slate-600/10 rounded-full blur-[120px]" />
-        </div>
-
-        {/* Back Button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="fixed top-24 left-72 cursor-pointer z-50 flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white border border-white/10 rounded-full transition-all duration-300 group shadow-2xl"
-        >
-          <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" />
-          <span className="font-bold text-sm">Close Exam</span>
-        </button>
-
-        <div className="w-full max-w-2xl relative z-10"> {/* Increased max-width */}
-          <div className="relative bg-slate-900 border border-white/10 rounded-3xl shadow-[0_24px_80px_-16px_rgba(0,0,0,0.8)] overflow-hidden">
-            <div className="p-6 sm:p-8">
-              <header className="mb-8 text-center">
-                <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">
-                  {chapter ? chapter.name : subject || category}
-                </h1>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-700/20 rounded-full border border-slate-600/30">
-                  <span className="w-1 h-1 rounded-full bg-slate-400 animate-pulse" />
-                  <p className="text-slate-300 font-bold tracking-widest uppercase text-[9px]">
-                    {safeTotal} Questions
-                  </p>
+      
+      {/* Header Bar */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mr-6"
+              >
+                <FaArrowLeft className="text-sm" />
+                <span className="font-medium text-sm">Back to Course</span>
+              </button>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <FaClipboardList className="text-blue-600" />
                 </div>
-              </header>
-
-              {loading ? (
-                <div className="py-20 flex flex-col items-center">
-                  <div className="relative w-16 h-16">
-                    <div className="absolute top-0 left-0 w-full h-full border-4 border-white/10 rounded-full" />
-                    <div className="absolute top-0 left-0 w-full h-full border-4 border-t-slate-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin" />
-                  </div>
-                  <p className="mt-6 text-slate-400/50 animate-pulse font-medium">
-                    Preparing your exam...
-                  </p>
+                <div>
+                  <h1 className="text-lg font-bold text-gray-900">
+                    {chapter ? chapter.name : subject || searchCategory || courseId}
+                  </h1>
+                  <p className="text-xs text-gray-500">Exam Assessment</p>
                 </div>
-              ) : error && safeTotal === 0 ? (
-                <div className="p-8 text-center bg-slate-700/20 border border-slate-600/30 rounded-2xl">
-                  <p className="text-slate-200 font-medium mb-4">{error}</p>
-                  <button
-                    onClick={() => navigate(-1)}
-                    className="text-white bg-slate-600 px-6 py-2 rounded-xl"
-                  >
-                    Try Again Later
-                  </button>
-                </div>
-              ) : showScore ? (
-                <div className="text-center animate-in fade-in zoom-in duration-500">
-                  <div className="flex justify-center mb-8">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-slate-600/30 blur-2xl rounded-full" />
-                      <div className="relative w-32 h-32 bg-white/10 rounded-full flex items-center justify-center border border-white/20">
-                        <span className="text-6xl">
-                          {getResultFeedback((score / safeTotal) * 100).emoji}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <h2 className="text-3xl font-bold text-white mb-1">
-                    {getResultFeedback((score / safeTotal) * 100).text}
-                  </h2>
-
-                  <div className="mt-6 p-6 rounded-2xl bg-slate-800/50 border border-white/10 shadow-inner">
-                    <div className="text-slate-300 font-bold tracking-widest uppercase text-[10px] mb-2">
-                      Final Performance
-                    </div>
-                    <div className="text-5xl font-black text-white mb-4">
-                      {score}
-                      <span className="text-slate-500/50">/</span>
-                      {safeTotal}
-                    </div>
-                    <div className="mb-2 flex justify-between items-center text-xs font-bold">
-                      <span className="text-slate-300">Completion Score</span>
-                      <span className="text-white">
-                        {Math.round((score / safeTotal) * 100)}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-950/50 h-3 rounded-full overflow-hidden p-0.5 border border-white/5">
-                      <div
-                        className="h-full rounded-full transition-all duration-1000 bg-gradient-to-r from-slate-600 to-slate-400"
-                        style={{ width: `${(score / safeTotal) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-                    <button
-                      onClick={handleRetakeExam}
-                      className="flex items-center cursor-pointer justify-center gap-2 px-8 py-3 bg-slate-700 text-white font-bold rounded-2xl hover:bg-slate-600 transition-all duration-300 shadow-xl shadow-slate-700/20 active:scale-95"
-                    >
-                      <FaRedo className="text-sm" />
-                      Retake Exam
-                    </button>
-                    <button
-                      onClick={() => navigate("/home")}
-                      className="flex items-center cursor-pointer justify-center gap-2 px-8 py-3 bg-white/10 text-white font-bold rounded-2xl hover:bg-white/20 transition-all duration-300 border border-white/10 active:scale-95"
-                    >
-                      <FaHome className="text-sm" />
-                      Exit Exam
-                    </button>
-                  </div>
-
-
-
-                  {/* Show exam attempts if user is logged in */}
-                  {user && (
-                    <div className="mt-8 p-4 rounded-2xl bg-slate-800/50 border border-white/10">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-slate-300 font-bold tracking-widest uppercase text-[10px]">
-                          YOUR EXAM HISTORY
-                        </h4>
-                        {examAttempts && examAttempts.length > 0 && (
-                          <button
-                            onClick={() =>
-                              navigate(
-                                `/performance/${encodeURIComponent(courseId)}`,
-                              )
-                            }
-                            className="text-xs cursor-pointer font-bold px-3 py-1 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all flex items-center gap-1"
-                          >
-                            View All
-                            <FaArrowLeft className="rotate-180 text-[8px]" />
-                          </button>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        {examAttempts && examAttempts.length > 0 ? (
-                          examAttempts.slice(-3).map((attempt, idx) => (
-                            <div
-                              key={attempt.attemptNumber || idx}
-                              className="flex justify-between items-center py-2 border-b border-white/5 last:border-0"
-                            >
-                              <span className="text-sm text-slate-300">
-                                Attempt #{attempt.attemptNumber}
-                              </span>
-                              <div className="text-right">
-                                <span className="text-white font-bold">
-                                  {attempt.score}%
-                                </span>
-                                <span
-                                  className={`ml-2 text-xs ${attempt.passed
-                                    ? "text-slate-400"
-                                    : "text-slate-500"
-                                    }`}
-                                >
-                                  {attempt.passed ? "PASSED" : "FAILED"}
-                                </span>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-slate-400/60 text-sm">
-                            No previous attempts found
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="animate-in slide-in-from-bottom-4 duration-500">
-                  {/* Progress Tracking */}
-                  <div className="mb-6">
-                    <div className="flex justify-between items-end mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-md bg-slate-700/30 flex items-center justify-center text-slate-300 font-bold text-[10px]">
-                          {safeCurrentIndex + 1}
-                        </div>
-                        <span className="text-slate-200 font-bold text-xs tracking-tight">
-                          Question Pool
-                        </span>
-                      </div>
-                      <span className="text-slate-400/60 font-mono text-[10px] leading-none">
-                        {Math.round(((safeCurrentIndex + 1) / safeTotal) * 100)}
-                        % PROGRESS
-                      </span>
-                    </div>
-                    <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-slate-600 to-slate-400 transition-all duration-500"
-                        style={{
-                          width: `${((safeCurrentIndex + 1) / safeTotal) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Question Body */}
-                  <div className="mb-8 relative">
-                    <h3 className="text-lg sm:text-xl font-bold text-white mb-6 leading-tight min-h-[60px]"> {/* Added min-height */}
-                      {current.question}
-                    </h3>
-                    <div className="space-y-3">
-                      {current.options.map((option, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleAnswerOptionClick(index)}
-                          className={`w-full relative p-4 rounded-xl border-2 text-left transition-all duration-200 flex items-center justify-between min-h-[60px]`} 
-                        >
-                          <div className="flex items-center gap-4">
-                            <div
-                              className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center font-bold text-xs transition-all duration-200 ${selectedOptions[safeCurrentIndex] === index
-                                ? "border-white bg-white text-slate-800 shadow-md"
-                                : "border-white/10 text-slate-300"
-                                }`}
-                            >
-                              {String.fromCharCode(65 + index)}
-                            </div>
-                            <span
-                              className={`text-sm font-bold transition-colors ${selectedOptions[safeCurrentIndex] === index
-                                ? "text-white"
-                                : "text-slate-100"
-                                }`}
-                            >
-                              {option}
-                            </span>
-                          </div>
-                          <div
-                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${selectedOptions[safeCurrentIndex] === index
-                              ? "scale-100 opacity-100 border-white"
-                              : "scale-50 opacity-0"
-                              }`}
-                          >
-                            <div className="w-2 h-2 bg-white rounded-full" />
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Navigation */}
-                  <div className="flex items-center justify-between pt-6 border-t border-white/10">
-                    <button
-                      onClick={handlePrevious}
-                      disabled={safeCurrentIndex === 0}
-                      className={`flex items-center cursor-pointer gap-2 font-bold px-4 py-2 rounded-lg transition-all text-xs ${safeCurrentIndex === 0
-                        ? "opacity-20 cursor-not-allowed text-white"
-                        : "text-slate-200 hover:bg-slate-700/20 active:scale-95"
-                        }`}
-                    >
-                      <FaArrowLeft className="text-[10px]" />
-                      Prev
-                    </button>
-
-                    <div className="flex gap-3">
-                      {safeCurrentIndex === safeTotal - 1 ? (
-                        <button
-                          onClick={handleSubmit}
-                          disabled={selectedOptions[safeCurrentIndex] === null || isSubmitting}
-                          className={`flex items-center gap-2 font-bold px-6 py-2 rounded-xl hover:shadow-lg transition-all text-xs active:scale-95 ${selectedOptions[safeCurrentIndex] === null || isSubmitting
-                            ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-slate-600 to-slate-500 cursor-pointer text-white'
-                            }`}
-                        >
-                          {isSubmitting ? (
-                            <>
-                              <span className="inline-block animate-spin">⟳</span>
-                              Submitting...
-                            </>
-                          ) : (
-                            <>
-                              <FaCheckCircle className="text-sm" />
-                              Submit Exam
-                            </>
-                          )}
-                        </button>
-                      ) : (
-                        <button
-                          onClick={handleNext}
-                          disabled={selectedOptions[safeCurrentIndex] === null}
-                          className="flex cursor-pointer items-center gap-2 bg-slate-700 text-white font-bold px-6 py-2 rounded-xl hover:bg-slate-600 hover:shadow-lg transition-all text-xs active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Next
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FaListOl className="text-gray-400" />
+                <span className="font-medium">{safeTotal} Questions</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FaClock className="text-gray-400" />
+                <span>Timed Exam</span>
+              </div>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="bg-gray-50 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-xs font-bold">{safeCurrentIndex + 1}</span>
+              </div>
+              <span className="text-sm font-medium text-gray-700">Question {safeCurrentIndex + 1} of {safeTotal}</span>
+            </div>
+            <div className="text-sm text-gray-500">
+              {Math.round(((safeCurrentIndex + 1) / safeTotal) * 100)}% Complete
+            </div>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${((safeCurrentIndex + 1) / safeTotal) * 100}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {loading ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+            <div className="flex flex-col items-center">
+              <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Loading Exam</h3>
+              <p className="text-gray-500">Preparing your assessment questions...</p>
+            </div>
+          </div>
+        ) : error && safeTotal === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FaTimes className="text-red-500 text-xl" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to Load Exam</h3>
+            <p className="text-gray-500 mb-6">{error}</p>
+            <button
+              onClick={() => navigate(-1)}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Return to Course
+            </button>
+          </div>
+        ) : showScore ? (
+          <div className="space-y-6">
+            {/* Results Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white text-center">
+                <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">
+                    {getResultFeedback((score / safeTotal) * 100).emoji}
+                  </span>
+                </div>
+                <h2 className="text-2xl font-bold mb-2">
+                  {getResultFeedback((score / safeTotal) * 100).text}
+                </h2>
+                <p className="text-blue-100">Exam Completed Successfully</p>
+              </div>
+              
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-gray-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-gray-900">{score}/{safeTotal}</div>
+                    <div className="text-sm text-gray-500">Correct Answers</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {Math.round((score / safeTotal) * 100)}%
+                    </div>
+                    <div className="text-sm text-gray-500">Score</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {getResultFeedback((score / safeTotal) * 100).text}
+                    </div>
+                    <div className="text-sm text-gray-500">Performance</div>
+                  </div>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button
+                    onClick={handleRetakeExam}
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-colors"
+                  >
+                    <FaRedo className="text-sm" />
+                    Retake Exam
+                  </button>
+                  <button
+                    onClick={() => navigate("/home")}
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    <FaHome className="text-sm" />
+                    Back to Dashboard
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Exam History */}
+            {user && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-gray-900">Your Exam History</h3>
+                  {examAttempts && examAttempts.length > 0 && (
+                    <button
+                      onClick={() => navigate(`/performance/${encodeURIComponent(courseId)}`)}
+                      className="text-sm text-blue-500 hover:text-blue-700 font-medium"
+                    >
+                      View All Attempts
+                    </button>
+                  )}
+                </div>
+                
+                {examAttempts && examAttempts.length > 0 ? (
+                  <div className="space-y-3">
+                    {examAttempts.slice(-3).map((attempt, idx) => (
+                      <div key={attempt.attemptNumber || idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${attempt.passed ? 'bg-green-100' : 'bg-red-100'}`}>
+                            {attempt.passed ? (
+                              <FaCheck className="text-green-600 text-xs" />
+                            ) : (
+                              <FaTimes className="text-red-600 text-xs" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900">Attempt #{attempt.attemptNumber}</div>
+                            <div className="text-sm text-gray-500">
+                              {new Date(attempt.timestamp).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`font-bold ${attempt.passed ? 'text-green-600' : 'text-red-600'}`}>
+                            {attempt.score}%
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {attempt.passed ? 'PASSED' : 'FAILED'}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <FaClipboardList className="text-gray-400 text-xl" />
+                    </div>
+                    <p className="text-gray-500">No previous attempts found</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            {/* Question Header */}
+            <div className="bg-gray-50 border-b border-gray-200 p-6">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <FaQuestionCircle className="text-blue-600" />
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">Question {safeCurrentIndex + 1}</h2>
+              </div>
+              <p className="text-gray-600">{current.question}</p>
+            </div>
+            
+            {/* Options */}
+            <div className="p-6">
+              <div className="space-y-3">
+                {current.options.map((option, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleAnswerOptionClick(index)}
+                    className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${
+                      selectedOptions[safeCurrentIndex] === index
+                        ? 'border-blue-500 bg-blue-50 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
+                        selectedOptions[safeCurrentIndex] === index
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {String.fromCharCode(65 + index)}
+                      </div>
+                      <span className="font-medium text-gray-900">{option}</span>
+                      {selectedOptions[safeCurrentIndex] === index && (
+                        <div className="ml-auto">
+                          <FaCheck className="text-blue-500" />
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Navigation */}
+            <div className="bg-gray-50 border-t border-gray-200 p-6">
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={handlePrevious}
+                  disabled={safeCurrentIndex === 0}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    safeCurrentIndex === 0
+                      ? 'text-gray-400 cursor-not-allowed'
+                      : 'text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <FaArrowLeft className="text-sm" />
+                  Previous
+                </button>
+                
+                <div className="flex gap-3">
+                  {safeCurrentIndex === safeTotal - 1 ? (
+                    <button
+                      onClick={handleSubmit}
+                      disabled={selectedOptions[safeCurrentIndex] === null || isSubmitting}
+                      className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors ${
+                        selectedOptions[safeCurrentIndex] === null || isSubmitting
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-green-500 text-white hover:bg-green-600'
+                      }`}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span className="inline-block animate-spin">⟳</span>
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <FaCheckCircle className="text-sm" />
+                          Submit Exam
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleNext}
+                      disabled={selectedOptions[safeCurrentIndex] === null}
+                      className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors ${
+                        selectedOptions[safeCurrentIndex] === null
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-blue-500 text-white hover:bg-blue-600'
+                      }`}
+                    >
+                      Next
+                      <FaArrowLeft className="text-sm rotate-180" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

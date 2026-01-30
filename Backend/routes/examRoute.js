@@ -12,6 +12,7 @@ router.post("/seed", seedExamQuestions);
 
 // Get exam questions (public endpoint, no auth required)
 router.get("/questions", getExamQuestions);
+router.get("/questions/:courseId", getExamQuestions);
 
 // Save exam results (auth removed temporarily since login doesn't generate tokens)
 router.post("/results", saveExamResult);

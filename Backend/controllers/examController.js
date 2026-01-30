@@ -570,24 +570,26 @@ export const createExamQuestions = async (req, res) => {
 export const getExamQuestions = async (req, res) => {
   try {
     const { category, course, video, chapterId, numQuestions, attemptId } = req.query;
+    const { courseId } = req.params;
 
     // Support both old format (category, course, video) and new format (chapterId, category)
-    let queryCategory = category;
+    // Also support courseId parameter from route
+    let queryCategory = category || courseId;
     let queryChapterId = chapterId ? parseInt(chapterId) : null;
 
     // Validate required parameters
     if (!queryCategory) {
       return res.status(400).json({
         success: false,
-        message: "category is required",
+        message: "category or courseId is required",
       });
     }
 
-    // If chapterId is provided, use it; otherwise require course and video
-    if (!queryChapterId && (!course || !video)) {
+    // If chapterId is provided, use it; otherwise require course and video (if not using courseId route)
+    if (!queryChapterId && !courseId && (!course || !video)) {
       return res.status(400).json({
         success: false,
-        message: "Either chapterId or (course and video) are required",
+        message: "Either chapterId or (course and video) or courseId are required",
       });
     }
 
@@ -597,6 +599,11 @@ export const getExamQuestions = async (req, res) => {
       // Search by chapterId and category
       examData = await ExamQuestion.findOne({
         chapterId: queryChapterId,
+        category: queryCategory,
+      });
+    } else if (courseId) {
+      // Search by courseId (treat it as category)
+      examData = await ExamQuestion.findOne({
         category: queryCategory,
       });
     } else {
@@ -618,6 +625,10 @@ export const getExamQuestions = async (req, res) => {
         if (queryChapterId) {
           examData = await ExamQuestion.findOne({
             chapterId: queryChapterId,
+            category: queryCategory,
+          });
+        } else if (courseId) {
+          examData = await ExamQuestion.findOne({
             category: queryCategory,
           });
         } else {
