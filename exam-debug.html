@@ -1,0 +1,88 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>Exam Debug Tool</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Exam Debug Tool</h1>
+    
+    <div>
+        <label>Course ID: 
+            <input type="text" id="courseId" value="CSE" />
+        </label>
+        <button onclick="testEndpoint()">Test Endpoint</button>
+    </div>
+    
+    <div id="results" style="margin-top: 20px; padding: 10px; background: #f0f0f0;">
+        <h3>Results:</h3>
+        <pre id="output"></pre>
+    </div>
+
+    <script>
+        async function testEndpoint() {
+            const courseId = document.getElementById('courseId').value;
+            const output = document.getElementById('output');
+            
+            output.textContent = `Testing courseId: ${courseId}\n`;
+            
+            try {
+                const startTime = Date.now();
+                const response = await axios.get(`http://localhost:8000/api/exam/questions/${courseId}`, {
+                    timeout: 10000
+                });
+                const endTime = Date.now();
+                
+                output.textContent += `\nSUCCESS!\n`;
+                output.textContent += `Time taken: ${endTime - startTime}ms\n`;
+                output.textContent += `Status: ${response.status}\n`;
+                output.textContent += `Success: ${response.data.success}\n`;
+                output.textContent += `Questions count: ${response.data.data?.questions?.length || response.data.questions?.length || 0}\n`;
+                
+                if (response.data.success) {
+                    const questions = response.data.data?.questions || response.data.questions || [];
+                    output.textContent += `\nFirst question:\n`;
+                    output.textContent += JSON.stringify(questions[0], null, 2);
+                } else {
+                    output.textContent += `\nError: ${response.data.message}\n`;
+                }
+                
+            } catch (error) {
+                output.textContent += `\nERROR!\n`;
+                output.textContent += `Message: ${error.message}\n`;
+                if (error.response) {
+                    output.textContent += `Status: ${error.response.status}\n`;
+                    output.textContent += `Data: ${JSON.stringify(error.response.data, null, 2)}\n`;
+                }
+            }
+        }
+        
+        // Auto-test common course IDs
+        window.onload = function() {
+            const commonIds = ['CSE', 'ECE', 'Mechanical', 'Civil', 'EEE', 'Diploma'];
+            let output = document.getElementById('output');
+            output.textContent = 'Auto-testing common course IDs...\n\n';
+            
+            commonIds.forEach(id => {
+                setTimeout(() => testEndpointSpecific(id), commonIds.indexOf(id) * 1000);
+            });
+        };
+        
+        async function testEndpointSpecific(courseId) {
+            const output = document.getElementById('output');
+            output.textContent += `Testing ${courseId}... `;
+            
+            try {
+                const response = await axios.get(`http://localhost:8000/api/exam/questions/${courseId}`, {
+                    timeout: 5000
+                });
+                
+                const count = response.data.data?.questions?.length || response.data.questions?.length || 0;
+                output.textContent += count > 0 ? `✓ ${count} questions\n` : `✗ No questions\n`;
+            } catch (error) {
+                output.textContent += `✗ Error: ${error.message}\n`;
+            }
+        }
+    </script>
+</body>
+</html> -->
