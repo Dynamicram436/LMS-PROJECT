@@ -3,7 +3,6 @@ import {
   FaUserCircle,
   FaGraduationCap,
   FaTrophy,
-  FaCalendarAlt,
   FaEdit,
   FaBook,
   FaChartLine,
@@ -65,10 +64,10 @@ const Profile = () => {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="relative w-20 h-20 mx-auto mb-8">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-pulse opacity-20"></div>
+            <div className="absolute inset-0 bg-linear-to-r from-blue-400 to-purple-500 rounded-full animate-pulse opacity-20"></div>
             <div className="absolute inset-2 bg-white rounded-full flex items-center justify-center">
               <FaUserCircle className="text-3xl text-blue-500 animate-bounce" />
             </div>
@@ -137,12 +136,12 @@ const Profile = () => {
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
         {/* Enhanced Profile Header with Gradient */}
-        <div className="relative h-48 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700">
+        <div className="relative h-48 bg-linear-to-r from-blue-600 via-purple-600 to-indigo-700">
           <div className="absolute -bottom-16 left-8">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full blur-xl opacity-30 animate-pulse"></div>
+              <div className="absolute inset-0 bg-linear-to-r from-blue-400 to-purple-500 rounded-full blur-xl opacity-30 animate-pulse"></div>
               <div className="relative p-1 bg-white rounded-full border-4 border-white shadow-2xl">
-                <div className="w-32 h-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center border-4 border-white">
+                <div className="w-32 h-32 bg-linear-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center border-4 border-white">
                   <FaUserCircle className="text-6xl text-gray-600" />
                 </div>
               </div>
@@ -167,11 +166,11 @@ const Profile = () => {
                 {user.name}
               </h1>
               <div className="flex flex-wrap items-center gap-3">
-                <span className="px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 text-sm font-bold uppercase tracking-wider rounded-full border border-blue-300 shadow-sm">
+                <span className="px-4 py-2 bg-linear-to-r from-blue-100 to-blue-200 text-blue-800 text-sm font-bold uppercase tracking-wider rounded-full border border-blue-300 shadow-sm">
                   <FaGraduationCap className="inline mr-2" size={12} />
                   Student
                 </span>
-                <span className="px-4 py-2 bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 text-sm font-bold uppercase tracking-wider rounded-full border border-purple-300 shadow-sm">
+                <span className="px-4 py-2 bg-linear-to-r from-purple-100 to-purple-200 text-purple-800 text-sm font-bold uppercase tracking-wider rounded-full border border-purple-300 shadow-sm">
                   <FaClock className="inline mr-2" size={12} />
                   Joined{" "}
                   {user.createdAt
@@ -179,7 +178,7 @@ const Profile = () => {
                     : new Date().getFullYear()}
                 </span>
                 <span
-                  className={`px-4 py-2 bg-gradient-to-r ${achievement.color} text-white text-sm font-bold uppercase tracking-wider rounded-full border border-white/30 shadow-sm flex items-center gap-2`}
+                  className={`px-4 py-2 bg-linear-to-r ${achievement.color} text-white text-sm font-bold uppercase tracking-wider rounded-full border border-white/30 shadow-sm flex items-center gap-2`}
                 >
                   {achievement.icon}
                   {achievement.level} Learner
@@ -190,7 +189,7 @@ const Profile = () => {
 
           {/* Profile Form when editing */}
           {editing && (
-            <div className="mt-6 p-8 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border border-gray-200 shadow-lg mb-10">
+            <div className="mt-6 p-8 bg-linear-to-br from-gray-50 to-gray-100 rounded-2xl border border-gray-200 shadow-lg mb-10">
               <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
                   <FaEdit className="text-blue-600" size={20} />
@@ -221,7 +220,7 @@ const Profile = () => {
                 </button>
                 <button
                   onClick={handleSave}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg"
+                  className="px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg"
                 >
                   Save Changes
                 </button>
@@ -231,7 +230,7 @@ const Profile = () => {
 
           {/* Enhanced Stats Grid with Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="p-6 bg-linear-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center gap-4 mb-4">
                 <div className="p-4 bg-blue-500 rounded-2xl shadow-lg">
                   <FaBook className="text-2xl text-white" />
@@ -248,7 +247,7 @@ const Profile = () => {
               <div className="text-sm text-blue-600 font-medium">Enrolled</div>
             </div>
 
-            <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl border border-purple-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="p-6 bg-linear-to-br from-purple-50 to-purple-100 rounded-2xl border border-purple-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center gap-4 mb-4">
                 <div className="p-4 bg-purple-500 rounded-2xl shadow-lg">
                   <FaTrophy className="text-2xl text-white" />
@@ -267,7 +266,7 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border border-green-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="p-6 bg-linear-to-br from-green-50 to-green-100 rounded-2xl border border-green-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center gap-4 mb-4">
                 <div className="p-4 bg-green-500 rounded-2xl shadow-lg">
                   <FaCertificate className="text-2xl text-white" />
@@ -284,7 +283,7 @@ const Profile = () => {
               <div className="text-sm text-green-600 font-medium">Passed</div>
             </div>
 
-            <div className="p-6 bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl border border-amber-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="p-6 bg-linear-to-br from-amber-50 to-amber-100 rounded-2xl border border-amber-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center gap-4 mb-4">
                 <div className="p-4 bg-amber-500 rounded-2xl shadow-lg">
                   <FaChartLine className="text-2xl text-white" />
@@ -303,9 +302,9 @@ const Profile = () => {
           </div>
 
           {/* Enhanced Personal Information Section */}
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-8 border border-gray-200 shadow-lg">
+          <div className="bg-linear-to-br from-gray-50 to-gray-100 rounded-2xl p-8 border border-gray-200 shadow-lg">
             <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-              <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl">
+              <div className="p-3 bg-linear-to-r from-blue-500 to-purple-500 rounded-xl">
                 <FaUserCircle className="text-white" size={24} />
               </div>
               Learning Profile
@@ -350,7 +349,7 @@ const Profile = () => {
             {/* Enhanced Account Details */}
             <div className="pt-6 border-t border-gray-200">
               <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg">
+                <div className="p-2 bg-linear-to-r from-green-500 to-teal-500 rounded-lg">
                   <FaGraduationCap className="text-white" size={18} />
                 </div>
                 Account Information
@@ -366,7 +365,7 @@ const Profile = () => {
                         Student ID
                       </span>
                     </div>
-                    <span className="text-sm font-mono text-gray-800 bg-gradient-to-r from-gray-100 to-gray-200 px-4 py-2 rounded-lg font-bold shadow-sm">
+                    <span className="text-sm font-mono text-gray-800 bg-linear-to-r from-gray-100 to-gray-200 px-4 py-2 rounded-lg font-bold shadow-sm">
                       {user.userid}
                     </span>
                   </div>
@@ -382,7 +381,7 @@ const Profile = () => {
                         Learning Status
                       </span>
                     </div>
-                    <span className="text-sm text-green-700 bg-gradient-to-r from-green-100 to-green-200 px-4 py-2 rounded-lg font-bold shadow-sm">
+                    <span className="text-sm text-green-700 bg-linear-to-r from-green-100 to-green-200 px-4 py-2 rounded-lg font-bold shadow-sm">
                       Active Learner
                     </span>
                   </div>
