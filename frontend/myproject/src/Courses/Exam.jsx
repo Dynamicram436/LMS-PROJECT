@@ -212,15 +212,49 @@ const Exam = () => {
       // Save attempt if user is logged in
       if (user) {
         try {
+          // Format answers for backend
+          const formattedAnswers = questions.map((question, index) => {
+            // Determine correct answer index
+            let correctAnswerIndex;
+            if (question.correctAnswer !== undefined) {
+              // Old format
+              correctAnswerIndex = question.correctAnswer;
+            } else if (question.correctAns && question.choices) {
+              // New format
+              correctAnswerIndex = question.choices.indexOf(question.correctAns);
+            } else {
+              // Fallback
+              correctAnswerIndex = 0;
+            }
+            
+            // Determine if user's answer is correct
+            const userSelectedOption = selectedOptions[index];
+            const isCorrect = userSelectedOption === correctAnswerIndex;
+            
+            // Get question text and options
+            const questionText = question.qDesc || question.question || `Question ${index + 1}`;
+            const options = question.choices || question.options || [];
+            
+            return {
+              questionIndex: index,
+              question: questionText,
+              options: options,
+              selectedOption: userSelectedOption,
+              correctAnswer: correctAnswerIndex,
+              isCorrect: isCorrect,
+            };
+          });
+          
           const attemptData = {
+            userId: user.userid, // Add userId
             courseId,
-            score: Math.round((calculatedScore / questions.length) * 100),
+            score: calculatedScore, // Send raw score (number of correct answers)
             totalQuestions: questions.length,
-            correctAnswers: calculatedScore,
-            timestamp: new Date().toISOString()
+            answers: formattedAnswers,
+            attemptId: `${user.userid}_${courseId}_${Date.now()}` // Unique attempt ID
           };
           
-          await apiClient.post('/exam/save-attempt', attemptData);
+          await apiClient.post('/exam/results', attemptData);
           
           // Refresh exam history
           const historyResponse = await apiClient.get(`/exam/history/${courseId}`);
