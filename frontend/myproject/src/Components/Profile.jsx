@@ -260,7 +260,7 @@ const Profile = () => {
             <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mt-6">
               <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <FaChartBar className="text-blue-600 text-lg" />
-                Learning Progress
+                Learning Progress Summary
               </h3>
               <div className="space-y-4">
                 <div>
