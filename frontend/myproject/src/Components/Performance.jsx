@@ -266,6 +266,26 @@ const Performance = () => {
     // Listen for progress updates
     const handleProgressUpdate = (event) => {
       if (user?.userid === event.detail.userId) {
+        // Optimistic update
+        const { courseId, completionPercentage } = event.detail;
+
+        setAllExamData((prevData) => {
+          if (!prevData) return prevData;
+          return prevData.map((course) => {
+            if (course.courseId === courseId) {
+              return { ...course, completionPercentage: completionPercentage };
+            }
+            return course;
+          });
+        });
+
+        setExamData((prev) => {
+          if (prev && prev.courseId === courseId) {
+            return { ...prev, completionPercentage: completionPercentage };
+          }
+          return prev;
+        });
+
         refreshExamResults();
       }
     };

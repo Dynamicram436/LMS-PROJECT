@@ -197,18 +197,32 @@ const Courses = () => {
       return;
     }
 
+    // Calculate total videos
+    const allTopics = branchSyllabus.units.flatMap((u) => u.topics);
+    const totalVideos = allTopics.length;
+
     try {
       const result = await ProgressService.updateVideoProgress(
         user.userid,
         String(subject),
         String(activeTopic.id),
-        true
+        true,
+        100, // Explicitly set to 100% completion
+        totalVideos
       );
 
       if (result.success) {
         toast.success("Progress saved!");
-        setCompletedVideos((prev) => [...new Set([...prev, activeTopic.id])]);
-        setOverallProgress(result.data.completionPercentage);
+        setCompletedVideos((prev) => [...new Set([...prev, String(activeTopic.id)])]);
+        
+        // Calculate new overall progress
+        const allTopics = branchSyllabus.units.flatMap((u) => u.topics);
+        const newCompletedCount = completedVideos.includes(String(activeTopic.id)) 
+          ? completedVideos.length 
+          : completedVideos.length + 1;
+        const newOverallProgress = Math.round((newCompletedCount / allTopics.length) * 100);
+        
+        setOverallProgress(newOverallProgress);
 
         try {
           const updatedUser = JSON.parse(localStorage.getItem("user"));
@@ -221,12 +235,11 @@ const Courses = () => {
               (course) => String(course.courseId) === String(subject)
             );
             if (courseIndex !== -1) {
-              updatedUser.examResults[courseIndex].completionPercentage =
-                result.data.completionPercentage;
+              updatedUser.examResults[courseIndex].completionPercentage = newOverallProgress;
             } else {
               updatedUser.examResults.push({
                 courseId: subject,
-                completionPercentage: result.data.completionPercentage,
+                completionPercentage: newOverallProgress,
               });
             }
 
@@ -238,13 +251,11 @@ const Courses = () => {
               (cp) => String(cp.courseId) === String(subject)
             );
             if (courseProgressIndex !== -1) {
-              updatedUser.courseProgress[
-                courseProgressIndex
-              ].completionPercentage = result.data.completionPercentage;
+              updatedUser.courseProgress[courseProgressIndex].completionPercentage = newOverallProgress;
             } else {
               updatedUser.courseProgress.push({
                 courseId: subject,
-                completionPercentage: result.data.completionPercentage,
+                completionPercentage: newOverallProgress,
                 videos: [],
                 exam: { attempts: 0, passed: false, score: 0 },
               });
@@ -257,7 +268,7 @@ const Courses = () => {
                 detail: {
                   userId: updatedUser.userid,
                   courseId: subject,
-                  completionPercentage: result.data.completionPercentage,
+                  completionPercentage: newOverallProgress,
                 },
               })
             );
@@ -275,8 +286,7 @@ const Courses = () => {
       console.error("Error marking topic as completed:", error);
       if (error.response) {
         toast.error(
-          `Server error: ${
-            error.response.data.message || "Failed to save progress"
+          `Server error: ${error.response.data.message || "Failed to save progress"
           }`
         );
       } else if (error.request) {
@@ -439,11 +449,10 @@ const Courses = () => {
                       <button
                         onClick={handleMarkAsCompleted}
                         disabled={isCompleted(activeTopic.id)}
-                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                          isCompleted(activeTopic.id)
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${isCompleted(activeTopic.id)
                             ? "bg-green-50 text-green-700 border border-green-200 cursor-default"
                             : "bg-white text-gray-700 border border-gray-300 hover:border-gray-400 hover:shadow-sm"
-                        }`}
+                          }`}
                       >
                         <FiCheckCircle className="w-4 h-4" />
                         {isCompleted(activeTopic.id)
@@ -513,9 +522,8 @@ const Courses = () => {
 
           {/* Sidebar */}
           <aside
-            className={`w-full lg:w-80 ${
-              sidebarOpen ? "block" : "hidden"
-            } lg:block`}
+            className={`w-full lg:w-80 ${sidebarOpen ? "block" : "hidden"
+              } lg:block`}
           >
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="p-5 border-b border-gray-200">
@@ -574,7 +582,7 @@ const Courses = () => {
                                 (unit.topics.filter((t) => isCompleted(t.id))
                                   .length /
                                   unit.topics.length) *
-                                  100
+                                100
                               )}
                               color="bg-green-500"
                               height="h-1"
@@ -595,11 +603,10 @@ const Courses = () => {
                           <div
                             key={topic.id}
                             onClick={() => handleTopicSelect(topic)}
-                            className={`flex items-center gap-3 p-4 cursor-pointer transition-all border-l-4 ${
-                              activeTopic?.id === topic.id
+                            className={`flex items-center gap-3 p-4 cursor-pointer transition-all border-l-4 ${activeTopic?.id === topic.id
                                 ? "bg-blue-50 border-blue-500"
                                 : "hover:bg-gray-50 border-transparent"
-                            }`}
+                              }`}
                           >
                             <div className="flex-shrink-0">
                               {isCompleted(topic.id) ? (
@@ -612,11 +619,10 @@ const Courses = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p
-                                className={`text-sm font-medium truncate ${
-                                  activeTopic?.id === topic.id
+                                className={`text-sm font-medium truncate ${activeTopic?.id === topic.id
                                     ? "text-blue-700"
                                     : "text-gray-900"
-                                }`}
+                                  }`}
                               >
                                 {topic.name}
                               </p>

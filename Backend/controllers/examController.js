@@ -5,9 +5,9 @@ import seedQuestions from "../seedExamQuestions.js";
 import asyncHandler from "express-async-handler";
 
 export const updateVideoProgress = asyncHandler(async (req, res) => {
-  const { userId, courseId, videoId, isCompleted, progressPercentage } = req.body;
+  const { userId, courseId, videoId, isCompleted, progressPercentage, totalVideos } = req.body;
 
-  console.log('[updateVideoProgress] Received request:', { userId, courseId, videoId, isCompleted, progressPercentage });
+  console.log('[updateVideoProgress] Received request:', { userId, courseId, videoId, isCompleted, progressPercentage, totalVideos });
 
   if (!userId || !courseId || !videoId) {
     console.log('[updateVideoProgress] Missing required fields');
@@ -71,12 +71,12 @@ export const updateVideoProgress = asyncHandler(async (req, res) => {
 
     // Check if this is for an exam (videoId starts with 'exam_')
     if (videoId.startsWith('exam_')) {
-      // For exam progress, we use the progressPercentage from the request
-      if (progressPercentage !== undefined) {
-        // Only update if progress is higher than current (don't let it go backwards)
-        if (progressPercentage > courseProgress.completionPercentage) {
-          courseProgress.completionPercentage = progressPercentage;
-        }
+      // For exam progress, we set the completion to 100% when marking as complete
+      if (progressPercentage !== undefined && progressPercentage === 100) {
+        courseProgress.completionPercentage = 100;
+      } else if (isCompleted) {
+        // If just marking as completed without specific percentage, set to 100%
+        courseProgress.completionPercentage = 100;
       }
     } else {
       // Original video progress handling
@@ -114,31 +114,35 @@ export const updateVideoProgress = asyncHandler(async (req, res) => {
       // Convert courseId to string and extract base course ID to ensure proper lookup
       const courseIdStr = String(courseId);
       const baseCourseId = getBaseCourseId(courseIdStr);  // Use the function defined above
-      const totalExpectedVideos = topicCounts[baseCourseId] || nonExamVideos.length || 4;
+      
+      // Use totalVideos from frontend if available, otherwise fallback
+      const totalExpectedVideos = totalVideos || topicCounts[baseCourseId] || Math.max(nonExamVideos.length, 4);
 
-      const videoWeight = 50;
-      const examWeight = 50;
-
-      // Calculate video score based on completed videos
-      let videoScore = 0;
-      if (totalExpectedVideos > 0) {
-        videoScore = Math.min(videoWeight, (completedNonExamVideos / totalExpectedVideos) * videoWeight);
-      }
-
-      // Get exam score if exam exists
-      if (!courseProgress.exam) {
-        courseProgress.exam = { attempts: 0, passed: false, score: 0 };
-      }
-      const examScore = courseProgress.exam?.passed ? examWeight : 0;
-
-      courseProgress.completionPercentage = Math.round(videoScore + examScore);
+      // Calculate progress treating videos and exam as items
+      // This fixes the issue where progress was capped at 50% if exam wasn't passed
+      
+      const examPassed = courseProgress.exam?.passed || false;
+      const totalItems = totalExpectedVideos + 1; // Videos + 1 Exam
+      const completedItems = completedNonExamVideos + (examPassed ? 1 : 0);
+      
+      // Calculate percentage based on items completed
+      courseProgress.completionPercentage = Math.min(100, Math.round((completedItems / totalItems) * 100));
     }
 
     if (courseProgress.completionPercentage >= 100) {
       courseProgress.isCourseCompleted = true;
     }
 
+    // Mark the field as modified to ensure Mongoose saves it
+    user.markModified('courseProgress');
     await user.save();
+
+    console.log('[updateVideoProgress] Successfully updated progress:', {
+      userId,
+      courseId,
+      videoId,
+      completionPercentage: courseProgress.completionPercentage
+    });
 
     res.status(200).json({
       success: true,
@@ -298,18 +302,17 @@ export const saveExamResult = asyncHandler(async (req, res) => {
 
   // Use base course ID to get expected total videos
   const baseCourseId = getBaseCourseIdForExam(courseId);  // Use the local function
-  const totalExpectedVideos = topicCounts[baseCourseId] || nonExamVideos.length || 4;
+  const totalExpectedVideos = topicCounts[baseCourseId] || Math.max(nonExamVideos.length, 4);
 
-  const videoCompletion =
-    totalExpectedVideos > 0
-      ? (completedNonExamVideos / totalExpectedVideos) * 50
-      : 0;
-  const examCompletion = passed ? 50 : 0;
+  // New calculation: Treat videos and exam as items to be completed
+  const totalItems = totalExpectedVideos + 1; // Videos + 1 Exam
+  const completedItems = completedNonExamVideos + (passed ? 1 : 0);
+  
   courseProgress.completionPercentage = Math.min(
     100,
-    videoCompletion + examCompletion
+    Math.round((completedItems / totalItems) * 100)
   );
-  
+
   // If exam is passed, also mark the exam video as completed for this course
   const examVideoId = `exam_${courseId}`;
   let examVideoProgress = courseProgress.videos.find((v) => v.videoId === examVideoId);
@@ -325,8 +328,10 @@ export const saveExamResult = asyncHandler(async (req, res) => {
     examVideoProgress.lastWatched = new Date();
   }
 
+  // Mark as modified and save
+  user.markModified('courseProgress');
   await user.save();
-  console.log(`[SaveExamResult] Successfully saved exam result for ${userId}`);
+  console.log(`[SaveExamResult] Successfully saved exam result for ${userId}, completion: ${courseProgress.completionPercentage}%`);
 
   res.status(200).json({
     success: true,
@@ -339,6 +344,55 @@ export const saveExamResult = asyncHandler(async (req, res) => {
       attemptId: finalAttemptId,
     },
   });
+});
+
+// NEW: Get exam history for a specific course
+export const getExamHistory = asyncHandler(async (req, res) => {
+  const { courseId } = req.params;
+  const userId = req.user?.userid || req.query.userId; // Support both auth and query param
+
+  console.log(`[getExamHistory] Request for courseId: ${courseId}, userId: ${userId}`);
+
+  if (!userId) {
+    return res.status(401).json({
+      success: false,
+      message: "User authentication required"
+    });
+  }
+
+  try {
+    // Find all exam attempts for this user and course
+    const examAttempts = await ExamAttempt.find({
+      userId: userId,
+      courseId: String(courseId)
+    })
+      .sort({ attemptDate: -1 })
+      .lean();
+
+    // Format the attempts for frontend
+    const formattedAttempts = examAttempts.map((attempt, index) => ({
+      attemptNumber: attempt.attemptNumber || (examAttempts.length - index),
+      score: attempt.score,
+      passed: attempt.passed,
+      timestamp: attempt.attemptDate || attempt.createdAt,
+      totalQuestions: attempt.totalQuestions,
+      correctAnswers: attempt.correctAnswers,
+      answers: attempt.answers || []
+    }));
+
+    res.status(200).json({
+      success: true,
+      attempts: formattedAttempts,
+      totalAttempts: formattedAttempts.length
+    });
+  } catch (error) {
+    console.error('[getExamHistory] Error fetching exam history:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching exam history',
+      error: error.message
+    });
+  }
 });
 
 // Get all exam attempts for a user from the ExamAttempt collection

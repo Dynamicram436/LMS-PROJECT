@@ -1,14 +1,15 @@
 import apiClient from './axiosConfig';
 
 export const ProgressService = {
-    updateVideoProgress: async (userId, courseId, videoId, isCompleted = true, progressPercentage = null) => {
+    updateVideoProgress: async (userId, courseId, videoId, isCompleted = true, progressPercentage = null, totalVideos = null) => {
         try {
             const response = await apiClient.post('/exam/video-progress', {
                 userId,
                 courseId,
                 videoId,
                 isCompleted,
-                progressPercentage
+                progressPercentage,
+                totalVideos
             });
             return response.data;
         } catch (error) {

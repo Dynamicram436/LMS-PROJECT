@@ -1,5 +1,5 @@
 import express from "express";
-import { saveExamResult, getExamResults, getExamQuestions, createExamQuestions, seedExamQuestions, updateVideoProgress } from "../controllers/examController.js";
+import { saveExamResult, getExamResults, getExamQuestions, createExamQuestions, seedExamQuestions, updateVideoProgress, getExamHistory } from "../controllers/examController.js";
 import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -22,5 +22,8 @@ router.get("/results/:userId", getExamResults);
 
 // Update video progress
 router.post("/video-progress", updateVideoProgress);
+
+// Get exam history for a specific course
+router.get("/history/:courseId", getExamHistory);
 
 export default router;

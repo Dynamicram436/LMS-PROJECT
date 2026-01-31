@@ -32,16 +32,24 @@ const Profile = () => {
   // Function to refresh progress data
   const refreshProgressData = async () => {
     if (!user?.userid) return;
-    
+
     try {
       const progressData = await ProgressService.getUserProgress(user.userid);
-      if (progressData.success && progressData.data) {
+      console.log("Refresh progress data received:", progressData);
+
+      if (progressData.success && Array.isArray(progressData.data)) {
         const updatedUserData = {
           ...user,
           examResults: progressData.data,
         };
         setUser(updatedUserData);
         localStorage.setItem("user", JSON.stringify(updatedUserData));
+
+        // Force re-render by updating state
+        setUser((prev) => ({ ...prev, examResults: progressData.data }));
+        console.log("Successfully refreshed progress data");
+      } else {
+        console.log("No valid progress data received during refresh");
       }
     } catch (error) {
       console.error("Error refreshing progress:", error);
@@ -60,7 +68,9 @@ const Profile = () => {
             const progressData = await ProgressService.getUserProgress(
               userData.userid
             );
-            if (progressData.success && progressData.data) {
+            console.log("Progress data received:", progressData);
+
+            if (progressData.success && Array.isArray(progressData.data)) {
               // Update user data with latest progress
               const updatedUserData = {
                 ...userData,
@@ -68,9 +78,32 @@ const Profile = () => {
               };
               setUser(updatedUserData);
               localStorage.setItem("user", JSON.stringify(updatedUserData));
+              console.log("Updated user with exam results:", progressData.data);
+            } else {
+              console.log(
+                "No valid progress data received, using existing data"
+              );
+              // Use existing examResults if available
+              if (userData.examResults) {
+                setUser({
+                  ...userData,
+                  examResults: Array.isArray(userData.examResults)
+                    ? userData.examResults
+                    : [],
+                });
+              }
             }
           } catch (error) {
             console.error("Error fetching progress:", error);
+            // Fallback to existing data
+            if (userData.examResults) {
+              setUser({
+                ...userData,
+                examResults: Array.isArray(userData.examResults)
+                  ? userData.examResults
+                  : [],
+              });
+            }
           }
         }
 
@@ -149,10 +182,10 @@ const Profile = () => {
       if (result.success) {
         toast.success("Course marked as 100% complete!");
 
-        // Refresh user data
+        // Immediately update local state
         const updatedUserData = {
           ...user,
-          examResults: user.examResults.map((course) =>
+          examResults: (user.examResults || []).map((course) =>
             course.courseId === courseId
               ? { ...course, completionPercentage: 100 }
               : course
@@ -162,7 +195,7 @@ const Profile = () => {
         setUser(updatedUserData);
         localStorage.setItem("user", JSON.stringify(updatedUserData));
 
-        // Dispatch event to update other components
+        // Dispatch event to update other components immediately
         window.dispatchEvent(
           new CustomEvent("progressUpdated", {
             detail: {
@@ -173,8 +206,10 @@ const Profile = () => {
           })
         );
 
-        // Refresh progress data to ensure consistency
-        refreshProgressData();
+        // Force refresh progress data from server
+        setTimeout(() => {
+          refreshProgressData();
+        }, 500);
       } else {
         toast.error(result.message || "Failed to mark course as complete");
       }
@@ -195,14 +230,14 @@ const Profile = () => {
             </div>
           </div>
           <p className="text-gray-600 animate-pulse font-medium text-lg">
-            Loading your learning dashboard...
+            Loading your Profile...
           </p>
         </div>
       </div>
     );
   }
 
-  const examResults = user.examResults || [];
+  const examResults = Array.isArray(user.examResults) ? user.examResults : [];
   const totalAttempts = examResults.reduce(
     (sum, course) => sum + (course.examAttempts?.length || 0),
     0
@@ -222,6 +257,17 @@ const Profile = () => {
             }
             return sum;
           }, 0) / totalAttempts
+        )
+      : 0;
+
+  // Calculate average progress across all courses
+  const averageProgress =
+    coursesStarted > 0
+      ? Math.round(
+          examResults.reduce(
+            (sum, course) => sum + (course.completionPercentage || 0),
+            0
+          ) / coursesStarted
         )
       : 0;
 
@@ -382,21 +428,16 @@ const Profile = () => {
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">Course Completion</span>
-                    <span className="font-medium">
-                      {Math.round(
-                        (completedCourses / Math.max(coursesStarted, 1)) * 100
-                      )}
-                      %
+                    <span className="text-gray-600">
+                      Average Course Progress
                     </span>
+                    <span className="font-medium">{averageProgress}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full"
                       style={{
-                        width: `${Math.round(
-                          (completedCourses / Math.max(coursesStarted, 1)) * 100
-                        )}%`,
+                        width: `${averageProgress}%`,
                       }}
                     ></div>
                   </div>
@@ -540,84 +581,113 @@ const Profile = () => {
                 Recent Learning Activity
               </h3>
               <div className="space-y-4">
-                {examResults.slice(0, 3).map((course, index) => {
-                  // Calculate course completion percentage
-                  const completionPercentage = course.completionPercentage || 0;
+                {examResults && examResults.length > 0 ? (
+                  examResults.slice(0, 3).map((course, index) => {
+                    // Calculate course completion percentage with better fallbacks
+                    const completionPercentage =
+                      course.completionPercentage !== undefined &&
+                      course.completionPercentage !== null
+                        ? Math.max(
+                            0,
+                            Math.min(100, course.completionPercentage)
+                          )
+                        : 0;
 
-                  // Determine completion status based on percentage
-                  let completionStatus = "In Progress";
-                  let statusColor = "bg-gray-100 text-gray-800";
+                    // Determine completion status based on percentage
+                    let completionStatus = "In Progress";
+                    let statusColor = "bg-gray-100 text-gray-800";
 
-                  if (completionPercentage >= 100) {
-                    completionStatus = "100% Complete";
-                    statusColor = "bg-green-100 text-green-800";
-                  } else if (completionPercentage >= 75) {
-                    completionStatus = "75% Complete";
-                    statusColor = "bg-blue-200 text-blue-800";
-                  } else if (completionPercentage >= 50) {
-                    completionStatus = "50% Complete";
-                    statusColor = "bg-blue-100 text-blue-800";
-                  } else if (completionPercentage >= 25) {
-                    completionStatus = "25% Complete";
-                    statusColor = "bg-orange-100 text-orange-800";
-                  } else if (completionPercentage >= 1) {
-                    completionStatus = "1% Complete";
-                    statusColor = "bg-yellow-100 text-yellow-800";
-                  } else {
-                    completionStatus = "0% Complete";
-                    statusColor = "bg-gray-100 text-gray-800";
-                  }
+                    if (completionPercentage >= 100) {
+                      completionStatus = "100% Complete";
+                      statusColor = "bg-green-100 text-green-800";
+                    } else if (completionPercentage >= 75) {
+                      completionStatus = "75% Complete";
+                      statusColor = "bg-blue-200 text-blue-800";
+                    } else if (completionPercentage >= 50) {
+                      completionStatus = "50% Complete";
+                      statusColor = "bg-blue-100 text-blue-800";
+                    } else if (completionPercentage >= 25) {
+                      completionStatus = "25% Complete";
+                      statusColor = "bg-orange-100 text-orange-800";
+                    } else if (completionPercentage >= 1) {
+                      completionStatus = "1% Complete";
+                      statusColor = "bg-yellow-100 text-yellow-800";
+                    } else {
+                      completionStatus = "Not Started";
+                      statusColor = "bg-gray-100 text-gray-800";
+                    }
 
-                  return (
-                    <div
-                      key={index}
-                      className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg"
-                    >
-                      <div className="p-3 bg-white rounded-lg shadow-sm">
-                        <FaBook className="text-gray-600 text-lg" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">
-                          {course.courseName || `Course ${index + 1}`}
-                        </h4>
-                        <p className="text-sm text-gray-600">
-                          Progress: {completionPercentage}%
-                        </p>
-                        <div className="mt-2">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 bg-gray-200 rounded-full h-2">
-                              <div
-                                className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full"
-                                style={{ width: `${completionPercentage}%` }}
-                              ></div>
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg"
+                      >
+                        <div className="p-3 bg-white rounded-lg shadow-sm">
+                          <FaBook className="text-gray-600 text-lg" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">
+                            {course.courseName ||
+                              course.courseId ||
+                              `Course ${index + 1}`}
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            Progress: {completionPercentage}%
+                          </p>
+                          {/* Debug info - remove in production */}
+                          {import.meta.env.DEV && (
+                            <p className="text-xs text-gray-400 mt-1">
+                              Debug: completionPercentage=
+                              {course.completionPercentage}, passed=
+                              {course.passed ? "true" : "false"}
+                            </p>
+                          )}
+                          <div className="mt-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                <div
+                                  className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full"
+                                  style={{ width: `${completionPercentage}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-xs font-medium text-gray-600">
+                                {completionPercentage}%
+                              </span>
                             </div>
-                            <span className="text-xs font-medium text-gray-600">
-                              {completionPercentage}%
-                            </span>
                           </div>
                         </div>
+                        <div className="text-right">
+                          <span
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusColor}`}
+                          >
+                            {completionStatus}
+                          </span>
+                          {completionPercentage >= 1 &&
+                            completionPercentage < 100 && (
+                              <button
+                                onClick={() =>
+                                  markCourseComplete(course.courseId)
+                                }
+                                className="mt-2 inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium hover:bg-blue-200 transition-colors"
+                              >
+                                Mark Complete
+                              </button>
+                            )}
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusColor}`}
-                        >
-                          {completionStatus}
-                        </span>
-                        {completionPercentage >= 1 &&
-                          completionPercentage < 100 && (
-                            <button
-                              onClick={() =>
-                                markCourseComplete(course.courseId)
-                              }
-                              className="mt-2 inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium hover:bg-blue-200 transition-colors"
-                            >
-                              Mark Complete
-                            </button>
-                          )}
-                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-gray-400 mb-4">
+                      <FaBook className="text-4xl mx-auto" />
                     </div>
-                  );
-                })}
+                    <p className="text-gray-500">No learning activity yet</p>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Start a course to see your progress
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
