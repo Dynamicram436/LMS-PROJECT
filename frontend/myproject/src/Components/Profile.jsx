@@ -29,6 +29,25 @@ const Profile = () => {
     name: "",
   });
 
+  // Function to refresh progress data
+  const refreshProgressData = async () => {
+    if (!user?.userid) return;
+    
+    try {
+      const progressData = await ProgressService.getUserProgress(user.userid);
+      if (progressData.success && progressData.data) {
+        const updatedUserData = {
+          ...user,
+          examResults: progressData.data,
+        };
+        setUser(updatedUserData);
+        localStorage.setItem("user", JSON.stringify(updatedUserData));
+      }
+    } catch (error) {
+      console.error("Error refreshing progress:", error);
+    }
+  };
+
   useEffect(() => {
     const initializeProfile = async () => {
       const storedUser = localStorage.getItem("user");
@@ -66,7 +85,29 @@ const Profile = () => {
     };
 
     initializeProfile();
-  }, []);
+
+    // Listen for real-time progress updates
+    const handleProgressUpdate = (event) => {
+      if (event.detail.userId === user?.userid) {
+        refreshProgressData();
+      }
+    };
+
+    // Listen for exam submissions
+    const handleExamSubmission = (event) => {
+      if (event.detail.userId === user?.userid) {
+        refreshProgressData();
+      }
+    };
+
+    window.addEventListener("progressUpdated", handleProgressUpdate);
+    window.addEventListener("examSubmitted", handleExamSubmission);
+
+    return () => {
+      window.removeEventListener("progressUpdated", handleProgressUpdate);
+      window.removeEventListener("examSubmitted", handleExamSubmission);
+    };
+  }, [user?.userid]); // Add user.userid to dependencies
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -131,6 +172,9 @@ const Profile = () => {
             },
           })
         );
+
+        // Refresh progress data to ensure consistency
+        refreshProgressData();
       } else {
         toast.error(result.message || "Failed to mark course as complete");
       }
