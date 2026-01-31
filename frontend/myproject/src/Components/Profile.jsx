@@ -19,6 +19,7 @@ import {
   FaBuilding,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
+import ProgressService from "../utils/ProgressService";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -29,10 +30,31 @@ const Profile = () => {
   });
 
   useEffect(() => {
-    const initializeProfile = () => {
+    const initializeProfile = async () => {
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         const userData = JSON.parse(storedUser);
+
+        // Fetch and update progress data
+        if (userData.userid) {
+          try {
+            const progressData = await ProgressService.getUserProgress(
+              userData.userid
+            );
+            if (progressData.success && progressData.data) {
+              // Update user data with latest progress
+              const updatedUserData = {
+                ...userData,
+                examResults: progressData.data,
+              };
+              setUser(updatedUserData);
+              localStorage.setItem("user", JSON.stringify(updatedUserData));
+            }
+          } catch (error) {
+            console.error("Error fetching progress:", error);
+          }
+        }
+
         setUser(userData);
         setEditForm({
           name: userData.name || "",
@@ -67,6 +89,57 @@ const Profile = () => {
     toast.success("Profile updated successfully!");
   };
 
+  const markCourseComplete = async (courseId) => {
+    if (!user?.userid || !courseId) {
+      toast.error("User or course information is missing");
+      return;
+    }
+
+    try {
+      // Update video progress to 100% to mark the course as complete
+      const result = await ProgressService.updateVideoProgress(
+        user.userid,
+        courseId,
+        `exam_${courseId}`, // Using exam video ID to represent course completion
+        true,
+        100 // Set completion percentage to 100%
+      );
+
+      if (result.success) {
+        toast.success("Course marked as 100% complete!");
+
+        // Refresh user data
+        const updatedUserData = {
+          ...user,
+          examResults: user.examResults.map((course) =>
+            course.courseId === courseId
+              ? { ...course, completionPercentage: 100 }
+              : course
+          ),
+        };
+
+        setUser(updatedUserData);
+        localStorage.setItem("user", JSON.stringify(updatedUserData));
+
+        // Dispatch event to update other components
+        window.dispatchEvent(
+          new CustomEvent("progressUpdated", {
+            detail: {
+              userId: user.userid,
+              courseId: courseId,
+              completionPercentage: 100,
+            },
+          })
+        );
+      } else {
+        toast.error(result.message || "Failed to mark course as complete");
+      }
+    } catch (error) {
+      console.error("Error marking course as complete:", error);
+      toast.error("Failed to mark course as complete");
+    }
+  };
+
   if (loading || !user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
@@ -91,8 +164,8 @@ const Profile = () => {
     0
   );
   const coursesStarted = examResults.length;
-  const passedCourses = examResults.filter((course) =>
-    course.examAttempts?.some((attempt) => attempt.passed)
+  const completedCourses = examResults.filter(
+    (course) => (course.completionPercentage || 0) >= 100
   ).length;
   const overallScore =
     totalAttempts > 0
@@ -268,7 +341,7 @@ const Profile = () => {
                     <span className="text-gray-600">Course Completion</span>
                     <span className="font-medium">
                       {Math.round(
-                        (passedCourses / Math.max(coursesStarted, 1)) * 100
+                        (completedCourses / Math.max(coursesStarted, 1)) * 100
                       )}
                       %
                     </span>
@@ -278,7 +351,7 @@ const Profile = () => {
                       className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full"
                       style={{
                         width: `${Math.round(
-                          (passedCourses / Math.max(coursesStarted, 1)) * 100
+                          (completedCourses / Math.max(coursesStarted, 1)) * 100
                         )}%`,
                       }}
                     ></div>
@@ -336,9 +409,9 @@ const Profile = () => {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Courses Passed</p>
+                    <p className="text-sm text-gray-600">Courses Completed</p>
                     <p className="text-2xl font-bold text-gray-900 mt-1">
-                      {passedCourses}
+                      {completedCourses}
                     </p>
                   </div>
                   <div className="p-3 bg-green-100 rounded-lg">
@@ -423,43 +496,84 @@ const Profile = () => {
                 Recent Learning Activity
               </h3>
               <div className="space-y-4">
-                {examResults.slice(0, 3).map((course, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg"
-                  >
-                    <div className="p-3 bg-white rounded-lg shadow-sm">
-                      <FaBook className="text-gray-600 text-lg" />
+                {examResults.slice(0, 3).map((course, index) => {
+                  // Calculate course completion percentage
+                  const completionPercentage = course.completionPercentage || 0;
+
+                  // Determine completion status based on percentage
+                  let completionStatus = "In Progress";
+                  let statusColor = "bg-gray-100 text-gray-800";
+
+                  if (completionPercentage >= 100) {
+                    completionStatus = "100% Complete";
+                    statusColor = "bg-green-100 text-green-800";
+                  } else if (completionPercentage >= 75) {
+                    completionStatus = "75% Complete";
+                    statusColor = "bg-blue-200 text-blue-800";
+                  } else if (completionPercentage >= 50) {
+                    completionStatus = "50% Complete";
+                    statusColor = "bg-blue-100 text-blue-800";
+                  } else if (completionPercentage >= 25) {
+                    completionStatus = "25% Complete";
+                    statusColor = "bg-orange-100 text-orange-800";
+                  } else if (completionPercentage >= 1) {
+                    completionStatus = "1% Complete";
+                    statusColor = "bg-yellow-100 text-yellow-800";
+                  } else {
+                    completionStatus = "0% Complete";
+                    statusColor = "bg-gray-100 text-gray-800";
+                  }
+
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg"
+                    >
+                      <div className="p-3 bg-white rounded-lg shadow-sm">
+                        <FaBook className="text-gray-600 text-lg" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900">
+                          {course.courseName || `Course ${index + 1}`}
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          Progress: {completionPercentage}%
+                        </p>
+                        <div className="mt-2">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full"
+                                style={{ width: `${completionPercentage}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-xs font-medium text-gray-600">
+                              {completionPercentage}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusColor}`}
+                        >
+                          {completionStatus}
+                        </span>
+                        {completionPercentage >= 1 &&
+                          completionPercentage < 100 && (
+                            <button
+                              onClick={() =>
+                                markCourseComplete(course.courseId)
+                              }
+                              className="mt-2 inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium hover:bg-blue-200 transition-colors"
+                            >
+                              Mark Complete
+                            </button>
+                          )}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">
-                        {course.courseName || `Course ${index + 1}`}
-                      </h4>
-                      <p className="text-sm text-gray-600">
-                        {course.examAttempts?.length > 0
-                          ? `Last attempt: ${
-                              course.examAttempts[
-                                course.examAttempts.length - 1
-                              ].score || 0
-                            }%`
-                          : "No attempts yet"}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                          course.examAttempts?.some((attempt) => attempt.passed)
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {course.examAttempts?.some((attempt) => attempt.passed)
-                          ? "Completed"
-                          : "In Progress"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
