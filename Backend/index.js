@@ -21,6 +21,12 @@ app.use(express.json());
 // Serve static files from uploads directory
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
+// Routes
+app.get("/", (req, res) => res.send("EduTrack API is running"));
+
+app.use("/api/auth", authRoute);
+app.use("/api/exam", examRoute);
+
 // Connect to database and start server
 const startServer = async () => {
   try {
@@ -34,12 +40,6 @@ const startServer = async () => {
 };
 
 startServer();
-
-// Routes
-app.get("/", (req, res) => res.send("EduTrack API is running"));
-
-app.use("/api/auth", authRoute);
-app.use("/api/exam", examRoute);
 
 // Global error handling middleware
 app.use((err, req, res, next) => {

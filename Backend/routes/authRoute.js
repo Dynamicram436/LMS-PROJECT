@@ -1,6 +1,6 @@
 import express from "express";
 import { register, login, getUser, uploadProfilePic, getProfilePic, uploadProfilePicture } from "../controllers/authControllers.js";
-import { protect } from "../middleware/auth.js";
+import { verifyToken as protect } from "../middleware/auth.js";
 
 const router = express.Router();
 

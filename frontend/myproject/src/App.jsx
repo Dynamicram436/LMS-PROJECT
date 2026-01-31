@@ -36,8 +36,8 @@ const App = () => {
         <Route path="/viewcourses" element={<DashboardLayout><Viewcourses /></DashboardLayout>} />
         <Route path="/profile" element={<DashboardLayout><Profile /></DashboardLayout>} />
         <Route path="/courses/:category/*" element={<DashboardLayout><CoursesWithExam /></DashboardLayout>} />
-        <Route path="/performance/:category" element={<DashboardLayout><Performance /></DashboardLayout>} />
         <Route path="/performance/overall" element={<DashboardLayout><Performance /></DashboardLayout>} />
+        <Route path="/performance/:category" element={<DashboardLayout><Performance /></DashboardLayout>} />
       </Routes>
     </>
   );
