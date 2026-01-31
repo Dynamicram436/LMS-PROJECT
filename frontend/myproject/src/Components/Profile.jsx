@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import {
   FaUserCircle,
@@ -12,6 +13,17 @@ import {
   FaMedal,
   FaAward,
   FaCrown,
+  FaBookOpen,
+  FaTasks,
+  FaCheckCircle,
+  FaRegClock,
+  FaUserGraduate,
+  FaChalkboardTeacher,
+  FaCalendarAlt,
+  FaIdCard,
+  FaChartBar,
+  FaGlobe,
+  FaBuilding,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 
@@ -64,12 +76,12 @@ const Profile = () => {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="relative w-20 h-20 mx-auto mb-8">
-            <div className="absolute inset-0 bg-linear-to-r from-blue-400 to-purple-500 rounded-full animate-pulse opacity-20"></div>
-            <div className="absolute inset-2 bg-white rounded-full flex items-center justify-center">
-              <FaUserCircle className="text-3xl text-blue-500 animate-bounce" />
+          <div className="relative w-24 h-24 mx-auto mb-8">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full animate-pulse opacity-20"></div>
+            <div className="absolute inset-2 bg-white rounded-full flex items-center justify-center shadow-lg">
+              <FaUserGraduate className="text-4xl text-blue-600 animate-bounce" />
             </div>
           </div>
           <p className="text-gray-600 animate-pulse font-medium text-lg">
@@ -110,282 +122,308 @@ const Profile = () => {
         level: "Master",
         icon: <FaCrown className="text-yellow-500" />,
         color: "from-yellow-400 to-yellow-600",
+        badge: "Expert Level",
       };
     if (overallScore >= 75)
       return {
         level: "Expert",
         icon: <FaMedal className="text-blue-500" />,
         color: "from-blue-400 to-blue-600",
+        badge: "Advanced Level",
       };
     if (overallScore >= 60)
       return {
         level: "Advanced",
         icon: <FaAward className="text-purple-500" />,
         color: "from-purple-400 to-purple-600",
+        badge: "Intermediate Level",
       };
     return {
       level: "Beginner",
       icon: <FaStar className="text-green-500" />,
       color: "from-green-400 to-green-600",
+      badge: "Starter Level",
     };
   };
 
   const achievement = getAchievementLevel();
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
-        {/* Enhanced Profile Header with Gradient */}
-        <div className="relative h-48 bg-linear-to-r from-blue-600 via-purple-600 to-indigo-700">
-          <div className="absolute -bottom-16 left-8">
-            <div className="relative">
-              <div className="absolute inset-0 bg-linear-to-r from-blue-400 to-purple-500 rounded-full blur-xl opacity-30 animate-pulse"></div>
-              <div className="relative p-1 bg-white rounded-full border-4 border-white shadow-2xl">
-                <div className="w-32 h-32 bg-linear-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center border-4 border-white">
-                  <FaUserCircle className="text-6xl text-gray-600" />
-                </div>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      {/* Header Section */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Learning Dashboard</h1>
+              <p className="text-gray-600 mt-1">Welcome back, {user.name}</p>
             </div>
-          </div>
-
-          <div className="absolute top-6 right-6">
             <button
               onClick={() => setEditing(!editing)}
-              className="px-5 py-3 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-xl hover:bg-white/30 transition-all duration-300 flex items-center gap-2 shadow-lg border border-white/30"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 font-medium"
             >
               <FaEdit size={16} />
               {editing ? "Cancel" : "Edit Profile"}
             </button>
           </div>
         </div>
+      </div>
 
-        <div className="pt-20 px-8 pb-10">
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-10">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-3">
-                {user.name}
-              </h1>
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="px-4 py-2 bg-linear-to-r from-blue-100 to-blue-200 text-blue-800 text-sm font-bold uppercase tracking-wider rounded-full border border-blue-300 shadow-sm">
-                  <FaGraduationCap className="inline mr-2" size={12} />
-                  Student
-                </span>
-                <span className="px-4 py-2 bg-linear-to-r from-purple-100 to-purple-200 text-purple-800 text-sm font-bold uppercase tracking-wider rounded-full border border-purple-300 shadow-sm">
-                  <FaClock className="inline mr-2" size={12} />
-                  Joined{" "}
-                  {user.createdAt
-                    ? new Date(user.createdAt).getFullYear()
-                    : new Date().getFullYear()}
-                </span>
-                <span
-                  className={`px-4 py-2 bg-linear-to-r ${achievement.color} text-white text-sm font-bold uppercase tracking-wider rounded-full border border-white/30 shadow-sm flex items-center gap-2`}
-                >
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Profile Card */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+              {/* Profile Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white text-center relative overflow-hidden">
+                {/* Decorative background elements */}
+                <div className="absolute top-0 left-0 w-full h-full opacity-10">
+                  <div className="absolute top-4 left-4 w-8 h-8 rounded-full bg-white"></div>
+                  <div className="absolute top-8 right-6 w-6 h-6 rounded-full bg-white"></div>
+                  <div className="absolute bottom-6 left-8 w-4 h-4 rounded-full bg-white"></div>
+                </div>
+                
+                <div className="relative mx-auto w-28 h-28 mb-4">
+                  {/* Outer glow ring */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full animate-pulse opacity-30 scale-110"></div>
+                  
+                  {/* Main profile container */}
+                  <div className="relative bg-gradient-to-br from-white to-gray-50 rounded-full p-2 shadow-xl border-4 border-white/20">
+                    {/* Inner decorative ring */}
+                    <div className="absolute inset-0 rounded-full border-2 border-dashed border-blue-300/50 animate-spin" style={{ animationDuration: '20s' }}></div>
+                    
+                    {/* Profile icon with enhanced styling */}
+                    <div className="relative bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full w-full h-full flex items-center justify-center shadow-inner">
+                      <FaUserGraduate className="text-5xl text-white drop-shadow-lg" />
+                    </div>
+                  </div>
+                </div>
+                <h2 className="text-2xl font-bold mb-1">{user.name}</h2>
+                <div className="flex items-center justify-center gap-2 text-blue-100 mt-2">
+                  <FaIdCard className="text-sm" />
+                  <span className="font-mono text-sm tracking-wide">{user.userid}</span>
+                </div>
+                
+                {/* Achievement Badge */}
+                <div className={`inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-gradient-to-r ${achievement.color} text-white text-sm font-semibold`}>
                   {achievement.icon}
                   {achievement.level} Learner
-                </span>
+                </div>
+              </div>
+
+              {/* Profile Details */}
+              <div className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <FaCalendarAlt className="text-gray-500" />
+                    <div>
+                      <p className="text-sm text-gray-600">Member Since</p>
+                      <p className="font-medium">
+                        {user.createdAt
+                          ? new Date(user.createdAt).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })
+                          : "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <FaBuilding className="text-gray-500" />
+                    <div>
+                      <p className="text-sm text-gray-600">Institution</p>
+                      <p className="font-medium">Online Learning Platform</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <FaGlobe className="text-gray-500" />
+                    <div>
+                      <p className="text-sm text-gray-600">Status</p>
+                      <p className="font-medium text-green-600">Active Learner</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Profile Form when editing */}
-          {editing && (
-            <div className="mt-6 p-8 bg-linear-to-br from-gray-50 to-gray-100 rounded-2xl border border-gray-200 shadow-lg mb-10">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <FaEdit className="text-blue-600" size={20} />
-                </div>
-                Update Your Profile
+            {/* Progress Summary Card */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mt-6">
+              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <FaChartBar className="text-blue-600" />
+                Learning Progress
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={editForm.name}
-                    onChange={handleInputChange}
-                    className="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white shadow-sm"
-                    placeholder="Enter your full name"
-                  />
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-gray-600">Course Completion</span>
+                    <span className="font-medium">{Math.round((passedCourses / Math.max(coursesStarted, 1)) * 100)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full" 
+                      style={{ width: `${Math.round((passedCourses / Math.max(coursesStarted, 1)) * 100)}%` }}
+                    ></div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex justify-end gap-4 mt-8">
-                <button
-                  onClick={() => setEditing(false)}
-                  className="px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-xl hover:bg-gray-300 transition-colors shadow-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Enhanced Stats Grid with Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            <div className="p-6 bg-linear-to-br from-blue-50 to-blue-100 rounded-2xl border border-blue-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-4 bg-blue-500 rounded-2xl shadow-lg">
-                  <FaBook className="text-2xl text-white" />
-                </div>
+                
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-blue-700">
-                    Courses
-                  </span>
-                  <div className="text-3xl font-bold text-gray-900 mt-1">
-                    {coursesStarted}
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-gray-600">Overall Performance</span>
+                    <span className="font-medium">{overallScore}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-green-500 to-teal-500 h-2 rounded-full" 
+                      style={{ width: `${overallScore}%` }}
+                    ></div>
                   </div>
                 </div>
               </div>
-              <div className="text-sm text-blue-600 font-medium">Enrolled</div>
-            </div>
-
-            <div className="p-6 bg-linear-to-br from-purple-50 to-purple-100 rounded-2xl border border-purple-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-4 bg-purple-500 rounded-2xl shadow-lg">
-                  <FaTrophy className="text-2xl text-white" />
-                </div>
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-purple-700">
-                    Exams
-                  </span>
-                  <div className="text-3xl font-bold text-gray-900 mt-1">
-                    {totalAttempts}
-                  </div>
-                </div>
-              </div>
-              <div className="text-sm text-purple-600 font-medium">
-                Attempts
-              </div>
-            </div>
-
-            <div className="p-6 bg-linear-to-br from-green-50 to-green-100 rounded-2xl border border-green-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-4 bg-green-500 rounded-2xl shadow-lg">
-                  <FaCertificate className="text-2xl text-white" />
-                </div>
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-green-700">
-                    Completed
-                  </span>
-                  <div className="text-3xl font-bold text-gray-900 mt-1">
-                    {passedCourses}
-                  </div>
-                </div>
-              </div>
-              <div className="text-sm text-green-600 font-medium">Passed</div>
-            </div>
-
-            <div className="p-6 bg-linear-to-br from-amber-50 to-amber-100 rounded-2xl border border-amber-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-4 bg-amber-500 rounded-2xl shadow-lg">
-                  <FaChartLine className="text-2xl text-white" />
-                </div>
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-amber-700">
-                    Average
-                  </span>
-                  <div className="text-3xl font-bold text-gray-900 mt-1">
-                    {overallScore}%
-                  </div>
-                </div>
-              </div>
-              <div className="text-sm text-amber-600 font-medium">Score</div>
             </div>
           </div>
 
-          {/* Enhanced Personal Information Section */}
-          <div className="bg-linear-to-br from-gray-50 to-gray-100 rounded-2xl p-8 border border-gray-200 shadow-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-              <div className="p-3 bg-linear-to-r from-blue-500 to-purple-500 rounded-xl">
-                <FaUserCircle className="text-white" size={24} />
+          {/* Right Column - Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Courses Enrolled</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">{coursesStarted}</p>
+                  </div>
+                  <div className="p-3 bg-blue-100 rounded-lg">
+                    <FaBookOpen className="text-blue-600 text-xl" />
+                  </div>
+                </div>
               </div>
-              Learning Profile
-            </h2>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-                <div className="flex items-center gap-3 mb-4">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Exams Taken</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">{totalAttempts}</p>
+                  </div>
+                  <div className="p-3 bg-purple-100 rounded-lg">
+                    <FaTasks className="text-purple-600 text-xl" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Courses Passed</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">{passedCourses}</p>
+                  </div>
+                  <div className="p-3 bg-green-100 rounded-lg">
+                    <FaCheckCircle className="text-green-600 text-xl" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Average Score</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">{overallScore}%</p>
+                  </div>
+                  <div className="p-3 bg-amber-100 rounded-lg">
+                    <FaChartLine className="text-amber-600 text-xl" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Edit Profile Form */}
+            {editing && (
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
                   <div className="p-2 bg-blue-100 rounded-lg">
-                    <FaUserCircle className="text-blue-600 text-lg" />
+                    <FaEdit className="text-blue-600" size={20} />
                   </div>
-                  <span className="text-sm font-bold uppercase tracking-wider text-gray-700">
-                    Full Name
-                  </span>
-                </div>
-                <p className="text-gray-900 font-semibold text-xl">
-                  {user.name}
-                </p>
-              </div>
-
-              <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <FaClock className="text-purple-600 text-lg" />
+                  Update Your Profile
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={editForm.name}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                      placeholder="Enter your full name"
+                    />
                   </div>
-                  <span className="text-sm font-bold uppercase tracking-wider text-gray-700">
-                    Member Since
-                  </span>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      Student ID
+                    </label>
+                    <input
+                      type="text"
+                      value={user.userid}
+                      disabled
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                    />
+                  </div>
                 </div>
-                <p className="text-gray-900 font-semibold text-xl">
-                  {user.createdAt
-                    ? new Date(user.createdAt).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })
-                    : "N/A"}
-                </p>
+                <div className="flex justify-end gap-4 mt-8">
+                  <button
+                    onClick={() => setEditing(false)}
+                    className="px-6 py-3 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors duration-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                  >
+                    Save Changes
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Enhanced Account Details */}
-            <div className="pt-6 border-t border-gray-200">
+            {/* Recent Activity */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <div className="p-2 bg-linear-to-r from-green-500 to-teal-500 rounded-lg">
-                  <FaGraduationCap className="text-white" size={18} />
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <FaRegClock className="text-indigo-600" size={20} />
                 </div>
-                Account Information
+                Recent Learning Activity
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-5 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-gray-100 rounded-lg">
-                        <FaCertificate className="text-gray-600" />
-                      </div>
-                      <span className="text-sm font-semibold text-gray-600">
-                        Student ID
+              <div className="space-y-4">
+                {examResults.slice(0, 3).map((course, index) => (
+                  <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="p-3 bg-white rounded-lg shadow-sm">
+                      <FaBook className="text-gray-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">{course.courseName || `Course ${index + 1}`}</h4>
+                      <p className="text-sm text-gray-600">
+                        {course.examAttempts?.length > 0 
+                          ? `Last attempt: ${course.examAttempts[course.examAttempts.length - 1].score || 0}%`
+                          : 'No attempts yet'
+                        }
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                        course.examAttempts?.some(attempt => attempt.passed)
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {course.examAttempts?.some(attempt => attempt.passed) ? 'Completed' : 'In Progress'}
                       </span>
                     </div>
-                    <span className="text-sm font-mono text-gray-800 bg-linear-to-r from-gray-100 to-gray-200 px-4 py-2 rounded-lg font-bold shadow-sm">
-                      {user.userid}
-                    </span>
                   </div>
-                </div>
-
-                <div className="p-5 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-green-100 rounded-lg">
-                        <FaStar className="text-green-600" />
-                      </div>
-                      <span className="text-sm font-semibold text-gray-600">
-                        Learning Status
-                      </span>
-                    </div>
-                    <span className="text-sm text-green-700 bg-linear-to-r from-green-100 to-green-200 px-4 py-2 rounded-lg font-bold shadow-sm">
-                      Active Learner
-                    </span>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>

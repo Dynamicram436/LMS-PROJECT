@@ -135,6 +135,10 @@ const userSchema = new mongoose.Schema(
       default: "student",
     },
     lastLogin: Date,
+    profilePicture: {
+      type: String,
+      default: null,
+    },
     accountStatus: {
       type: String,
       enum: ["active", "suspended", "deactivated"],

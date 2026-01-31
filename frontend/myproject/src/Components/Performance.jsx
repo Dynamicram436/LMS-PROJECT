@@ -6,7 +6,6 @@ import { subjectsData } from "../Courses/courseCatalog";
 import {
   FaArrowLeft,
   FaCheckCircle,
-  FaTimesCircle,
   FaTrophy,
   FaChartLine,
   FaHistory,
@@ -39,7 +38,7 @@ const Performance = () => {
     const subjectEntry = subjectsData.find(
       (s) =>
         s.id.toLowerCase() === idOrName.toLowerCase() ||
-        s.name.toLowerCase() === idOrName.toLowerCase(),
+        s.name.toLowerCase() === idOrName.toLowerCase()
     );
     return subjectEntry ? subjectEntry.name : idOrName;
   };
@@ -57,24 +56,31 @@ const Performance = () => {
       }
 
       try {
-        const response = await apiClient.get(`/exam/results/${userData.userid}`, {
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
+        const response = await apiClient.get(
+          `/exam/results/${userData.userid}`,
+          {
+            headers: {
+              "Cache-Control": "no-cache",
+              Pragma: "no-cache",
+            },
           }
-        });
+        );
 
         console.log("Initial performance data response:", response.data);
 
         if (!response?.data?.success) {
-          throw new Error(response?.data?.message || "Failed to fetch performance data");
+          throw new Error(
+            response?.data?.message || "Failed to fetch performance data"
+          );
         }
 
         const examResults = Array.isArray(response.data.data)
           ? response.data.data.filter(Boolean) // Remove any null/undefined entries
           : [];
 
-        console.log(`Loaded ${examResults.length} exam result entries initially`);
+        console.log(
+          `Loaded ${examResults.length} exam result entries initially`
+        );
 
         setAllExamData(examResults);
 
@@ -100,8 +106,12 @@ const Performance = () => {
           const subjectStr = String(subject).trim().toLowerCase();
           const courseData = examResults.find((result) => {
             if (!result) return false;
-            const courseId = String(result.courseId || "").trim().toLowerCase();
-            const courseName = String(result.courseName || "").trim().toLowerCase();
+            const courseId = String(result.courseId || "")
+              .trim()
+              .toLowerCase();
+            const courseName = String(result.courseName || "")
+              .trim()
+              .toLowerCase();
             return (
               courseId === subjectStr ||
               courseName === subjectStr ||
@@ -147,12 +157,14 @@ const Performance = () => {
     const handleExamSubmission = (event) => {
       const currentUser = JSON.parse(localStorage.getItem("user"));
       if (currentUser?.userid === event.detail.userId) {
-        console.log("Detected exam submission for current user, refreshing performance data...");
+        console.log(
+          "Detected exam submission for current user, refreshing performance data..."
+        );
         fetchPerformanceData();
       }
     };
 
-    window.addEventListener('examSubmitted', handleExamSubmission);
+    window.addEventListener("examSubmitted", handleExamSubmission);
 
     // Listen for progress updates
     const handleProgressUpdate = (event) => {
@@ -161,11 +173,11 @@ const Performance = () => {
       }
     };
 
-    window.addEventListener('progressUpdated', handleProgressUpdate);
+    window.addEventListener("progressUpdated", handleProgressUpdate);
 
     return () => {
-      window.removeEventListener('examSubmitted', handleExamSubmission);
-      window.removeEventListener('progressUpdated', handleProgressUpdate);
+      window.removeEventListener("examSubmitted", handleExamSubmission);
+      window.removeEventListener("progressUpdated", handleProgressUpdate);
     };
   }, [subject, isOverallView, category, navigate]);
 
@@ -268,15 +280,17 @@ const Performance = () => {
 
       const response = await apiClient.get(`/exam/results/${userData.userid}`, {
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
       });
 
       console.log("Performance data response:", response.data);
 
       if (!response?.data?.success) {
-        throw new Error(response?.data?.message || "Failed to fetch performance data");
+        throw new Error(
+          response?.data?.message || "Failed to fetch performance data"
+        );
       }
 
       const examResults = Array.isArray(response.data.data)
@@ -304,8 +318,12 @@ const Performance = () => {
         const subjectStr = String(subject).trim().toLowerCase();
         const courseData = examResults.find((result) => {
           if (!result) return false;
-          const courseId = String(result.courseId || "").trim().toLowerCase();
-          const courseName = String(result.courseName || "").trim().toLowerCase();
+          const courseId = String(result.courseId || "")
+            .trim()
+            .toLowerCase();
+          const courseName = String(result.courseName || "")
+            .trim()
+            .toLowerCase();
           return (
             courseId === subjectStr ||
             courseName === subjectStr ||
@@ -353,16 +371,16 @@ const Performance = () => {
           ...attempt,
           courseName: course.courseName,
           courseId: course.courseId,
-        })),
+        }))
       )
       .sort((a, b) => new Date(b.attemptDate) - new Date(a.attemptDate));
     const totalAttempts = allAttempts.length;
     const avgScore =
       totalAttempts > 0
         ? Math.round(
-          allAttempts.reduce((sum, a) => sum + (a.score || 0), 0) /
-          totalAttempts,
-        )
+            allAttempts.reduce((sum, a) => sum + (a.score || 0), 0) /
+              totalAttempts
+          )
         : 0;
     const passedAttempts = allAttempts.filter((a) => a.passed).length;
     const passingRate =
@@ -370,7 +388,7 @@ const Performance = () => {
         ? Math.round((passedAttempts / totalAttempts) * 100)
         : 0;
     const subjectsCleared = new Set(
-      allAttempts.filter((a) => a.passed).map((a) => a.courseId),
+      allAttempts.filter((a) => a.passed).map((a) => a.courseId)
     ).size;
     return {
       allAttempts,
@@ -387,6 +405,15 @@ const Performance = () => {
     isOverallView && globalStats
       ? [...globalStats.allAttempts].reverse()
       : examData?.examAttempts || [];
+  const currentCompletionPercentage =
+    isOverallView && globalStats
+      ? Math.round(
+          allExamData.reduce(
+            (sum, c) => sum + (c.completionPercentage || 0),
+            0
+          ) / (allExamData.length || 1)
+        )
+      : examData?.completionPercentage || 0;
   const performanceLevel = getPerformanceLevel(currentScore);
   const streakInfo = getStreakInfo(currentAttempts);
   const improvementTrend = getImprovementTrend(currentAttempts);
@@ -503,9 +530,7 @@ const Performance = () => {
                 onClick={refreshExamResults}
                 className="text-gray-500 hover:text-gray-700"
                 title="Refresh data"
-              >
-                
-              </button>
+              ></button>
             </div>
             <p className="text-gray-600 text-lg">
               {isOverallView
@@ -532,10 +557,11 @@ const Performance = () => {
                         if (element)
                           element.scrollIntoView({ behavior: "smooth" });
                       }}
-                      className={`p-5 border rounded-xl transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group ${selectedAttempt?.attemptId === attempt.attemptId
-                        ? "bg-blue-50 border-blue-300 shadow-sm"
-                        : "bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50 hover:shadow-sm"
-                        }`}
+                      className={`p-5 border rounded-xl transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group ${
+                        selectedAttempt?.attemptId === attempt.attemptId
+                          ? "bg-blue-50 border-blue-300 shadow-sm"
+                          : "bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50 hover:shadow-sm"
+                      }`}
                     >
                       <div className="flex items-center gap-4 text-left rounded-xl transition">
                         <div className="text-3xl bg-gray-50 w-14 h-14 rounded-xl flex items-center justify-center border border-gray-200 group-hover:scale-110 transition-transform">
@@ -543,13 +569,14 @@ const Performance = () => {
                         </div>
                         <div>
                           <h4
-                            className={`font-bold text-lg transition-colors ${selectedAttempt?.attemptId === attempt.attemptId
-                              ? "text-blue-600"
-                              : "text-gray-800 group-hover:text-blue-600"
-                              }`}
+                            className={`font-bold text-lg transition-colors ${
+                              selectedAttempt?.attemptId === attempt.attemptId
+                                ? "text-blue-600"
+                                : "text-gray-800 group-hover:text-blue-600"
+                            }`}
                           >
                             {getFullCourseName(
-                              attempt.courseName || attempt.courseId,
+                              attempt.courseName || attempt.courseId
                             )}
                           </h4>
                           <p className="text-sm text-gray-500 flex items-center gap-1">
@@ -570,8 +597,8 @@ const Performance = () => {
                             <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
                               {attempt.attemptDate
                                 ? new Date(
-                                  attempt.attemptDate,
-                                ).toLocaleDateString()
+                                    attempt.attemptDate
+                                  ).toLocaleDateString()
                                 : "Recent"}
                             </span>
                           </p>
@@ -581,8 +608,9 @@ const Performance = () => {
                       <div className="flex items-center gap-6">
                         <div className="flex flex-col text-right">
                           <p
-                            className={`text-xs font-bold uppercase tracking-wider ${attempt.passed ? "text-green-600" : "text-red-500"
-                              }`}
+                            className={`text-xs font-bold uppercase tracking-wider ${
+                              attempt.passed ? "text-green-600" : "text-red-500"
+                            }`}
                           >
                             {attempt.passed
                               ? "✅ Passed"
@@ -594,10 +622,11 @@ const Performance = () => {
                         </div>
                         <div className="h-10 w-0.5 bg-gray-200 hidden sm:block"></div>
                         <div
-                          className={`p-2 transition-colors ${selectedAttempt?.attemptId === attempt.attemptId
-                            ? "text-blue-600"
-                            : "text-gray-300 group-hover:text-blue-600"
-                            }`}
+                          className={`p-2 transition-colors ${
+                            selectedAttempt?.attemptId === attempt.attemptId
+                              ? "text-blue-600"
+                              : "text-gray-300 group-hover:text-blue-600"
+                          }`}
                         >
                           <svg
                             className="w-6 h-6"
@@ -643,8 +672,8 @@ const Performance = () => {
                       {Math.round(
                         allExamData.reduce(
                           (sum, c) => sum + (c.completionPercentage || 0),
-                          0,
-                        ) / (allExamData.length || 1),
+                          0
+                        ) / (allExamData.length || 1)
                       )}
                       %
                     </div>
@@ -720,9 +749,13 @@ const Performance = () => {
                     </span>
                   </div>
                   <div className="text-3xl font-bold text-gray-900 mb-2">
-                    {examData?.completionPercentage || 0}%
+                    {currentCompletionPercentage}%
                   </div>
-                  <div className="text-gray-500 text-sm">Study Progress</div>
+                  <div className="text-gray-500 text-sm">
+                    {currentCompletionPercentage > 0
+                      ? "Study Progress"
+                      : "Start Learning to Track Progress"}
+                  </div>
                 </div>
               </div>
 
@@ -730,12 +763,13 @@ const Performance = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <FaChartLine
-                      className={`text-2xl ${improvementTrend.trend === "up"
-                        ? "text-green-600"
-                        : improvementTrend.trend === "down"
+                      className={`text-2xl ${
+                        improvementTrend.trend === "up"
+                          ? "text-green-600"
+                          : improvementTrend.trend === "down"
                           ? "text-red-600"
                           : "text-yellow-600"
-                        }`}
+                      }`}
                     />
                     <div>
                       <h3 className="text-lg font-bold text-gray-900">
@@ -748,26 +782,27 @@ const Performance = () => {
                   </div>
                   <div className="text-right">
                     <div
-                      className={`text-2xl font-bold ${improvementTrend.trend === "up"
-                        ? "text-green-600"
-                        : improvementTrend.trend === "down"
+                      className={`text-2xl font-bold ${
+                        improvementTrend.trend === "up"
+                          ? "text-green-600"
+                          : improvementTrend.trend === "down"
                           ? "text-red-600"
                           : "text-yellow-600"
-                        }`}
+                      }`}
                     >
                       {improvementTrend.trend === "up"
                         ? "↑"
                         : improvementTrend.trend === "down"
-                          ? "↓"
-                          : "→"}{" "}
+                        ? "↓"
+                        : "→"}{" "}
                       {Math.abs(improvementTrend.change)}%
                     </div>
                     <div className="text-gray-500 text-sm">
                       {improvementTrend.trend === "up"
                         ? "Improving"
                         : improvementTrend.trend === "down"
-                          ? "Declining"
-                          : "Stable"}
+                        ? "Declining"
+                        : "Stable"}
                     </div>
                   </div>
                 </div>
@@ -816,7 +851,7 @@ const Performance = () => {
                           >
                             <td className="py-4 px-4 text-gray-900 font-medium">
                               {getFullCourseName(
-                                course.courseName || course.courseId,
+                                course.courseName || course.courseId
                               )}
                             </td>
                             <td className="text-center py-4 px-4">
@@ -831,8 +866,9 @@ const Performance = () => {
                                 <div
                                   className="h-full bg-blue-600"
                                   style={{
-                                    width: `${course.completionPercentage || 0
-                                      }%`,
+                                    width: `${
+                                      course.completionPercentage || 0
+                                    }%`,
                                   }}
                                 />
                               </div>
@@ -842,10 +878,11 @@ const Performance = () => {
                             </td>
                             <td className="text-center py-4 px-4">
                               <span
-                                className={`px-3 py-1 rounded-full text-xs font-bold ${passed
-                                  ? "bg-green-50 border border-green-200 text-green-600"
-                                  : "bg-yellow-50 border border-yellow-200 text-yellow-600"
-                                  }`}
+                                className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                  passed
+                                    ? "bg-green-50 border border-green-200 text-green-600"
+                                    : "bg-yellow-50 border border-yellow-200 text-yellow-600"
+                                }`}
                               >
                                 {passed ? "✅ Passed" : "📚 Learning"}
                               </span>
@@ -855,7 +892,7 @@ const Performance = () => {
                                 onClick={() =>
                                   navigate(
                                     `/performance/${encodeURIComponent(
-                                      course.courseId,
+                                      course.courseId
                                     )}`
                                   )
                                 }
@@ -896,11 +933,22 @@ const Performance = () => {
                     {currentAttempts.map((attempt, index) => (
                       <div
                         key={attempt.attemptId || index}
-                        onClick={() => setSelectedAttempt(attempt)}
-                        className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${selectedAttempt?.attemptId === attempt.attemptId
-                          ? "bg-blue-50 border-blue-300"
-                          : "bg-gray-50 border-gray-200 hover:border-gray-300"
-                          }`}
+                        onClick={() => {
+                          setSelectedAttempt(attempt);
+                          // Scroll to question analysis section when an attempt is clicked
+                          setTimeout(() => {
+                            const element =
+                              document.getElementById("question-analysis");
+                            if (element) {
+                              element.scrollIntoView({ behavior: "smooth" });
+                            }
+                          }, 100);
+                        }}
+                        className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${
+                          selectedAttempt?.attemptId === attempt.attemptId
+                            ? "bg-blue-50 border-blue-300"
+                            : "bg-gray-50 border-gray-200 hover:border-gray-300"
+                        }`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
@@ -916,27 +964,33 @@ const Performance = () => {
                                 </span>
                                 <span className="text-sm text-gray-500">
                                   {attempt.attemptDate
-                                    ? new Date(attempt.attemptDate).toLocaleDateString()
+                                    ? new Date(
+                                        attempt.attemptDate
+                                      ).toLocaleDateString()
                                     : "Recent"}
                                 </span>
                               </div>
                               <div className="text-sm text-gray-500">
                                 {attempt.totalQuestions
-                                  ? `${attempt.correctAnswers || 0} of ${attempt.totalQuestions} correct`
+                                  ? `${attempt.correctAnswers || 0} of ${
+                                      attempt.totalQuestions
+                                    } correct`
                                   : "Details not available"}
                               </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
                             <span
-                              className={`px-3 py-1 rounded-full text-xs font-bold ${attempt.passed
-                                ? "bg-green-50 border border-green-200 text-green-600"
-                                : "bg-red-50 border border-red-200 text-red-600"
-                                }`}
+                              className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                attempt.passed
+                                  ? "bg-green-50 border border-green-200 text-green-600"
+                                  : "bg-red-50 border border-red-200 text-red-600"
+                              }`}
                             >
                               {attempt.passed ? "PASSED" : "NEEDS IMPROVEMENT"}
                             </span>
-                            {selectedAttempt?.attemptId === attempt.attemptId && (
+                            {selectedAttempt?.attemptId ===
+                              attempt.attemptId && (
                               <FaCheckCircle className="text-blue-600" />
                             )}
                           </div>
@@ -951,7 +1005,8 @@ const Performance = () => {
                       No exam attempts yet
                     </h4>
                     <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                      You haven't taken any exams for this course yet. Complete a quiz or exam to track your progress here.
+                      You haven't taken any exams for this course yet. Complete
+                      a quiz or exam to track your progress here.
                     </p>
                     <button
                       onClick={() => navigate(-1)}
@@ -964,6 +1019,108 @@ const Performance = () => {
               </div>
             </div>
           )}
+
+          {/* Question Analysis Section - Shows only incorrect answers */}
+          {!isOverallView &&
+            selectedAttempt &&
+            selectedAttempt.answers &&
+            selectedAttempt.answers.length > 0 && (
+              <div
+                id="question-analysis"
+                className="bg-white border border-gray-200 rounded-xl p-6 mb-12 shadow-sm"
+              >
+                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                  <FaChartLine className="text-blue-600" />
+                  Questions You Got Wrong
+                </h3>
+
+                <div className="space-y-4">
+                  {selectedAttempt.answers
+                    .filter((answer) => !answer.isCorrect)
+                    .map((answer, index) => (
+                      <div
+                        key={index}
+                        className="p-4 rounded-lg bg-red-50 border border-red-200"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="font-bold text-gray-900">
+                                Question {answer.questionIndex + 1}:
+                              </span>
+                              <span className="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-800">
+                                ✗ INCORRECT
+                              </span>
+                            </div>
+
+                            <div className="mb-3">
+                              <p className="text-gray-800 font-medium">
+                                {answer.question}
+                              </p>
+                            </div>
+
+                            <div className="space-y-2">
+                              {answer.options &&
+                                answer.options.map((option, optIndex) => {
+                                  const isSelected =
+                                    answer.selectedOption === optIndex;
+
+                                  let optionClass = "p-2 rounded border";
+                                  if (isSelected) {
+                                    optionClass += " bg-red-100 border-red-300"; // Selected answer
+                                  } else {
+                                    optionClass +=
+                                      " bg-gray-50 border-gray-200"; // Not selected
+                                  }
+
+                                  return (
+                                    <div key={optIndex} className={optionClass}>
+                                      <span className="mr-2 font-medium">
+                                        {String.fromCharCode(65 + optIndex)}.
+                                      </span>
+                                      <span>{option}</span>
+                                      {isSelected && (
+                                        <span className="ml-2 text-blue-600">
+                                          (Your answer)
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                            </div>
+
+                            {answer.explanation && (
+                              <div className="mt-3 pt-3 border-t border-gray-200">
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-medium">
+                                    Explanation:
+                                  </span>{" "}
+                                  {answer.explanation}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                  {/* Show message if all questions were answered correctly */}
+                  {selectedAttempt.answers.every(
+                    (answer) => answer.isCorrect
+                  ) && (
+                    <div className="text-center py-8">
+                      <div className="text-5xl mb-4 text-green-500">🎉</div>
+                      <h4 className="font-semibold text-gray-900 text-lg mb-2">
+                        Perfect Score!
+                      </h4>
+                      <p className="text-gray-600 mb-4">
+                        You got all questions correct in this attempt.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
         </div>
       </div>
     </>

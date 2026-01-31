@@ -2,8 +2,10 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import dns from "dns";
+import path from "path";
 
 // Fix for SRV resolution issues on some local networks
+
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 import authRoute from "./routes/authRoute.js";
 import examRoute from "./routes/examRoute.js";
@@ -15,6 +17,9 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from uploads directory
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Connect to database and start server
 const startServer = async () => {
