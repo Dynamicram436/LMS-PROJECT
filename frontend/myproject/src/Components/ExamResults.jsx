@@ -150,7 +150,22 @@ const ExamResults = ({ result, onBackToNavigation, onRetakeExam }) => {
           {/* Action Buttons */}
           <div className="flex gap-4 justify-center">
             <button
-              onClick={onBackToNavigation}
+              onClick={() => {
+                // Dispatch event to notify other components when returning from exam results
+                const user = JSON.parse(localStorage.getItem('user'));
+                if (user) {
+                  window.dispatchEvent(new CustomEvent('examSubmitted', {
+                    detail: {
+                      userId: user.userid,
+                      courseId: result.topicData ? `${result.topicData.course?.courseId}-${result.topicData.branch?.branchId}-${result.topicData.year?.yearId}-${result.topicData.semester?.semesterId}-${result.topicData.subject?.subjectId}-${result.topicData.unit?.unitId}-${result.topicData.chapter?.chapterId}-${result.topicData.topic?.topicId}` : 'unknown',
+                      score: result.score,
+                      passed: result.passed,
+                      result: result
+                    }
+                  }));
+                }
+                onBackToNavigation();
+              }}
               className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
             >
               Back to Courses
@@ -165,7 +180,22 @@ const ExamResults = ({ result, onBackToNavigation, onRetakeExam }) => {
             )}
             {passed && (
               <button
-                onClick={onBackToNavigation}
+                onClick={() => {
+                  // Dispatch event to notify other components when continuing after passed exam
+                  const user = JSON.parse(localStorage.getItem('user'));
+                  if (user) {
+                    window.dispatchEvent(new CustomEvent('examSubmitted', {
+                      detail: {
+                        userId: user.userid,
+                        courseId: result.topicData ? `${result.topicData.course?.courseId}-${result.topicData.branch?.branchId}-${result.topicData.year?.yearId}-${result.topicData.semester?.semesterId}-${result.topicData.subject?.subjectId}-${result.topicData.unit?.unitId}-${result.topicData.chapter?.chapterId}-${result.topicData.topic?.topicId}` : 'unknown',
+                        score: result.score,
+                        passed: result.passed,
+                        result: result
+                      }
+                    }));
+                  }
+                  onBackToNavigation();
+                }}
                 className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
               >
                 Continue Learning

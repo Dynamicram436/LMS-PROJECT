@@ -251,13 +251,75 @@ const Performance = () => {
     fetchPerformanceData();
 
     // Listen for exam submission events to refresh data
-    const handleExamSubmission = (event) => {
+    const handleExamSubmission = async (event) => {
       const currentUser = JSON.parse(localStorage.getItem("user"));
       if (currentUser?.userid === event.detail.userId) {
         console.log(
-          "Detected exam submission for current user, refreshing performance data...",
+          "Performance: Detected exam submission for current user, refreshing data...",
+          event.detail
         );
-        fetchPerformanceData();
+        
+        // Immediately update localStorage with the new exam result
+        if (event.detail.result) {
+          const updatedExamResults = Array.isArray(currentUser.examResults) ? [...currentUser.examResults] : [];
+          
+          // Find if this course already exists in the results
+          const existingCourseIndex = updatedExamResults.findIndex(
+            course => course.courseId === event.detail.courseId
+          );
+          
+          const newExamAttempt = {
+            score: event.detail.score,
+            passed: event.detail.passed,
+            attemptDate: new Date().toISOString(),
+            attemptNumber: (existingCourseIndex >= 0 ? (updatedExamResults[existingCourseIndex]?.examAttempts?.length || 0) : 0) + 1,
+            answers: event.detail.result.answers || []
+          };
+          
+          if (existingCourseIndex >= 0) {
+            // Update existing course
+            if (!updatedExamResults[existingCourseIndex].examAttempts) {
+              updatedExamResults[existingCourseIndex].examAttempts = [];
+            }
+            updatedExamResults[existingCourseIndex].examAttempts.push(newExamAttempt);
+            updatedExamResults[existingCourseIndex].score = event.detail.score;
+            updatedExamResults[existingCourseIndex].passed = event.detail.passed;
+            updatedExamResults[existingCourseIndex].lastAttempt = newExamAttempt.attemptDate;
+          } else {
+            // Add new course entry
+            updatedExamResults.push({
+              courseId: event.detail.courseId,
+              courseName: event.detail.courseId, // Will be updated with proper name later
+              score: event.detail.score,
+              passed: event.detail.passed,
+              examAttempts: [newExamAttempt],
+              lastAttempt: newExamAttempt.attemptDate,
+              completionPercentage: event.detail.passed ? 100 : 0
+            });
+          }
+          
+          currentUser.examResults = updatedExamResults;
+          localStorage.setItem("user", JSON.stringify(currentUser));
+          
+          // Update component state immediately for instant UI update
+          setAllExamData(updatedExamResults);
+          
+          // Update current exam data if viewing this course
+          if (examData && examData.courseId === event.detail.courseId) {
+            const updatedCourseData = updatedExamResults.find(course => course.courseId === event.detail.courseId);
+            if (updatedCourseData) {
+              setExamData(updatedCourseData);
+              if (updatedCourseData.examAttempts?.[0]) {
+                setSelectedAttempt(updatedCourseData.examAttempts[updatedCourseData.examAttempts.length - 1]);
+              }
+            }
+          }
+        }
+        
+        // Then fetch fresh data from server with a small delay to ensure backend has processed
+        setTimeout(async () => {
+          await fetchPerformanceData();
+        }, 500);
       }
     };
 

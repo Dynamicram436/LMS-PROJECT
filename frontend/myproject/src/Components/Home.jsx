@@ -24,6 +24,12 @@ const Home = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [examResults, setExamResults] = useState([]);
+  
+  // Debug: Log exam data to understand structure
+  console.log('Home Component Debug:');
+  console.log('Exam results state:', examResults);
+  console.log('Is examResults array?', Array.isArray(examResults));
+  console.log('Exam results length:', examResults.length);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -68,6 +74,7 @@ const Home = () => {
 
         // Fetch exam results
         try {
+          console.log("Home: Fetching exam results for user:", userData.userid);
           const resultsResponse = await apiClient.get(
             `/exam/results/${userData.userid}`,
             {
@@ -79,19 +86,25 @@ const Home = () => {
             }
           );
 
+          console.log("Home: Exam results response:", resultsResponse.data);
+
           if (resultsResponse?.data?.success) {
             const results = Array.isArray(resultsResponse.data.data)
               ? resultsResponse.data.data
               : [];
+            console.log("Home: Setting exam results:", results);
             setExamResults(results);
             const updatedUser = { ...userData, examResults: results };
             localStorage.setItem("user", JSON.stringify(updatedUser));
           } else {
-            setExamResults(userData.examResults || []);
+            console.log("Home: Using fallback exam results from userData");
+            const fallbackResults = Array.isArray(userData.examResults) ? userData.examResults : [];
+            setExamResults(fallbackResults);
           }
         } catch (_error) {
-          console.error("Error fetching exam results:", _error);
-          setExamResults(userData.examResults || []);
+          console.error("Home: Error fetching exam results:", _error);
+          const fallbackResults = Array.isArray(userData.examResults) ? userData.examResults : [];
+          setExamResults(fallbackResults);
           if (_error.response?.status === 401) {
             localStorage.removeItem("user");
             navigate("/login");
@@ -107,10 +120,65 @@ const Home = () => {
 
     fetchUserData();
 
-    const handleExamSubmission = (event) => {
+    const handleExamSubmission = async (event) => {
       const currentUser = JSON.parse(localStorage.getItem("user"));
       if (currentUser?.userid === event.detail.userId) {
-        fetchUserData();
+        console.log('Home: Exam submission detected', event.detail);
+        
+        // Update local user data with the new exam result
+        const updatedUser = { ...currentUser };
+
+        // Initialize examResults if not present
+        if (!Array.isArray(updatedUser.examResults)) {
+          updatedUser.examResults = [];
+        }
+
+        // Find if this course already exists in the results
+        const existingCourseIndex = updatedUser.examResults.findIndex(
+          course => course.courseId === event.detail.courseId
+        );
+
+        const newExamAttempt = {
+          score: event.detail.score,
+          passed: event.detail.passed,
+          attemptDate: new Date().toISOString(),
+          attemptNumber: (existingCourseIndex >= 0 ? (updatedUser.examResults[existingCourseIndex]?.examAttempts?.length || 0) : 0) + 1,
+          answers: event.detail.result?.answers || []
+        };
+
+        if (existingCourseIndex >= 0) {
+          // Update existing course
+          if (!updatedUser.examResults[existingCourseIndex].examAttempts) {
+            updatedUser.examResults[existingCourseIndex].examAttempts = [];
+          }
+          updatedUser.examResults[existingCourseIndex].examAttempts.push(newExamAttempt);
+          updatedUser.examResults[existingCourseIndex].score = event.detail.score;
+          updatedUser.examResults[existingCourseIndex].passed = event.detail.passed;
+          updatedUser.examResults[existingCourseIndex].lastAttempt = newExamAttempt.attemptDate;
+        } else {
+          // Add new course entry
+          updatedUser.examResults.push({
+            courseId: event.detail.courseId,
+            courseName: event.detail.courseId, // Will be updated with proper name later
+            score: event.detail.score,
+            passed: event.detail.passed,
+            examAttempts: [newExamAttempt],
+            lastAttempt: newExamAttempt.attemptDate,
+            completionPercentage: event.detail.passed ? 100 : 0
+          });
+        }
+
+        // Update localStorage first
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        
+        // Update component state immediately for instant UI update
+        setExamResults(updatedUser.examResults);
+        setUser(updatedUser);
+
+        // Then fetch fresh data from server to ensure sync
+        setTimeout(async () => {
+          await fetchUserData();
+        }, 500);
       }
     };
 

@@ -272,13 +272,21 @@ const Exam = () => {
           const historyResponse = await apiClient.get(`/exam/history/${courseId}`);
           setExamAttempts(historyResponse.data.attempts || []);
 
-          // Dispatch event to notify coursesvideos.jsx of progress update
+          // Dispatch event to notify other components of exam submission
           window.dispatchEvent(
             new CustomEvent("examSubmitted", {
               detail: {
                 userId: user.userid,
                 courseId: courseId,
+                score: Math.round((calculatedScore / questions.length) * 100), // Percentage score
                 passed: calculatedScore >= (questions.length * 0.7), // 70% passing grade
+                result: {
+                  score: Math.round((calculatedScore / questions.length) * 100), // Percentage score
+                  passed: calculatedScore >= (questions.length * 0.7), // 70% passing grade
+                  answers: formattedAnswers,
+                  totalQuestions: questions.length,
+                  correctAnswers: calculatedScore
+                }
               },
             })
           );

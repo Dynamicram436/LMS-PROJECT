@@ -62,9 +62,19 @@ const Profile = () => {
       if (storedUser) {
         const userData = JSON.parse(storedUser);
 
+        // Set initial user data immediately
+        setUser({
+          ...userData,
+          examResults: Array.isArray(userData.examResults) ? userData.examResults : [],
+        });
+        setEditForm({
+          name: userData.name || "",
+        });
+
         // Fetch and update progress data
         if (userData.userid) {
           try {
+            console.log("Fetching fresh progress data for user:", userData.userid);
             const progressData = await ProgressService.getUserProgress(
               userData.userid
             );
@@ -84,33 +94,22 @@ const Profile = () => {
                 "No valid progress data received, using existing data"
               );
               // Use existing examResults if available
-              if (userData.examResults) {
-                setUser({
-                  ...userData,
-                  examResults: Array.isArray(userData.examResults)
-                    ? userData.examResults
-                    : [],
-                });
-              }
+              const existingResults = Array.isArray(userData.examResults) ? userData.examResults : [];
+              setUser(prev => ({
+                ...prev,
+                examResults: existingResults,
+              }));
             }
           } catch (error) {
             console.error("Error fetching progress:", error);
             // Fallback to existing data
-            if (userData.examResults) {
-              setUser({
-                ...userData,
-                examResults: Array.isArray(userData.examResults)
-                  ? userData.examResults
-                  : [],
-              });
-            }
+            const existingResults = Array.isArray(userData.examResults) ? userData.examResults : [];
+            setUser(prev => ({
+              ...prev,
+              examResults: existingResults,
+            }));
           }
         }
-
-        setUser(userData);
-        setEditForm({
-          name: userData.name || "",
-        });
       } else {
         toast.error("User data not found. Please log in.");
       }
@@ -127,9 +126,67 @@ const Profile = () => {
     };
 
     // Listen for exam submissions
-    const handleExamSubmission = (event) => {
+    const handleExamSubmission = async (event) => {
       if (event.detail.userId === user?.userid) {
-        refreshProgressData();
+        console.log('Profile: Exam submission detected, refreshing data...', event.detail);
+
+        // Update local user data with the new exam result
+        const currentUser = JSON.parse(localStorage.getItem("user"));
+        if (currentUser) {
+          // Initialize examResults if not present
+          if (!Array.isArray(currentUser.examResults)) {
+            currentUser.examResults = [];
+          }
+
+          // Find if this course already exists in the results
+          const existingCourseIndex = currentUser.examResults.findIndex(
+            course => course.courseId === event.detail.courseId
+          );
+
+          const newExamAttempt = {
+            score: event.detail.score,
+            passed: event.detail.passed,
+            attemptDate: new Date().toISOString(),
+            attemptNumber: (existingCourseIndex >= 0 ? (currentUser.examResults[existingCourseIndex]?.examAttempts?.length || 0) : 0) + 1,
+            answers: event.detail.result?.answers || []
+          };
+
+          if (existingCourseIndex >= 0) {
+            // Update existing course
+            if (!currentUser.examResults[existingCourseIndex].examAttempts) {
+              currentUser.examResults[existingCourseIndex].examAttempts = [];
+            }
+            currentUser.examResults[existingCourseIndex].examAttempts.push(newExamAttempt);
+            currentUser.examResults[existingCourseIndex].score = event.detail.score;
+            currentUser.examResults[existingCourseIndex].passed = event.detail.passed;
+            currentUser.examResults[existingCourseIndex].lastAttempt = newExamAttempt.attemptDate;
+          } else {
+            // Add new course entry
+            currentUser.examResults.push({
+              courseId: event.detail.courseId,
+              courseName: event.detail.courseId, // Will be updated with proper name later
+              score: event.detail.score,
+              passed: event.detail.passed,
+              examAttempts: [newExamAttempt],
+              lastAttempt: newExamAttempt.attemptDate,
+              completionPercentage: event.detail.passed ? 100 : 0
+            });
+          }
+
+          // Update localStorage first
+          localStorage.setItem("user", JSON.stringify(currentUser));
+
+          // Update component state immediately for instant UI update
+          setUser(prev => ({
+            ...prev,
+            examResults: currentUser.examResults
+          }));
+        }
+
+        // Then refresh progress data from server with a small delay to ensure backend has processed
+        setTimeout(async () => {
+          await refreshProgressData();
+        }, 500);
       }
     };
 
@@ -238,6 +295,13 @@ const Profile = () => {
   }
 
   const examResults = Array.isArray(user.examResults) ? user.examResults : [];
+  
+  // Debug: Log exam data to understand structure
+  console.log('Profile Component Debug:');
+  console.log('User data:', user);
+  console.log('Exam results:', examResults);
+  console.log('User examResults type:', typeof user.examResults);
+  console.log('Is examResults array?', Array.isArray(user.examResults));
   const totalAttempts = examResults.reduce(
     (sum, course) => sum + (course.examAttempts?.length || 0),
     0
@@ -574,12 +638,20 @@ const Profile = () => {
 
             {/* Recent Activity */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <div className="p-2 bg-indigo-100 rounded-lg">
-                  <FaRegClock className="text-indigo-600 text-lg" />
-                </div>
-                Recent Learning Activity
-              </h3>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+                  <div className="p-2 bg-indigo-100 rounded-lg">
+                    <FaRegClock className="text-indigo-600 text-lg" />
+                  </div>
+                  Recent Learning Activity
+                </h3>
+                <button
+                  onClick={refreshProgressData}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 px-3 py-1 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  Refresh Data
+                </button>
+              </div>
               <div className="space-y-4">
                 {examResults && examResults.length > 0 ? (
                   examResults.slice(0, 3).map((course, index) => {
@@ -682,10 +754,16 @@ const Profile = () => {
                     <div className="text-gray-400 mb-4">
                       <FaBook className="text-4xl mx-auto" />
                     </div>
-                    <p className="text-gray-500">No learning activity yet</p>
+                    <p className="text-gray-500 font-medium">No learning activity yet</p>
                     <p className="text-sm text-gray-400 mt-1">
-                      Start a course to see your progress
+                      Complete an exam to see your progress here
                     </p>
+                    <button
+                      onClick={() => window.location.href = '/course-exam'}
+                      className="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Take an Exam
+                    </button>
                   </div>
                 )}
               </div>

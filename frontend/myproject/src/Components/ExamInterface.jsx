@@ -118,6 +118,17 @@ const ExamInterface = ({ topicData, onExamComplete, onBack }) => {
       const result = await response.json();
       
       if (result.success) {
+        // Dispatch event to notify other components of exam submission
+        window.dispatchEvent(new CustomEvent('examSubmitted', {
+          detail: {
+            userId: user.userid,
+            courseId: examData.courseId,
+            score: result.data.score,
+            passed: result.data.passed,
+            result: result.data
+          }
+        }));
+
         onExamComplete({
           ...result.data,
           topicData,

@@ -6,9 +6,9 @@ import seedQuestions from "../seedExamQuestions.js";
 import asyncHandler from "express-async-handler";
 
 export const updateVideoProgress = asyncHandler(async (req, res) => {
-  const { userId, courseId, videoId, isCompleted, progressPercentage, totalVideos } = req.body;
+  const { userId, courseId, videoId, isCompleted, progressPercentage } = req.body;
 
-  console.log('[updateVideoProgress] Received request:', { userId, courseId, videoId, isCompleted, progressPercentage, totalVideos });
+  console.log('[updateVideoProgress] Received request:', { userId, courseId, videoId, isCompleted, progressPercentage });
 
   if (!userId || !courseId || !videoId) {
     console.log('[updateVideoProgress] Missing required fields');
@@ -115,19 +115,24 @@ export const updateVideoProgress = asyncHandler(async (req, res) => {
       // Convert courseId to string and extract base course ID to ensure proper lookup
       const courseIdStr = String(courseId);
       const baseCourseId = getBaseCourseId(courseIdStr);  // Use the function defined above
+      const totalExpectedVideos = topicCounts[baseCourseId] || nonExamVideos.length || 4;
 
-      // Use totalVideos from frontend if available, otherwise fallback
-      const totalExpectedVideos = totalVideos || topicCounts[baseCourseId] || Math.max(nonExamVideos.length, 4);
+      const videoWeight = 50;
+      const examWeight = 50;
 
-      // Calculate progress treating videos and exam as items
-      // This fixes the issue where progress was capped at 50% if exam wasn't passed
+      // Calculate video score based on completed videos
+      let videoScore = 0;
+      if (totalExpectedVideos > 0) {
+        videoScore = Math.min(videoWeight, (completedNonExamVideos / totalExpectedVideos) * videoWeight);
+      }
 
-      const examPassed = courseProgress.exam?.passed || false;
-      const totalItems = totalExpectedVideos + 1; // Videos + 1 Exam
-      const completedItems = completedNonExamVideos + (examPassed ? 1 : 0);
+      // Get exam score if exam exists
+      if (!courseProgress.exam) {
+        courseProgress.exam = { attempts: 0, passed: false, score: 0 };
+      }
+      const examScore = courseProgress.exam?.passed ? examWeight : 0;
 
-      // Calculate percentage based on items completed
-      courseProgress.completionPercentage = Math.min(100, Math.round((completedItems / totalItems) * 100));
+      courseProgress.completionPercentage = Math.round(videoScore + examScore);
     }
 
     if (courseProgress.completionPercentage >= 100) {
@@ -303,15 +308,16 @@ export const saveExamResult = asyncHandler(async (req, res) => {
 
   // Use base course ID to get expected total videos
   const baseCourseId = getBaseCourseIdForExam(courseId);  // Use the local function
-  const totalExpectedVideos = topicCounts[baseCourseId] || Math.max(nonExamVideos.length, 4);
+  const totalExpectedVideos = topicCounts[baseCourseId] || nonExamVideos.length || 4;
 
-  // New calculation: Treat videos and exam as items to be completed
-  const totalItems = totalExpectedVideos + 1; // Videos + 1 Exam
-  const completedItems = completedNonExamVideos + (passed ? 1 : 0);
-
+  const videoCompletion =
+    totalExpectedVideos > 0
+      ? (completedNonExamVideos / totalExpectedVideos) * 50
+      : 0;
+  const examCompletion = passed ? 50 : 0;
   courseProgress.completionPercentage = Math.min(
     100,
-    Math.round((completedItems / totalItems) * 100)
+    Math.round(videoCompletion + examCompletion)
   );
 
   // If exam is passed, also mark the exam video as completed for this course
@@ -459,31 +465,10 @@ export const getExamResults = asyncHandler(async (req, res) => {
     // Get the latest attempt to represent the overall course result
     const latestAttempt = sortedAttempts.length > 0 ? sortedAttempts[sortedAttempts.length - 1] : null;
 
-    // Extract base course ID if it follows the pattern "course-chapter-id"
-    const getBaseCourseId = (fullCourseId) => {
-      const strId = String(fullCourseId);
-      // If it follows pattern like "CSE-chapter-101", extract "CSE"
-      const match = strId.match(/^([A-Za-z]+)(?:-chapter-\d+)?/);
-      return match ? match[1] : strId;
-    };
-
     // Find the corresponding course progress for this courseId to get completion percentage
-    // Use robust matching similar to updateVideoProgress and saveExamResult
-    const courseProgress = user.courseProgress?.find((p) => {
-      const progressCourseId = String(p.courseId);
-      const requestCourseId = String(courseId);
-
-      // Try exact match first
-      if (progressCourseId.toLowerCase().trim() === requestCourseId.toLowerCase().trim()) {
-        return true;
-      }
-
-      // If exact match fails, try base course ID match
-      const baseProgressCourseId = getBaseCourseId(progressCourseId);
-      const baseRequestCourseId = getBaseCourseId(requestCourseId);
-
-      return baseProgressCourseId.toLowerCase().trim() === baseRequestCourseId.toLowerCase().trim();
-    });
+    const courseProgress = user.courseProgress?.find(
+      (p) => String(p.courseId) === courseId
+    );
 
     // Try to find a descriptive course name from user's other data
     const selectedCourse = user.selectedCourses?.find(
@@ -662,16 +647,10 @@ export const getExamQuestions = async (req, res) => {
     }
 
     // If chapterId is provided, use it; otherwise require course and video (if not using courseId route)
-    // Also allow filtering by year, semester, subject without specific video
-    const { year, semester, subject } = req.query;
-
-    // If using the new drill-down, validation is different
-    if (year && semester && subject) {
-      // Valid filter request
-    } else if (!queryChapterId && !courseId && (!course || !video)) {
+    if (!queryChapterId && !courseId && (!course || !video)) {
       return res.status(400).json({
         success: false,
-        message: "Either chapterId or (course and video) or courseId or specific filter (year, sem, subject) are required",
+        message: "Either chapterId or (course and video) or courseId are required",
       });
     }
 
@@ -683,50 +662,6 @@ export const getExamQuestions = async (req, res) => {
         chapterId: queryChapterId,
         category: queryCategory,
       });
-    } else if (year && semester && subject) {
-      // Search by drill-down filters
-      // Note: We might need to find *any* matching question set, or a specific one if designed that way.
-      // For now, let's assume we are looking for a question set that matches these criteria.
-      // Since ExamQuestion schema stores questions per "video" or "chapter", we might find multiple.
-      // But typically we want one set associated with this subject.
-      // We might need to adjust seeding to add year/sem/subject to the docs.
-
-      // Let's try to find one that matches.
-      // First, we need to ensure our seed data actually has these fields.
-      // If the user hasn't re-seeded with the NEW fields, this search will fail.
-
-      // Since we just updated the schema but haven't updated the MAIN seedExamQuestions.js to include these fields,
-      // we need to be careful. The user's request implies we should show questions based on this selection.
-
-      // Strategy: 
-      // 1. Look for a document that explicitly matches year/sem/subject.
-      // 2. If not found, fall back to matching by category (Branch) and subject name if stored in 'course' or 'chapterName'.
-
-      const query = {};
-      if (category) query.category = category;
-      if (branch) query.category = branch; // Alias
-
-      // For now, let's rely on finding by subject name in 'course' field or 'chapterName' as a fallback if new fields aren't populated yet
-      // But ideally we use the new fields.
-
-      examData = await ExamQuestion.findOne({
-        category: category || queryCategory,
-        subject: subject,
-        year: parseInt(year),
-        semester: parseInt(semester)
-      });
-
-      // Fallback: search by subject string in course name if exact match fail
-      if (!examData) {
-        examData = await ExamQuestion.findOne({
-          category: category || queryCategory,
-          $or: [
-            { course: { $regex: subject, $options: 'i' } },
-            { chapterName: { $regex: subject, $options: 'i' } }
-          ]
-        });
-      }
-
     } else if (courseId) {
       // Search by courseId (treat it as category)
       examData = await ExamQuestion.findOne({
@@ -865,17 +800,18 @@ export const seedExamQuestions = async (req, res) => {
 // Get course structure for dropdowns
 export const getCourseStructure = asyncHandler(async (req, res) => {
   try {
-    const structure = await CourseStructure.find({});
+    const courseStructures = await CourseStructure.find({});
+
     res.status(200).json({
       success: true,
-      data: structure
+      data: courseStructures
     });
   } catch (error) {
     console.error("Error fetching course structure:", error);
     res.status(500).json({
       success: false,
-      message: "Server error fetching course structure",
-      error: error.message
+      message: "Server error",
+      error: error.message,
     });
   }
 });
