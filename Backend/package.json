@@ -12,5 +12,10 @@
   },
   "devDependencies": {
     "@ljharb/tsconfig": "^0.3.2"
-  }
+  },
+  "scripts": {
+    "dev": "node index.js",
+    "start": "node index.js"
+  },
+  "type": "module"
 }
