@@ -405,9 +405,9 @@ const Performance = () => {
     const avgScore =
       totalAttempts > 0
         ? Math.round(
-            allAttempts.reduce((sum, a) => sum + (a.score || 0), 0) /
-              totalAttempts,
-          )
+          allAttempts.reduce((sum, a) => sum + (a.score || 0), 0) /
+          totalAttempts,
+        )
         : 0;
     const passedAttempts = allAttempts.filter((a) => a.passed).length;
     const passingRate =
@@ -435,11 +435,11 @@ const Performance = () => {
   const currentCompletionPercentage =
     isOverallView && globalStats
       ? Math.round(
-          allExamData.reduce(
-            (sum, c) => sum + (c.completionPercentage || 0),
-            0,
-          ) / (allExamData.length || 1),
-        )
+        allExamData.reduce(
+          (sum, c) => sum + (c.completionPercentage || 0),
+          0,
+        ) / (allExamData.length || 1),
+      )
       : examData?.completionPercentage || 0;
   const performanceLevel = getPerformanceLevel(currentScore);
   const streakInfo = getStreakInfo(currentAttempts);
@@ -601,11 +601,10 @@ const Performance = () => {
                         if (element)
                           element.scrollIntoView({ behavior: "smooth" });
                       }}
-                      className={`p-5 border rounded-xl transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group ${
-                        selectedAttempt?.attemptId === attempt.attemptId
+                      className={`p-5 border rounded-xl transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group ${selectedAttempt?.attemptId === attempt.attemptId
                           ? "bg-blue-50 border-blue-300 shadow-sm"
                           : "bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50 hover:shadow-sm"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-4 text-left rounded-xl transition">
                         <div className="text-3xl bg-gray-50 w-14 h-14 rounded-xl flex items-center justify-center border border-gray-200 group-hover:scale-110 transition-transform">
@@ -613,11 +612,10 @@ const Performance = () => {
                         </div>
                         <div>
                           <h4
-                            className={`font-bold text-lg transition-colors ${
-                              selectedAttempt?.attemptId === attempt.attemptId
+                            className={`font-bold text-lg transition-colors ${selectedAttempt?.attemptId === attempt.attemptId
                                 ? "text-blue-600"
                                 : "text-gray-800 group-hover:text-blue-600"
-                            }`}
+                              }`}
                           >
                             {getFullCourseName(
                               attempt.courseName || attempt.courseId,
@@ -641,8 +639,8 @@ const Performance = () => {
                             <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
                               {attempt.attemptDate
                                 ? new Date(
-                                    attempt.attemptDate,
-                                  ).toLocaleDateString()
+                                  attempt.attemptDate,
+                                ).toLocaleDateString()
                                 : "Recent"}
                             </span>
                           </p>
@@ -652,9 +650,8 @@ const Performance = () => {
                       <div className="flex items-center gap-6">
                         <div className="flex flex-col text-right">
                           <p
-                            className={`text-xs font-bold uppercase tracking-wider ${
-                              attempt.passed ? "text-green-600" : "text-red-500"
-                            }`}
+                            className={`text-xs font-bold uppercase tracking-wider ${attempt.passed ? "text-green-600" : "text-red-500"
+                              }`}
                           >
                             {attempt.passed
                               ? "✅ Passed"
@@ -666,11 +663,10 @@ const Performance = () => {
                         </div>
                         <div className="h-10 w-0.5 bg-gray-200 hidden sm:block"></div>
                         <div
-                          className={`p-2 transition-colors ${
-                            selectedAttempt?.attemptId === attempt.attemptId
+                          className={`p-2 transition-colors ${selectedAttempt?.attemptId === attempt.attemptId
                               ? "text-blue-600"
                               : "text-gray-300 group-hover:text-blue-600"
-                          }`}
+                            }`}
                         >
                           <svg
                             className="w-6 h-6"
@@ -807,13 +803,12 @@ const Performance = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <FaChartLine
-                      className={`text-2xl ${
-                        improvementTrend.trend === "up"
+                      className={`text-2xl ${improvementTrend.trend === "up"
                           ? "text-green-600"
                           : improvementTrend.trend === "down"
                             ? "text-red-600"
                             : "text-yellow-600"
-                      }`}
+                        }`}
                     />
                     <div>
                       <h3 className="text-lg font-bold text-gray-900">
@@ -826,13 +821,12 @@ const Performance = () => {
                   </div>
                   <div className="text-right">
                     <div
-                      className={`text-2xl font-bold ${
-                        improvementTrend.trend === "up"
+                      className={`text-2xl font-bold ${improvementTrend.trend === "up"
                           ? "text-green-600"
                           : improvementTrend.trend === "down"
                             ? "text-red-600"
                             : "text-yellow-600"
-                      }`}
+                        }`}
                     >
                       {improvementTrend.trend === "up"
                         ? "↑"
@@ -910,9 +904,8 @@ const Performance = () => {
                                 <div
                                   className="h-full bg-blue-600"
                                   style={{
-                                    width: `${
-                                      course.completionPercentage || 0
-                                    }%`,
+                                    width: `${course.completionPercentage || 0
+                                      }%`,
                                   }}
                                 />
                               </div>
@@ -922,11 +915,10 @@ const Performance = () => {
                             </td>
                             <td className="text-center py-4 px-4">
                               <span
-                                className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                  passed
+                                className={`px-3 py-1 rounded-full text-xs font-bold ${passed
                                     ? "bg-green-50 border border-green-200 text-green-600"
                                     : "bg-yellow-50 border border-yellow-200 text-yellow-600"
-                                }`}
+                                  }`}
                               >
                                 {passed ? "✅ Passed" : "📚 Learning"}
                               </span>
@@ -988,11 +980,10 @@ const Performance = () => {
                             }
                           }, 100);
                         }}
-                        className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${
-                          selectedAttempt?.attemptId === attempt.attemptId
+                        className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${selectedAttempt?.attemptId === attempt.attemptId
                             ? "bg-blue-50 border-blue-300"
                             : "bg-gray-50 border-gray-200 hover:border-gray-300"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
@@ -1009,34 +1000,32 @@ const Performance = () => {
                                 <span className="text-sm text-gray-500">
                                   {attempt.attemptDate
                                     ? new Date(
-                                        attempt.attemptDate,
-                                      ).toLocaleDateString()
+                                      attempt.attemptDate,
+                                    ).toLocaleDateString()
                                     : "Recent"}
                                 </span>
                               </div>
                               <div className="text-sm text-gray-500">
                                 {attempt.totalQuestions
-                                  ? `${attempt.correctAnswers || 0} of ${
-                                      attempt.totalQuestions
-                                    } correct`
+                                  ? `${attempt.correctAnswers || 0} of ${attempt.totalQuestions
+                                  } correct`
                                   : "Details not available"}
                               </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
                             <span
-                              className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                attempt.passed
+                              className={`px-3 py-1 rounded-full text-xs font-bold ${attempt.passed
                                   ? "bg-green-50 border border-green-200 text-green-600"
                                   : "bg-red-50 border border-red-200 text-red-600"
-                              }`}
+                                }`}
                             >
                               {attempt.passed ? "PASSED" : "NEEDS IMPROVEMENT"}
                             </span>
                             {selectedAttempt?.attemptId ===
                               attempt.attemptId && (
-                              <FaCheckCircle className="text-blue-600" />
-                            )}
+                                <FaCheckCircle className="text-blue-600" />
+                              )}
                           </div>
                         </div>
                       </div>
@@ -1152,16 +1141,16 @@ const Performance = () => {
                   {selectedAttempt.answers.every(
                     (answer) => answer.isCorrect,
                   ) && (
-                    <div className="text-center py-8">
-                      <div className="text-5xl mb-4 text-green-500">🎉</div>
-                      <h4 className="font-semibold text-gray-900 text-lg mb-2">
-                        Perfect Score!
-                      </h4>
-                      <p className="text-gray-600 mb-4">
-                        You got all questions correct in this attempt.
-                      </p>
-                    </div>
-                  )}
+                      <div className="text-center py-8">
+                        <div className="text-5xl mb-4 text-green-500">🎉</div>
+                        <h4 className="font-semibold text-gray-900 text-lg mb-2">
+                          Perfect Score!
+                        </h4>
+                        <p className="text-gray-600 mb-4">
+                          You got all questions correct in this attempt.
+                        </p>
+                      </div>
+                    )}
                 </div>
               </div>
             )}

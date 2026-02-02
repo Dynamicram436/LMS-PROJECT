@@ -45,7 +45,7 @@ const Sidebar = () => {
       name: "Profile",
       icon: <FaUser className="text-lg" />,
     },
-    
+
   ];
 
   return (
@@ -72,18 +72,16 @@ const Sidebar = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 group relative ${
-                  isActive
+                className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 group relative ${isActive
                     ? "bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-white border border-indigo-500/30 shadow-lg"
                     : "text-slate-400 hover:bg-slate-700/50 hover:text-white"
-                }`}
+                  }`}
               >
                 <div
-                  className={`p-2 rounded-lg transition-colors ${
-                    isActive
+                  className={`p-2 rounded-lg transition-colors ${isActive
                       ? "bg-indigo-500/30 text-indigo-300"
                       : "text-slate-400 group-hover:text-white group-hover:bg-slate-600/30"
-                  }`}
+                    }`}
                 >
                   {item.icon}
                 </div>
