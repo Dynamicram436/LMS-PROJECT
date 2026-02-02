@@ -477,15 +477,21 @@ const Performance = () => {
           </p>
           <div className="flex gap-4 justify-center">
             <button
+              onClick={() => navigate("/viewcourses")}
+              className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Browse Courses
+            </button>
+            <button
               onClick={() => navigate(-1)}
-              className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-6 py-3 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors"
             >
               Go Back
             </button>
             {!user?.userid && (
               <button
                 onClick={() => navigate("/login")}
-                className="px-6 py-2 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                className="px-6 py-3 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Log In
               </button>
