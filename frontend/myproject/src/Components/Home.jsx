@@ -659,6 +659,26 @@ const Home = () => {
                   </button>
 
                   <button
+                    onClick={() => navigate("/course-exam")}
+                    className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 transition-all group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                        <FaGraduationCap className="text-indigo-600" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-medium text-gray-900">
+                          Course Exams
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Navigate courses and take exams
+                        </div>
+                      </div>
+                    </div>
+                    <FaArrowRight className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
+                  </button>
+
+                  <button
                     onClick={() => navigate("/profile")}
                     className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-200 transition-all group"
                   >
