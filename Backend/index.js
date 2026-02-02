@@ -9,6 +9,7 @@ import path from "path";
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 import authRoute from "./routes/authRoute.js";
 import examRoute from "./routes/examRoute.js";
+import courseRoute from "./routes/courseRoute.js";
 import connectDB from "./utils/db.js";
 
 dotenv.config();
@@ -26,6 +27,7 @@ app.get("/", (req, res) => res.send("EduTrack API is running"));
 
 app.use("/api/auth", authRoute);
 app.use("/api/exam", examRoute);
+app.use("/api/course", courseRoute);
 
 // Connect to database and start server
 const startServer = async () => {
