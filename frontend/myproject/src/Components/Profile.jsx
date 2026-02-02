@@ -117,69 +117,79 @@ const Profile = () => {
     };
 
     initializeProfile();
+  }, []); // Remove user?.userid dependency to prevent re-running unnecessarily
 
+  // Separate useEffect for event listeners
+  useEffect(() => {
     // Listen for real-time progress updates
     const handleProgressUpdate = (event) => {
-      if (event.detail.userId === user?.userid) {
+      const currentUser = JSON.parse(localStorage.getItem("user"));
+      if (String(currentUser?.userid) === String(event.detail.userId)) {
         refreshProgressData();
       }
     };
 
     // Listen for exam submissions
     const handleExamSubmission = async (event) => {
-      if (event.detail.userId === user?.userid) {
+      const currentUser = JSON.parse(localStorage.getItem("user"));
+      if (String(currentUser?.userid) === String(event.detail.userId)) {
         console.log('Profile: Exam submission detected, refreshing data...', event.detail);
 
         // Update local user data with the new exam result
-        const currentUser = JSON.parse(localStorage.getItem("user"));
-        if (currentUser) {
+        const userData = JSON.parse(localStorage.getItem("user"));
+        if (userData) {
           // Initialize examResults if not present
-          if (!Array.isArray(currentUser.examResults)) {
-            currentUser.examResults = [];
+          if (!Array.isArray(userData.examResults)) {
+            userData.examResults = [];
           }
 
           // Find if this course already exists in the results
-          const existingCourseIndex = currentUser.examResults.findIndex(
-            course => course.courseId === event.detail.courseId
+          const existingCourseIndex = userData.examResults.findIndex(
+            course => String(course.courseId).trim().toLowerCase() === String(event.detail.courseId).trim().toLowerCase()
           );
 
           const newExamAttempt = {
             score: event.detail.score,
             passed: event.detail.passed,
             attemptDate: new Date().toISOString(),
-            attemptNumber: (existingCourseIndex >= 0 ? (currentUser.examResults[existingCourseIndex]?.examAttempts?.length || 0) : 0) + 1,
+            attemptNumber: (existingCourseIndex >= 0 ? (userData.examResults[existingCourseIndex]?.examAttempts?.length || 0) : 0) + 1,
             answers: event.detail.result?.answers || []
           };
 
           if (existingCourseIndex >= 0) {
-            // Update existing course
-            if (!currentUser.examResults[existingCourseIndex].examAttempts) {
-              currentUser.examResults[existingCourseIndex].examAttempts = [];
+            // Update existing course with guard to avoid duplicate processing
+            const courseEntry = userData.examResults[existingCourseIndex];
+            const existingAttempts = courseEntry.examAttempts || [];
+            const alreadyExists = existingAttempts.some(a => a.attemptDate === newExamAttempt.attemptDate);
+            if (!alreadyExists) {
+              courseEntry.examAttempts = existingAttempts.concat([newExamAttempt]);
+              courseEntry.score = event.detail.score;
+              courseEntry.passed = event.detail.passed;
+              courseEntry.lastAttempt = newExamAttempt.attemptDate;
             }
-            currentUser.examResults[existingCourseIndex].examAttempts.push(newExamAttempt);
-            currentUser.examResults[existingCourseIndex].score = event.detail.score;
-            currentUser.examResults[existingCourseIndex].passed = event.detail.passed;
-            currentUser.examResults[existingCourseIndex].lastAttempt = newExamAttempt.attemptDate;
           } else {
-            // Add new course entry
-            currentUser.examResults.push({
-              courseId: event.detail.courseId,
-              courseName: event.detail.courseId, // Will be updated with proper name later
-              score: event.detail.score,
-              passed: event.detail.passed,
-              examAttempts: [newExamAttempt],
-              lastAttempt: newExamAttempt.attemptDate,
-              completionPercentage: event.detail.passed ? 100 : 0
-            });
+            // Add new course entry if not already present (guard against duplicates)
+            const exists = userData.examResults.find((c) => String(c.courseId).trim().toLowerCase() === String(event.detail.courseId).trim().toLowerCase());
+            if (!exists) {
+              userData.examResults.push({
+                courseId: event.detail.courseId,
+                courseName: event.detail.courseId, // Will be updated with proper name later
+                score: event.detail.score,
+                passed: event.detail.passed,
+                examAttempts: [newExamAttempt],
+                lastAttempt: newExamAttempt.attemptDate,
+                completionPercentage: event.detail.passed ? 100 : 0
+              });
+            }
           }
 
           // Update localStorage first
-          localStorage.setItem("user", JSON.stringify(currentUser));
+          localStorage.setItem("user", JSON.stringify(userData));
 
           // Update component state immediately for instant UI update
           setUser(prev => ({
             ...prev,
-            examResults: currentUser.examResults
+            examResults: userData.examResults
           }));
         }
 
@@ -197,7 +207,7 @@ const Profile = () => {
       window.removeEventListener("progressUpdated", handleProgressUpdate);
       window.removeEventListener("examSubmitted", handleExamSubmission);
     };
-  }, [user?.userid]); // Add user.userid to dependencies
+  }, []); // Empty dependency array since handlers use fresh data from localStorage
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -295,7 +305,7 @@ const Profile = () => {
   }
 
   const examResults = Array.isArray(user.examResults) ? user.examResults : [];
-  
+
   // Debug: Log exam data to understand structure
   console.log('Profile Component Debug:');
   console.log('User data:', user);
@@ -313,26 +323,26 @@ const Profile = () => {
   const overallScore =
     totalAttempts > 0
       ? Math.round(
-          examResults.reduce((sum, course) => {
-            if (course.examAttempts && course.examAttempts.length > 0) {
-              const latestAttempt =
-                course.examAttempts[course.examAttempts.length - 1];
-              return sum + (latestAttempt.score || 0);
-            }
-            return sum;
-          }, 0) / totalAttempts
-        )
+        examResults.reduce((sum, course) => {
+          if (course.examAttempts && course.examAttempts.length > 0) {
+            const latestAttempt =
+              course.examAttempts[course.examAttempts.length - 1];
+            return sum + (latestAttempt.score || 0);
+          }
+          return sum;
+        }, 0) / totalAttempts
+      )
       : 0;
 
   // Calculate average progress across all courses
   const averageProgress =
     coursesStarted > 0
       ? Math.round(
-          examResults.reduce(
-            (sum, course) => sum + (course.completionPercentage || 0),
-            0
-          ) / coursesStarted
-        )
+        examResults.reduce(
+          (sum, course) => sum + (course.completionPercentage || 0),
+          0
+        ) / coursesStarted
+      )
       : 0;
 
   // Determine achievement level based on performance
@@ -450,13 +460,13 @@ const Profile = () => {
                       <p className="font-medium">
                         {user.createdAt
                           ? new Date(user.createdAt).toLocaleDateString(
-                              "en-US",
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              }
-                            )
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            }
+                          )
                           : "N/A"}
                       </p>
                     </div>
@@ -658,11 +668,11 @@ const Profile = () => {
                     // Calculate course completion percentage with better fallbacks
                     const completionPercentage =
                       course.completionPercentage !== undefined &&
-                      course.completionPercentage !== null
+                        course.completionPercentage !== null
                         ? Math.max(
-                            0,
-                            Math.min(100, course.completionPercentage)
-                          )
+                          0,
+                          Math.min(100, course.completionPercentage)
+                        )
                         : 0;
 
                     // Determine completion status based on percentage

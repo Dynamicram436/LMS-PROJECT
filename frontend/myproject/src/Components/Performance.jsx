@@ -277,25 +277,30 @@ const Performance = () => {
           };
           
           if (existingCourseIndex >= 0) {
-            // Update existing course
-            if (!updatedExamResults[existingCourseIndex].examAttempts) {
-              updatedExamResults[existingCourseIndex].examAttempts = [];
+            // Update existing course with guard to avoid duplicates
+            const courseEntry = updatedExamResults[existingCourseIndex];
+            const existingAttempts = courseEntry.examAttempts || [];
+            const alreadyExists = existingAttempts.some(a => a.attemptDate === newExamAttempt.attemptDate);
+            if (!alreadyExists) {
+              courseEntry.examAttempts = existingAttempts.concat([newExamAttempt]);
+              courseEntry.score = event.detail.score;
+              courseEntry.passed = event.detail.passed;
+              courseEntry.lastAttempt = newExamAttempt.attemptDate;
             }
-            updatedExamResults[existingCourseIndex].examAttempts.push(newExamAttempt);
-            updatedExamResults[existingCourseIndex].score = event.detail.score;
-            updatedExamResults[existingCourseIndex].passed = event.detail.passed;
-            updatedExamResults[existingCourseIndex].lastAttempt = newExamAttempt.attemptDate;
           } else {
-            // Add new course entry
-            updatedExamResults.push({
-              courseId: event.detail.courseId,
-              courseName: event.detail.courseId, // Will be updated with proper name later
-              score: event.detail.score,
-              passed: event.detail.passed,
-              examAttempts: [newExamAttempt],
-              lastAttempt: newExamAttempt.attemptDate,
-              completionPercentage: event.detail.passed ? 100 : 0
-            });
+            // Add new course entry, guarded against duplicates from multiple handlers
+            const exists = updatedExamResults.find((c) => c.courseId === event.detail.courseId);
+            if (!exists) {
+              updatedExamResults.push({
+                courseId: event.detail.courseId,
+                courseName: event.detail.courseId, // Will be updated with proper name later
+                score: event.detail.score,
+                passed: event.detail.passed,
+                examAttempts: [newExamAttempt],
+                lastAttempt: newExamAttempt.attemptDate,
+                completionPercentage: event.detail.passed ? 100 : 0
+              });
+            }
           }
           
           currentUser.examResults = updatedExamResults;

@@ -13,6 +13,10 @@ import DashboardLayout from "./Components/DashboardLayout";
 import Profile from "./Components/Profile";
 import ExamSelection from "./Courses/ExamSelection";
 import CourseExamSystem from "./Components/CourseExamSystem";
+import DebugExamData from "./Components/DebugExamData";
+import DebugExamResults from "./Components/DebugExamResults";
+import BackendTest from "./Components/BackendTest";
+import ManualExamTest from "./Components/ManualExamTest";
 
 const App = () => {
   return (
@@ -41,7 +45,12 @@ const App = () => {
         <Route path="/course-exam" element={<DashboardLayout><CourseExamSystem /></DashboardLayout>} />
         <Route path="/courses/:category/*" element={<DashboardLayout><CoursesWithExam /></DashboardLayout>} />
         <Route path="/performance/overall" element={<DashboardLayout><Performance /></DashboardLayout>} />
+        <Route path="/performance/all" element={<DashboardLayout><Performance /></DashboardLayout>} />
         <Route path="/performance/:category" element={<DashboardLayout><Performance /></DashboardLayout>} />
+        <Route path="/debug-exam" element={<DashboardLayout><DebugExamData /></DashboardLayout>} />
+        <Route path="/debug-results" element={<DashboardLayout><DebugExamResults /></DashboardLayout>} />
+        <Route path="/test-backend" element={<DashboardLayout><BackendTest /></DashboardLayout>} />
+        <Route path="/manual-test" element={<DashboardLayout><ManualExamTest /></DashboardLayout>} />
       </Routes>
     </>
   );

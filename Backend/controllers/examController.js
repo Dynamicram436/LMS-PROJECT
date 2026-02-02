@@ -206,26 +206,29 @@ export const saveExamResult = asyncHandler(async (req, res) => {
     return match ? match[1] : strId;
   };
 
+  // Consistently convert courseId to string and trim
+  const normalizedCourseId = String(courseId).trim();
+
   // Find or create course progress - ensure consistent string comparison
   let courseProgress = user.courseProgress.find((progress) => {
-    const progressCourseId = String(progress.courseId);
-    const requestCourseId = String(courseId);
+    const progressCourseId = String(progress.courseId).trim();
 
     // Try exact match first
-    if (progressCourseId.toLowerCase().trim() === requestCourseId.toLowerCase().trim()) {
+    if (progressCourseId.toLowerCase() === normalizedCourseId.toLowerCase()) {
       return true;
     }
 
     // If exact match fails, try base course ID match (for cases like "CSE" vs "CSE-chapter-101")
     const baseProgressCourseId = getBaseCourseId(progressCourseId);
-    const baseRequestCourseId = getBaseCourseId(requestCourseId);
+    const baseRequestCourseId = getBaseCourseId(normalizedCourseId);
 
-    return baseProgressCourseId.toLowerCase().trim() === baseRequestCourseId.toLowerCase().trim();
+    return baseProgressCourseId.toLowerCase() === baseRequestCourseId.toLowerCase();
   });
 
   if (!courseProgress) {
+    console.log(`[SaveExamResult] Creating new course progress for courseId: "${normalizedCourseId}"`);
     courseProgress = {
-      courseId: courseId,
+      courseId: normalizedCourseId,
       videos: [],
       exam: {
         score: 0,
@@ -237,7 +240,10 @@ export const saveExamResult = asyncHandler(async (req, res) => {
       completionPercentage: 0,
     };
     user.courseProgress.push(courseProgress);
+    // Re-fetch reference from array
     courseProgress = user.courseProgress[user.courseProgress.length - 1];
+  } else {
+    console.log(`[SaveExamResult] Found existing course progress for courseId: "${courseProgress.courseId}"`);
   }
 
   const percentageScore = Math.round((score / totalQuestions) * 100);
@@ -425,19 +431,29 @@ export const getAllExamAttempts = asyncHandler(async (req, res) => {
 export const getExamResults = asyncHandler(async (req, res) => {
   const { userId } = req.params;
 
+  console.log(`[getExamResults] === REQUEST START === userId: ${userId}`);
+
   // Find user by userid field to get access to their course progress for completion stats
   const user = await User.findOne({ userid: userId }).lean();
   if (!user) {
+    console.log(`[getExamResults] User not found: ${userId}`);
     return res
       .status(404)
       .json({ success: false, message: "User not found" });
   }
 
+  console.log(`[getExamResults] User found: ${user.userid}`);
+
   // FIRST: Get all exam attempts from the single source of truth, the ExamAttempt collection.
   const allUserExamAttempts = await ExamAttempt.find({ userId: userId }).lean();
   console.log(`[getExamResults] Found ${allUserExamAttempts.length} total ExamAttempt records for user ${userId}`);
 
+  if (allUserExamAttempts.length > 0) {
+    console.log(`[getExamResults] Sample attempt:`, JSON.stringify(allUserExamAttempts[0], null, 2));
+  }
+
   if (allUserExamAttempts.length === 0) {
+    console.log(`[getExamResults] No exam attempts found, returning empty array`);
     // If there are no attempts, return an empty array.
     return res.status(200).json({
       success: true,
@@ -466,13 +482,14 @@ export const getExamResults = asyncHandler(async (req, res) => {
     const latestAttempt = sortedAttempts.length > 0 ? sortedAttempts[sortedAttempts.length - 1] : null;
 
     // Find the corresponding course progress for this courseId to get completion percentage
+    // Use loose comparison to handle potential string/objectId differences
     const courseProgress = user.courseProgress?.find(
-      (p) => String(p.courseId) === courseId
+      (p) => String(p.courseId).trim().toLowerCase() === String(courseId).trim().toLowerCase()
     );
 
     // Try to find a descriptive course name from user's other data
     const selectedCourse = user.selectedCourses?.find(
-      (c) => String(c.courseId) === courseId
+      (c) => String(c.courseId).trim().toLowerCase() === String(courseId).trim().toLowerCase()
     );
     let courseName = selectedCourse?.courseName || courseId;
 
@@ -512,6 +529,11 @@ export const getExamResults = asyncHandler(async (req, res) => {
       answers: latestAttempt ? latestAttempt.answers : [],
       examAttempts: enrichedExamAttempts,
     });
+  }
+
+  console.log(`[getExamResults] === RESPONSE === Returning ${examResults.length} course results`);
+  if (examResults.length > 0) {
+    console.log(`[getExamResults] Sample result:`, JSON.stringify(examResults[0], null, 2));
   }
 
   res.status(200).json({

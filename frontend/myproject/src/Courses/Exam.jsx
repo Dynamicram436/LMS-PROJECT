@@ -142,16 +142,34 @@ const Exam = () => {
 
         // Fetch user data if logged in
         const token = localStorage.getItem("token");
+        const storedUser = localStorage.getItem("user");
+
+        // Initialize with stored user immediately to ensure we have data for submission
+        if (storedUser) {
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch (e) {
+            console.error("Failed to parse stored user", e);
+          }
+        }
+
         if (token) {
           try {
-            const userResponse = await apiClient.get("/auth/profile");
-            setUser(userResponse.data.user);
+            // Attempt to refresh user data from API (robust against missing endpoint)
+            try {
+              const userResponse = await apiClient.get("/auth/profile");
+              if (userResponse.data?.user) {
+                setUser(userResponse.data.user);
+              }
+            } catch (profileErr) {
+              console.warn("Profile fetch failed (using stored user):", profileErr.message);
+            }
 
             // Fetch exam history
             const historyResponse = await apiClient.get(`/exam/history/${courseId}`);
             setExamAttempts(historyResponse.data.attempts || []);
-          } catch {
-            console.log("User not authenticated or error fetching user data");
+          } catch (err) {
+            console.log("Error fetching exam history", err);
           }
         }
       } catch (err) {
@@ -258,7 +276,7 @@ const Exam = () => {
           });
 
           const attemptData = {
-            userId: user.userid, // Add userId
+            userId: String(user.userid), // Add userId as string
             courseId,
             score: calculatedScore, // Send raw score (number of correct answers)
             totalQuestions: questions.length,
@@ -266,30 +284,39 @@ const Exam = () => {
             attemptId: `${user.userid}_${courseId}_${Date.now()}` // Unique attempt ID
           };
 
-          await apiClient.post('/exam/results', attemptData);
+          console.log('[Exam] Submitting exam attempt to backend:', attemptData);
+          const saveResponse = await apiClient.post('/exam/results', attemptData);
+          console.log('[Exam] Backend response:', saveResponse.data);
 
           // Refresh exam history
           const historyResponse = await apiClient.get(`/exam/history/${courseId}`);
           setExamAttempts(historyResponse.data.attempts || []);
 
+          // Prepare event data
+          const eventDetail = {
+            userId: user.userid,
+            courseId: courseId,
+            score: Math.round((calculatedScore / questions.length) * 100), // Percentage score
+            passed: calculatedScore >= (questions.length * 0.7), // 70% passing grade
+            result: {
+              score: Math.round((calculatedScore / questions.length) * 100), // Percentage score
+              passed: calculatedScore >= (questions.length * 0.7), // 70% passing grade
+              answers: formattedAnswers,
+              totalQuestions: questions.length,
+              correctAnswers: calculatedScore
+            }
+          };
+
+          console.log('[Exam] Dispatching examSubmitted event with detail:', eventDetail);
+
           // Dispatch event to notify other components of exam submission
           window.dispatchEvent(
             new CustomEvent("examSubmitted", {
-              detail: {
-                userId: user.userid,
-                courseId: courseId,
-                score: Math.round((calculatedScore / questions.length) * 100), // Percentage score
-                passed: calculatedScore >= (questions.length * 0.7), // 70% passing grade
-                result: {
-                  score: Math.round((calculatedScore / questions.length) * 100), // Percentage score
-                  passed: calculatedScore >= (questions.length * 0.7), // 70% passing grade
-                  answers: formattedAnswers,
-                  totalQuestions: questions.length,
-                  correctAnswers: calculatedScore
-                }
-              },
+              detail: eventDetail,
             })
           );
+
+          console.log('[Exam] Event dispatched successfully');
         } catch (saveError) {
           console.error('Error saving exam attempt:', saveError);
           toast.error('Could not save your exam results');
