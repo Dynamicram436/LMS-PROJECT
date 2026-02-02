@@ -55,16 +55,19 @@ const Exam = () => {
   // Extract parameters
   const searchCategory = searchParams.get("category") || "";
   const subject = searchParams.get("subject") || "";
+  const chapterIdParam = searchParams.get("chapterId");
 
+  // Parse chapterId if present
+  const chapterId = chapterIdParam ? parseInt(chapterIdParam, 10) : null;
 
-
-  const chapter = chaptersData.find(ch => ch.id === courseId);
+  // Find chapter data from catalog using chapterId if available, otherwise just use courseId
+  const chapter = chapterId
+    ? chaptersData.find(ch => ch.id === chapterId)
+    : chaptersData.find(ch => ch.id === courseId);
 
   // Safe navigation helpers
   const safeCurrentIndex = Math.max(0, Math.min(currentQuestionIndex, questions.length - 1));
   const safeTotal = Math.max(1, questions.length);
-
-
 
   // Get current question and normalize format
   const getCurrentQuestion = () => {
@@ -102,9 +105,10 @@ const Exam = () => {
         setLoading(true);
         setError(null);
 
-        // Fetch questions
+        // Fetch questions - include chapterId if available
         const questionResponse = await apiClient.get(`/exam/questions/${courseId}`, {
-          timeout: 10000, // 10 second timeout
+          params: { chapterId }, // Pass chapterId as query param
+          timeout: 10000,
         });
 
         // Check if response has the expected structure
@@ -155,7 +159,7 @@ const Exam = () => {
       setError("Invalid course ID");
       setLoading(false);
     }
-  }, [courseId]);
+  }, [courseId, chapterId]);
 
   // Handle answer selection
   const handleAnswerOptionClick = (selectedIndex) => {
@@ -523,14 +527,14 @@ const Exam = () => {
                     key={index}
                     onClick={() => handleAnswerOptionClick(index)}
                     className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${selectedOptions[safeCurrentIndex] === index
-                        ? 'border-blue-500 bg-blue-50 shadow-sm'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      ? 'border-blue-500 bg-blue-50 shadow-sm'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                       }`}
                   >
                     <div className="flex items-center gap-4">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${selectedOptions[safeCurrentIndex] === index
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-100 text-gray-600'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-600'
                         }`}>
                         {String.fromCharCode(65 + index)}
                       </div>
@@ -553,8 +557,8 @@ const Exam = () => {
                   onClick={handlePrevious}
                   disabled={safeCurrentIndex === 0}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${safeCurrentIndex === 0
-                      ? 'text-gray-400 cursor-not-allowed'
-                      : 'text-gray-700 hover:bg-gray-200'
+                    ? 'text-gray-400 cursor-not-allowed'
+                    : 'text-gray-700 hover:bg-gray-200'
                     }`}
                 >
                   <FaArrowLeft className="text-sm" />
@@ -567,8 +571,8 @@ const Exam = () => {
                       onClick={handleSubmit}
                       disabled={selectedOptions[safeCurrentIndex] === null || isSubmitting}
                       className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors ${selectedOptions[safeCurrentIndex] === null || isSubmitting
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-green-500 text-white hover:bg-green-600'
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-green-500 text-white hover:bg-green-600'
                         }`}
                     >
                       {isSubmitting ? (
@@ -588,8 +592,8 @@ const Exam = () => {
                       onClick={handleNext}
                       disabled={selectedOptions[safeCurrentIndex] === null}
                       className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors ${selectedOptions[safeCurrentIndex] === null
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-blue-500 text-white hover:bg-blue-600'
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
                         }`}
                     >
                       Next

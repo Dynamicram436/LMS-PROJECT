@@ -56,7 +56,7 @@ const Performance = () => {
 
       if (!response?.data?.success) {
         throw new Error(
-          response?.data?.message || "Failed to fetch performance data"
+          response?.data?.message || "Failed to fetch performance data",
         );
       }
 
@@ -71,7 +71,7 @@ const Performance = () => {
       if (isOverallView) {
         // For overall view, find the first course with attempts
         const courseWithAttempts = examResults.find(
-          (course) => course.examAttempts?.length > 0
+          (course) => course.examAttempts?.length > 0,
         );
 
         if (courseWithAttempts) {
@@ -135,7 +135,7 @@ const Performance = () => {
     const subjectEntry = subjectsData.find(
       (s) =>
         s.id.toLowerCase() === idOrName.toLowerCase() ||
-        s.name.toLowerCase() === idOrName.toLowerCase()
+        s.name.toLowerCase() === idOrName.toLowerCase(),
     );
     return subjectEntry ? subjectEntry.name : idOrName;
   };
@@ -160,14 +160,14 @@ const Performance = () => {
               "Cache-Control": "no-cache",
               Pragma: "no-cache",
             },
-          }
+          },
         );
 
         console.log("Initial performance data response:", response.data);
 
         if (!response?.data?.success) {
           throw new Error(
-            response?.data?.message || "Failed to fetch performance data"
+            response?.data?.message || "Failed to fetch performance data",
           );
         }
 
@@ -176,7 +176,7 @@ const Performance = () => {
           : [];
 
         console.log(
-          `Loaded ${examResults.length} exam result entries initially`
+          `Loaded ${examResults.length} exam result entries initially`,
         );
 
         setAllExamData(examResults);
@@ -189,7 +189,7 @@ const Performance = () => {
         if (isOverallView) {
           // For overall view, find the first course with attempts
           const courseWithAttempts = examResults.find(
-            (course) => course.examAttempts?.length > 0
+            (course) => course.examAttempts?.length > 0,
           );
 
           if (courseWithAttempts) {
@@ -255,7 +255,7 @@ const Performance = () => {
       const currentUser = JSON.parse(localStorage.getItem("user"));
       if (currentUser?.userid === event.detail.userId) {
         console.log(
-          "Detected exam submission for current user, refreshing performance data..."
+          "Detected exam submission for current user, refreshing performance data...",
         );
         fetchPerformanceData();
       }
@@ -398,7 +398,7 @@ const Performance = () => {
           ...attempt,
           courseName: course.courseName,
           courseId: course.courseId,
-        }))
+        })),
       )
       .sort((a, b) => new Date(b.attemptDate) - new Date(a.attemptDate));
     const totalAttempts = allAttempts.length;
@@ -406,7 +406,7 @@ const Performance = () => {
       totalAttempts > 0
         ? Math.round(
             allAttempts.reduce((sum, a) => sum + (a.score || 0), 0) /
-              totalAttempts
+              totalAttempts,
           )
         : 0;
     const passedAttempts = allAttempts.filter((a) => a.passed).length;
@@ -415,7 +415,7 @@ const Performance = () => {
         ? Math.round((passedAttempts / totalAttempts) * 100)
         : 0;
     const subjectsCleared = new Set(
-      allAttempts.filter((a) => a.passed).map((a) => a.courseId)
+      allAttempts.filter((a) => a.passed).map((a) => a.courseId),
     ).size;
     return {
       allAttempts,
@@ -437,8 +437,8 @@ const Performance = () => {
       ? Math.round(
           allExamData.reduce(
             (sum, c) => sum + (c.completionPercentage || 0),
-            0
-          ) / (allExamData.length || 1)
+            0,
+          ) / (allExamData.length || 1),
         )
       : examData?.completionPercentage || 0;
   const performanceLevel = getPerformanceLevel(currentScore);
@@ -620,7 +620,7 @@ const Performance = () => {
                             }`}
                           >
                             {getFullCourseName(
-                              attempt.courseName || attempt.courseId
+                              attempt.courseName || attempt.courseId,
                             )}
                           </h4>
                           <p className="text-sm text-gray-500 flex items-center gap-1">
@@ -641,7 +641,7 @@ const Performance = () => {
                             <span className="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
                               {attempt.attemptDate
                                 ? new Date(
-                                    attempt.attemptDate
+                                    attempt.attemptDate,
                                   ).toLocaleDateString()
                                 : "Recent"}
                             </span>
@@ -716,8 +716,8 @@ const Performance = () => {
                       {Math.round(
                         allExamData.reduce(
                           (sum, c) => sum + (c.completionPercentage || 0),
-                          0
-                        ) / (allExamData.length || 1)
+                          0,
+                        ) / (allExamData.length || 1),
                       )}
                       %
                     </div>
@@ -811,8 +811,8 @@ const Performance = () => {
                         improvementTrend.trend === "up"
                           ? "text-green-600"
                           : improvementTrend.trend === "down"
-                          ? "text-red-600"
-                          : "text-yellow-600"
+                            ? "text-red-600"
+                            : "text-yellow-600"
                       }`}
                     />
                     <div>
@@ -830,23 +830,23 @@ const Performance = () => {
                         improvementTrend.trend === "up"
                           ? "text-green-600"
                           : improvementTrend.trend === "down"
-                          ? "text-red-600"
-                          : "text-yellow-600"
+                            ? "text-red-600"
+                            : "text-yellow-600"
                       }`}
                     >
                       {improvementTrend.trend === "up"
                         ? "↑"
                         : improvementTrend.trend === "down"
-                        ? "↓"
-                        : "→"}{" "}
+                          ? "↓"
+                          : "→"}{" "}
                       {Math.abs(improvementTrend.change)}%
                     </div>
                     <div className="text-gray-500 text-sm">
                       {improvementTrend.trend === "up"
                         ? "Improving"
                         : improvementTrend.trend === "down"
-                        ? "Declining"
-                        : "Stable"}
+                          ? "Declining"
+                          : "Stable"}
                     </div>
                   </div>
                 </div>
@@ -895,7 +895,7 @@ const Performance = () => {
                           >
                             <td className="py-4 px-4 text-gray-900 font-medium">
                               {getFullCourseName(
-                                course.courseName || course.courseId
+                                course.courseName || course.courseId,
                               )}
                             </td>
                             <td className="text-center py-4 px-4">
@@ -936,8 +936,8 @@ const Performance = () => {
                                 onClick={() =>
                                   navigate(
                                     `/performance/${encodeURIComponent(
-                                      course.courseId
-                                    )}`
+                                      course.courseId,
+                                    )}`,
                                   )
                                 }
                                 className="text-blue-600 cursor-pointer hover:text-blue-800 font-medium"
@@ -1009,7 +1009,7 @@ const Performance = () => {
                                 <span className="text-sm text-gray-500">
                                   {attempt.attemptDate
                                     ? new Date(
-                                        attempt.attemptDate
+                                        attempt.attemptDate,
                                       ).toLocaleDateString()
                                     : "Recent"}
                                 </span>
@@ -1150,7 +1150,7 @@ const Performance = () => {
 
                   {/* Show message if all questions were answered correctly */}
                   {selectedAttempt.answers.every(
-                    (answer) => answer.isCorrect
+                    (answer) => answer.isCorrect,
                   ) && (
                     <div className="text-center py-8">
                       <div className="text-5xl mb-4 text-green-500">🎉</div>
