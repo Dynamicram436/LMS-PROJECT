@@ -562,18 +562,7 @@ const Performance = () => {
                 className="text-gray-500 hover:text-gray-700"
                 title="Refresh data"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+
               </button>
             </div>
             <p className="text-gray-600 text-lg">
@@ -602,8 +591,8 @@ const Performance = () => {
                           element.scrollIntoView({ behavior: "smooth" });
                       }}
                       className={`p-5 border rounded-xl transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group ${selectedAttempt?.attemptId === attempt.attemptId
-                          ? "bg-blue-50 border-blue-300 shadow-sm"
-                          : "bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50 hover:shadow-sm"
+                        ? "bg-blue-50 border-blue-300 shadow-sm"
+                        : "bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50 hover:shadow-sm"
                         }`}
                     >
                       <div className="flex items-center gap-4 text-left rounded-xl transition">
@@ -613,8 +602,8 @@ const Performance = () => {
                         <div>
                           <h4
                             className={`font-bold text-lg transition-colors ${selectedAttempt?.attemptId === attempt.attemptId
-                                ? "text-blue-600"
-                                : "text-gray-800 group-hover:text-blue-600"
+                              ? "text-blue-600"
+                              : "text-gray-800 group-hover:text-blue-600"
                               }`}
                           >
                             {getFullCourseName(
@@ -664,8 +653,8 @@ const Performance = () => {
                         <div className="h-10 w-0.5 bg-gray-200 hidden sm:block"></div>
                         <div
                           className={`p-2 transition-colors ${selectedAttempt?.attemptId === attempt.attemptId
-                              ? "text-blue-600"
-                              : "text-gray-300 group-hover:text-blue-600"
+                            ? "text-blue-600"
+                            : "text-gray-300 group-hover:text-blue-600"
                             }`}
                         >
                           <svg
@@ -804,10 +793,10 @@ const Performance = () => {
                   <div className="flex items-center gap-4">
                     <FaChartLine
                       className={`text-2xl ${improvementTrend.trend === "up"
-                          ? "text-green-600"
-                          : improvementTrend.trend === "down"
-                            ? "text-red-600"
-                            : "text-yellow-600"
+                        ? "text-green-600"
+                        : improvementTrend.trend === "down"
+                          ? "text-red-600"
+                          : "text-yellow-600"
                         }`}
                     />
                     <div>
@@ -822,10 +811,10 @@ const Performance = () => {
                   <div className="text-right">
                     <div
                       className={`text-2xl font-bold ${improvementTrend.trend === "up"
-                          ? "text-green-600"
-                          : improvementTrend.trend === "down"
-                            ? "text-red-600"
-                            : "text-yellow-600"
+                        ? "text-green-600"
+                        : improvementTrend.trend === "down"
+                          ? "text-red-600"
+                          : "text-yellow-600"
                         }`}
                     >
                       {improvementTrend.trend === "up"
@@ -916,8 +905,8 @@ const Performance = () => {
                             <td className="text-center py-4 px-4">
                               <span
                                 className={`px-3 py-1 rounded-full text-xs font-bold ${passed
-                                    ? "bg-green-50 border border-green-200 text-green-600"
-                                    : "bg-yellow-50 border border-yellow-200 text-yellow-600"
+                                  ? "bg-green-50 border border-green-200 text-green-600"
+                                  : "bg-yellow-50 border border-yellow-200 text-yellow-600"
                                   }`}
                               >
                                 {passed ? "✅ Passed" : "📚 Learning"}
@@ -981,8 +970,8 @@ const Performance = () => {
                           }, 100);
                         }}
                         className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${selectedAttempt?.attemptId === attempt.attemptId
-                            ? "bg-blue-50 border-blue-300"
-                            : "bg-gray-50 border-gray-200 hover:border-gray-300"
+                          ? "bg-blue-50 border-blue-300"
+                          : "bg-gray-50 border-gray-200 hover:border-gray-300"
                           }`}
                       >
                         <div className="flex items-center justify-between">
@@ -1016,8 +1005,8 @@ const Performance = () => {
                           <div className="flex items-center gap-3">
                             <span
                               className={`px-3 py-1 rounded-full text-xs font-bold ${attempt.passed
-                                  ? "bg-green-50 border border-green-200 text-green-600"
-                                  : "bg-red-50 border border-red-200 text-red-600"
+                                ? "bg-green-50 border border-green-200 text-green-600"
+                                : "bg-red-50 border border-red-200 text-red-600"
                                 }`}
                             >
                               {attempt.passed ? "PASSED" : "NEEDS IMPROVEMENT"}
