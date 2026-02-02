@@ -55,12 +55,15 @@ const Exam = () => {
   // Extract parameters
   const searchCategory = searchParams.get("category") || "";
   const subject = searchParams.get("subject") || "";
+  const year = searchParams.get("year");
+  const semester = searchParams.get("semester");
   const chapterIdParam = searchParams.get("chapterId");
 
   // Parse chapterId if present
   const chapterId = chapterIdParam ? parseInt(chapterIdParam, 10) : null;
 
   // Find chapter data from catalog using chapterId if available, otherwise just use courseId
+  // If using drill-down, chapter might be null, which is fine
   const chapter = chapterId
     ? chaptersData.find(ch => ch.id === chapterId)
     : chaptersData.find(ch => ch.id === courseId);
@@ -105,9 +108,14 @@ const Exam = () => {
         setLoading(true);
         setError(null);
 
-        // Fetch questions - include chapterId if available
+        // Fetch questions - include chapterId if available, or drill-down params
         const questionResponse = await apiClient.get(`/exam/questions/${courseId}`, {
-          params: { chapterId }, // Pass chapterId as query param
+          params: {
+            chapterId,
+            year: year || undefined,
+            semester: semester || undefined,
+            subject: subject || undefined
+          },
           timeout: 10000,
         });
 
@@ -159,7 +167,7 @@ const Exam = () => {
       setError("Invalid course ID");
       setLoading(false);
     }
-  }, [courseId, chapterId]);
+  }, [courseId, chapterId, year, semester, subject]);
 
   // Handle answer selection
   const handleAnswerOptionClick = (selectedIndex) => {

@@ -15,6 +15,19 @@ const examQuestionSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    // New fields for hierarchical drill-down
+    year: {
+      type: Number, // 1, 2, 3, 4
+      required: false
+    },
+    semester: {
+      type: Number, // 1, 2
+      required: false
+    },
+    subject: {
+      type: String,
+      required: false
+    },
     // Adding chapterId field to support the new seed data structure
     chapterId: {
       type: Number,

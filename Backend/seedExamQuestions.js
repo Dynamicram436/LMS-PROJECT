@@ -16,6 +16,9 @@ const sampleQuestions = [
     video: "Topic 101 Video",
     chapterId: 101,
     chapterName: "Introduction to programming",
+    year: 1,
+    semester: 1,
+    subject: "Programming for Problem Solving",
     questions: [
       { qType: "MCQ", qId: "CSE_101_1", qDesc: "Which of these is a programming language?", choices: ["HTML", "C++", "HTTP", "FTP"], correctAns: "C++", explanation: "C++ is a powerful, high-level programming language used for systems and applications, whereas HTML is a markup language and HTTP/FTP are protocols." },
       { qType: "MCQ", qId: "CSE_101_2", qDesc: "Who developed C++?", choices: ["Bjarne Stroustrup", "Dennis Ritchie", "James Gosling", "Guido van Rossum"], correctAns: "Bjarne Stroustrup", explanation: "Bjarne Stroustrup created C++ at Bell Labs in 1979 as an extension of the C language." },
@@ -33,6 +36,9 @@ const sampleQuestions = [
     video: "Topic 102 Video",
     chapterId: 102,
     chapterName: "Data Types & Variables",
+    year: 1,
+    semester: 1,
+    subject: "Programming for Problem Solving",
     questions: [
       { qType: "MCQ", qId: "CSE_102_1", qDesc: "Size of float in C++?", choices: ["2 bytes", "4 bytes", "8 bytes", "1 byte"], correctAns: "4 bytes", explanation: "In most modern C++ compilers, a float typically occupies 4 bytes (32 bits) of memory, following the IEEE 754 standard." },
       { qType: "MCQ", qId: "CSE_102_2", qDesc: "Which is a boolean value?", choices: ["10", "true", "null", "undefined"], correctAns: "true", explanation: "Boolean data types represent one of two values: true or false." },
@@ -50,6 +56,9 @@ const sampleQuestions = [
     video: "Topic 103 Video",
     chapterId: 103,
     chapterName: "Control Structures",
+    year: 1,
+    semester: 1,
+    subject: "Programming for Problem Solving",
     questions: [
       { qType: "MCQ", qId: "CSE_103_1", qDesc: "Which is a loop?", choices: ["if", "for", "switch", "break"], correctAns: "for", explanation: "The 'for' statement creates a loop that consists of three optional expressions, enclosed in parentheses and separated by semicolons." },
       { qType: "MCQ", qId: "CSE_103_2", qDesc: "The loop that runs at least once?", choices: ["while", "for", "do-while", "foreach"], correctAns: "do-while", explanation: "The 'do-while' loop checks the condition at the end of the block, ensuring the code inside executes at least once." },
@@ -67,6 +76,9 @@ const sampleQuestions = [
     video: "Topic 104 Video",
     chapterId: 104,
     chapterName: "Arrays & Linked Lists",
+    year: 1,
+    semester: 2,
+    subject: "Data Structures",
     questions: [
       { qType: "MCQ", qId: "CSE_104_1", qDesc: "Index of the first element in an array?", choices: ["1", "0", "-1", "Depends"], correctAns: "0", explanation: "In C++ and many other languages, arrays are 0-indexed, meaning the first element is at position 0." },
       { qType: "MCQ", qId: "CSE_104_2", qDesc: "Linked list nodes contain data and...?", choices: ["Index", "Pointer", "Value", "Size"], correctAns: "Pointer", explanation: "Each node in a linked list contains its data and a memory address (pointer) to the next node in the sequence." },
@@ -84,6 +96,9 @@ const sampleQuestions = [
     video: "Topic 105 Video",
     chapterId: 105,
     chapterName: "Stacks & Queues",
+    year: 1,
+    semester: 2,
+    subject: "Data Structures",
     questions: [
       { qType: "MCQ", qId: "CSE_105_1", qDesc: "Stack follows which principle?", choices: ["FIFO", "LIFO", "Linear", "Random"], correctAns: "LIFO", explanation: "Stacks use Last-In First-Out (LIFO), meaning the last item added is the first one to be removed." },
       { qType: "MCQ", qId: "CSE_105_2", qDesc: "Queue follows which principle?", choices: ["LIFO", "FIFO", "Ordered", "None"], correctAns: "FIFO", explanation: "Queues use First-In First-Out (FIFO), similar to a line of people where the first person in is served first." },
@@ -101,6 +116,9 @@ const sampleQuestions = [
     video: "Topic 106 Video",
     chapterId: 106,
     chapterName: "Sorting Algorithms",
+    year: 1,
+    semester: 2,
+    subject: "Data Structures",
     questions: [
       { qType: "MCQ", qId: "CSE_106_1", qDesc: "Complexity of Bubble Sort?", choices: ["O(n)", "O(n^2)", "O(log n)", "O(n log n)"], correctAns: "O(n^2)", explanation: "Bubble sort involves nested loops where each element is compared with every other element, resulting in quadratic time complexity O(n^2)." },
       { qType: "MCQ", qId: "CSE_106_2", qDesc: "Which uses Divide and Conquer?", choices: ["Bubble", "Selection", "Merge Sort", "Insertion"], correctAns: "Merge Sort", explanation: "Merge Sort recursively splits the array into two halves, sorts them, and then merges them back together." },
@@ -118,6 +136,9 @@ const sampleQuestions = [
     video: "Topic 107 Video",
     chapterId: 107,
     chapterName: "Search Algorithms",
+    year: 1,
+    semester: 2,
+    subject: "Data Structures",
     questions: [
       { qType: "MCQ", qId: "CSE_107_1", qDesc: "Complexity of Linear Search?", choices: ["O(1)", "O(n)", "O(log n)", "O(n^2)"], correctAns: "O(n)", explanation: "Linear search checks every element one by one from the beginning, so in the worst case, it takes time proportional to the number of elements N." },
       { qType: "MCQ", qId: "CSE_107_2", qDesc: "Binary Search requires array to be?", choices: ["Unsorted", "Sorted", "Small", "Empty"], correctAns: "Sorted", explanation: "Binary search works by repeatedly halving the search range, which is only possible if the data is ordered." },
@@ -137,6 +158,9 @@ const sampleQuestions = [
     video: "Topic 201 Video",
     chapterId: 201,
     chapterName: "Logic Gates",
+    year: 2,
+    semester: 1,
+    subject: "Switching Theory & Logic Design",
     questions: [
       { qType: "MCQ", qId: "ECE_201_1", qDesc: "Which gate inverts input?", choices: ["AND", "OR", "NOT", "XOR"], correctAns: "NOT", explanation: "The NOT gate (inverter) always outputs the opposite of its input bit." },
       { qType: "MCQ", qId: "ECE_201_2", qDesc: "AND gate output is HIGH when?", choices: ["All HIGH", "One HIGH", "All LOW", "None"], correctAns: "All HIGH", explanation: "For an AND gate, the output is only boolean 1 (HIGH) if every single input is also HIGH." },
@@ -154,6 +178,9 @@ const sampleQuestions = [
     video: "Topic 202 Video",
     chapterId: 202,
     chapterName: "Combinational Circuits",
+    year: 2,
+    semester: 1,
+    subject: "Switching Theory & Logic Design",
     questions: [
       { qType: "MCQ", qId: "ECE_202_1", qDesc: "Circuit that adds two bits?", choices: ["Full Adder", "Half Adder", "MUX", "DEMUX"], correctAns: "Half Adder", explanation: "A Half Adder performs the addition of two binary bits and produces 'Sum' and 'Carry' outputs." },
       { qType: "MCQ", qId: "ECE_202_2", qDesc: "How many inputs in a Full Adder?", choices: ["1", "2", "3", "4"], correctAns: "3", explanation: "A Full Adder takes three inputs: two significant bits and an incoming carry bit from a previous stage." },
@@ -171,6 +198,9 @@ const sampleQuestions = [
     video: "Topic 203 Video",
     chapterId: 203,
     chapterName: "8085 Architecture",
+    year: 2,
+    semester: 1,
+    subject: "Switching Theory & Logic Design",
     questions: [
       { qType: "MCQ", qId: "ECE_203_1", qDesc: "8085 is a how many bit processor?", choices: ["4", "8", "16", "32"], correctAns: "8", explanation: "The Intel 8085 is an 8-bit general-purpose microprocessor capable of addressing 64 KB of memory." },
       { qType: "MCQ", qId: "ECE_203_2", qDesc: "Address bus size of 8085?", choices: ["8 bit", "16 bit", "20 bit", "32 bit"], correctAns: "16 bit", explanation: "The 8085 has a 16-bit address bus, which allows it to address up to 2^16 = 65,536 (64K) memory locations." },
@@ -188,6 +218,9 @@ const sampleQuestions = [
     video: "Topic 204 Video",
     chapterId: 204,
     chapterName: "Instruction Sets",
+    year: 2,
+    semester: 1,
+    subject: "Switching Theory & Logic Design",
     questions: [
       { qType: "MCQ", qId: "ECE_204_1", qDesc: "MOV A, B is which type?", choices: ["Data Transfer", "Arithmetic", "Logical", "Branching"], correctAns: "Data Transfer", explanation: "MOV (Move) instructions are used to transfer data between registers or between memory and registers." },
       { qType: "MCQ", qId: "ECE_204_2", qDesc: "ADD B instruction affects?", choices: ["Accumulator", "Flags", "Both", "None"], correctAns: "Both", explanation: "Arithmetic instructions like ADD update the result in the accumulator and reflect the outcome status in the flag register." },
@@ -207,6 +240,9 @@ const sampleQuestions = [
     video: "Topic 301 Video",
     chapterId: 301,
     chapterName: "Laws of Thermodynamics",
+    year: 2,
+    semester: 1,
+    subject: "Thermodynamics",
     questions: [
       { qType: "MCQ", qId: "MECH_301_1", qDesc: "First law relates to?", choices: ["Entropy", "Enthalpy", "Energy conservation", "Mass"], correctAns: "Energy conservation", explanation: "The First Law of Thermodynamics states that energy cannot be created or destroyed, only transformed from one form to another." },
       { qType: "MCQ", qId: "MECH_301_2", qDesc: "Law defining Temperature?", choices: ["1st", "2nd", "3rd", "Zeroth"], correctAns: "Zeroth", explanation: "The Zeroth Law states that if two systems are in thermal equilibrium with a third system, they are in equilibrium with each other, defining temperature." },
@@ -224,6 +260,9 @@ const sampleQuestions = [
     video: "Topic 302 Video",
     chapterId: 302,
     chapterName: "IC Engines",
+    year: 2,
+    semester: 2,
+    subject: "Thermal Engineering I",
     questions: [
       { qType: "MCQ", qId: "MECH_302_1", qDesc: "IC engine stands for?", choices: ["Internal Combustion", "Initial Core", "Inner Cool", "None"], correctAns: "Internal Combustion", explanation: "IC stands for Internal Combustion, where the burning of fuel occurs inside the engine's main body." },
       { qType: "MCQ", qId: "MECH_302_2", qDesc: "Cycle used in Petrol engines?", choices: ["Diesel", "Otto", "Rankine", "Carnot"], correctAns: "Otto", explanation: "Petrol (SI) engines operate on the Otto cycle, which consists of isochoric heat addition and rejection." },
@@ -241,6 +280,9 @@ const sampleQuestions = [
     video: "Topic 303 Video",
     chapterId: 303,
     chapterName: "Fluid Properties",
+    year: 2,
+    semester: 1,
+    subject: "Fluid Mechanics",
     questions: [
       { qType: "MCQ", qId: "MECH_303_1", qDesc: "Resistance of fluid to flow?", choices: ["Density", "Viscosity", "Surface Tension", "Pressure"], correctAns: "Viscosity" },
       { qType: "MCQ", qId: "MECH_303_2", qDesc: "Unit of Kinematic Viscosity?", choices: ["Stoke", "Poise", "Pascal", "Newton"], correctAns: "Stoke" },
@@ -258,6 +300,9 @@ const sampleQuestions = [
     video: "Topic 304 Video",
     chapterId: 304,
     chapterName: "Bernoulli's Principle",
+    year: 2,
+    semester: 1,
+    subject: "Fluid Mechanics",
     questions: [
       { qType: "MCQ", qId: "MECH_304_1", qDesc: "Bernoulli's relates energy in?", choices: ["Solids", "Gases", "Fluids", "Heat"], correctAns: "Fluids" },
       { qType: "MCQ", qId: "MECH_304_2", qDesc: "Flow type Bernoulli's assume?", choices: ["Laminar", "Turbulent", "Steady/Incompressible", "Random"], correctAns: "Steady/Incompressible" },
@@ -277,6 +322,9 @@ const sampleQuestions = [
     video: "Topic 401 Video",
     chapterId: 401,
     chapterName: "Chain Surveying",
+    year: 2,
+    semester: 1,
+    subject: "Surveying",
     questions: [
       { qType: "MCQ", qId: "CIVIL_401_1", qDesc: "Principle of surveying?", choices: ["Part to Whole", "Whole to Part", "Line to Point", "None"], correctAns: "Whole to Part" },
       { qType: "MCQ", qId: "CIVIL_401_2", qDesc: "Length of Gunter's Chain?", choices: ["33ft", "66ft", "100ft", "20m"], correctAns: "66ft" },
@@ -294,6 +342,9 @@ const sampleQuestions = [
     video: "Topic 402 Video",
     chapterId: 402,
     chapterName: "Theodolite & Leveling",
+    year: 2,
+    semester: 1,
+    subject: "Surveying",
     questions: [
       { qType: "MCQ", qId: "CIVIL_402_1", qDesc: "Theodolite measures which angles?", choices: ["Horizontal", "Vertical", "Both", "None"], correctAns: "Both" },
       { qType: "MCQ", qId: "CIVIL_402_2", qDesc: "Size of theodolite is specified by?", choices: ["Height", "Weight", "Lower Plate Dia", "Upper Plate Dia"], correctAns: "Lower Plate Dia" },
@@ -311,6 +362,9 @@ const sampleQuestions = [
     video: "Topic 403 Video",
     chapterId: 403,
     chapterName: "Beams & Columns",
+    year: 2,
+    semester: 1,
+    subject: "Strength of Materials I",
     questions: [
       { qType: "MCQ", qId: "CIVIL_403_1", qDesc: "Structural member subjected to bending?", choices: ["Column", "Tension member", "Beam", "Truss"], correctAns: "Beam" },
       { qType: "MCQ", qId: "CIVIL_403_2", qDesc: "Column subjected to axial compression?", choices: ["Short Column", "Long Column", "Both", "None"], correctAns: "Both" },
@@ -328,6 +382,9 @@ const sampleQuestions = [
     video: "Topic 404 Video",
     chapterId: 404,
     chapterName: "Truss Design",
+    year: 2,
+    semester: 2,
+    subject: "Structural Analysis I",
     questions: [
       { qType: "MCQ", qId: "CIVIL_404_1", qDesc: "Truss is a framework of...?", choices: ["Rigid rods", "Flexible cables", "Flat plates", "Walls"], correctAns: "Rigid rods" },
       { qType: "MCQ", qId: "CIVIL_404_2", qDesc: "Ideal truss assumes joints are?", choices: ["Fixed", "Pinned", "Welded", "Sliding"], correctAns: "Pinned" },
@@ -347,6 +404,9 @@ const sampleQuestions = [
     video: "Topic 501 Video",
     chapterId: 501,
     chapterName: "Circuit Laws",
+    year: 1,
+    semester: 2,
+    subject: "Electrical Circuit Analysis I",
     questions: [
       { qType: "MCQ", qId: "EEE_501_1", qDesc: "Unit of Power?", choices: ["Ampere", "Volt", "Watt", "Ohm"], correctAns: "Watt" },
       { qType: "MCQ", qId: "EEE_501_2", qDesc: "KCL conservation of?", choices: ["Energy", "Mass", "Charge", "Flux"], correctAns: "Charge" },
@@ -364,6 +424,9 @@ const sampleQuestions = [
     video: "Topic 502 Video",
     chapterId: 502,
     chapterName: "Network Theorems",
+    year: 1,
+    semester: 2,
+    subject: "Electrical Circuit Analysis I",
     questions: [
       { qType: "MCQ", qId: "EEE_502_1", qDesc: "Thevenin's voltage is open circuit?", choices: ["Yes", "No", "Depends", "None"], correctAns: "Yes" },
       { qType: "MCQ", qId: "EEE_502_2", qDesc: "Norton's current is short circuit?", choices: ["Yes", "No", "Always", "Yes"], correctAns: "Yes" },
@@ -381,6 +444,9 @@ const sampleQuestions = [
     video: "Topic 503 Video",
     chapterId: 503,
     chapterName: "Power Generation",
+    year: 2,
+    semester: 2,
+    subject: "Power Systems I",
     questions: [
       { qType: "MCQ", qId: "EEE_503_1", qDesc: "Main source for Thermal Power?", choices: ["Coal", "Uranium", "Water", "Wind"], correctAns: "Coal" },
       { qType: "MCQ", qId: "EEE_503_2", qDesc: "Hydro Power converts which energy?", choices: ["Solar", "Potential/Kinetic", "Nuclear", "Chemical"], correctAns: "Potential/Kinetic" },
@@ -398,6 +464,9 @@ const sampleQuestions = [
     video: "Topic 504 Video",
     chapterId: 504,
     chapterName: "Transmission & Distribution",
+    year: 2,
+    semester: 2,
+    subject: "Power Systems I",
     questions: [
       { qType: "MCQ", qId: "EEE_504_1", qDesc: "Primary transmission voltage is usually?", choices: ["Low", "Medium", "High/Extra High", "None"], correctAns: "High/Extra High" },
       { qType: "MCQ", qId: "EEE_504_2", qDesc: "Transmission conductors are usually?", choices: ["ACSR", "Copper", "Insulated", "None"], correctAns: "ACSR" },
@@ -417,6 +486,9 @@ const sampleQuestions = [
     video: "Topic 601 Video",
     chapterId: 601,
     chapterName: "Safety Procedures",
+    year: 2,
+    semester: 1,
+    subject: "Safety Procedures",
     questions: [
       { qType: "MCQ", qId: "DIP_601_1", qDesc: "Which is a simple machine?", choices: ["Lever", "Car", "Laptop", "Engine"], correctAns: "Lever" },
       { qType: "MCQ", qId: "DIP_601_2", qDesc: "Safety sign color code RED?", choices: ["Warning", "Danger/Prohibition", "Safety", "Info"], correctAns: "Danger/Prohibition" },
@@ -434,6 +506,9 @@ const sampleQuestions = [
     video: "Topic 602 Video",
     chapterId: 602,
     chapterName: "Measurement Tools",
+    year: 2,
+    semester: 1,
+    subject: "Measurement Tools",
     questions: [
       { qType: "MCQ", qId: "DIP_602_1", qDesc: "Vernier Calliper measures?", choices: ["Internal/External dimensions", "Temperature", "Weight", "Speed"], correctAns: "Internal/External dimensions" },
       { qType: "MCQ", qId: "DIP_602_2", qDesc: "Least count of metric Micrometer?", choices: ["0.1 mm", "0.01 mm", "0.001 mm", "1 mm"], correctAns: "0.01 mm" },
@@ -444,7 +519,7 @@ const sampleQuestions = [
       { qType: "MCQ", qId: "DIP_602_7", qDesc: "The scale division on vernier is?", choices: ["Vernier Scale", "Main Scale", "Both", "Circular"], correctAns: "Both" },
       { qType: "MCQ", qId: "DIP_602_8", qDesc: "Anemometer measures?", choices: ["Wind Speed", "Draft", "Pressure", "Voltage"], correctAns: "Wind Speed" }
     ]
-  }
+  },
 ];
 
 const seedDatabase = async () => {

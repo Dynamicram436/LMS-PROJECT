@@ -1,5 +1,5 @@
 import express from "express";
-import { saveExamResult, getExamResults, getExamQuestions, createExamQuestions, seedExamQuestions, updateVideoProgress, getExamHistory } from "../controllers/examController.js";
+import { saveExamResult, getExamResults, getExamQuestions, createExamQuestions, seedExamQuestions, updateVideoProgress, getExamHistory, getCourseStructure } from "../controllers/examController.js";
 import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -13,6 +13,12 @@ router.post("/seed", seedExamQuestions);
 // Get exam questions (public endpoint, no auth required)
 router.get("/questions", getExamQuestions);
 router.get("/questions/:courseId", getExamQuestions);
+
+// Get course structure for dropdowns
+router.get("/structure", getCourseStructure);
+
+// Get filtered questions
+router.get("/questions/filter", getExamQuestions);
 
 // Save exam results (auth removed temporarily since login doesn't generate tokens)
 router.post("/results", saveExamResult);

@@ -11,6 +11,7 @@ import Viewcourses from "./Courses/Viewcourses";
 import Performance from "./Components/Performance";
 import DashboardLayout from "./Components/DashboardLayout";
 import Profile from "./Components/Profile";
+import ExamSelection from "./Courses/ExamSelection";
 
 const App = () => {
   return (
@@ -35,6 +36,7 @@ const App = () => {
         <Route path="/home" element={<DashboardLayout><Home /></DashboardLayout>} />
         <Route path="/viewcourses" element={<DashboardLayout><Viewcourses /></DashboardLayout>} />
         <Route path="/profile" element={<DashboardLayout><Profile /></DashboardLayout>} />
+        <Route path="/exam-selection" element={<DashboardLayout><ExamSelection /></DashboardLayout>} />
         <Route path="/courses/:category/*" element={<DashboardLayout><CoursesWithExam /></DashboardLayout>} />
         <Route path="/performance/overall" element={<DashboardLayout><Performance /></DashboardLayout>} />
         <Route path="/performance/:category" element={<DashboardLayout><Performance /></DashboardLayout>} />
