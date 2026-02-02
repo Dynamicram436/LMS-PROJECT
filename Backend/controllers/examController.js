@@ -114,17 +114,17 @@ export const updateVideoProgress = asyncHandler(async (req, res) => {
       // Convert courseId to string and extract base course ID to ensure proper lookup
       const courseIdStr = String(courseId);
       const baseCourseId = getBaseCourseId(courseIdStr);  // Use the function defined above
-      
+
       // Use totalVideos from frontend if available, otherwise fallback
       const totalExpectedVideos = totalVideos || topicCounts[baseCourseId] || Math.max(nonExamVideos.length, 4);
 
       // Calculate progress treating videos and exam as items
       // This fixes the issue where progress was capped at 50% if exam wasn't passed
-      
+
       const examPassed = courseProgress.exam?.passed || false;
       const totalItems = totalExpectedVideos + 1; // Videos + 1 Exam
       const completedItems = completedNonExamVideos + (examPassed ? 1 : 0);
-      
+
       // Calculate percentage based on items completed
       courseProgress.completionPercentage = Math.min(100, Math.round((completedItems / totalItems) * 100));
     }
@@ -307,7 +307,7 @@ export const saveExamResult = asyncHandler(async (req, res) => {
   // New calculation: Treat videos and exam as items to be completed
   const totalItems = totalExpectedVideos + 1; // Videos + 1 Exam
   const completedItems = completedNonExamVideos + (passed ? 1 : 0);
-  
+
   courseProgress.completionPercentage = Math.min(
     100,
     Math.round((completedItems / totalItems) * 100)
@@ -458,10 +458,31 @@ export const getExamResults = asyncHandler(async (req, res) => {
     // Get the latest attempt to represent the overall course result
     const latestAttempt = sortedAttempts.length > 0 ? sortedAttempts[sortedAttempts.length - 1] : null;
 
+    // Extract base course ID if it follows the pattern "course-chapter-id"
+    const getBaseCourseId = (fullCourseId) => {
+      const strId = String(fullCourseId);
+      // If it follows pattern like "CSE-chapter-101", extract "CSE"
+      const match = strId.match(/^([A-Za-z]+)(?:-chapter-\d+)?/);
+      return match ? match[1] : strId;
+    };
+
     // Find the corresponding course progress for this courseId to get completion percentage
-    const courseProgress = user.courseProgress?.find(
-      (p) => String(p.courseId) === courseId
-    );
+    // Use robust matching similar to updateVideoProgress and saveExamResult
+    const courseProgress = user.courseProgress?.find((p) => {
+      const progressCourseId = String(p.courseId);
+      const requestCourseId = String(courseId);
+
+      // Try exact match first
+      if (progressCourseId.toLowerCase().trim() === requestCourseId.toLowerCase().trim()) {
+        return true;
+      }
+
+      // If exact match fails, try base course ID match
+      const baseProgressCourseId = getBaseCourseId(progressCourseId);
+      const baseRequestCourseId = getBaseCourseId(requestCourseId);
+
+      return baseProgressCourseId.toLowerCase().trim() === baseRequestCourseId.toLowerCase().trim();
+    });
 
     // Try to find a descriptive course name from user's other data
     const selectedCourse = user.selectedCourses?.find(
