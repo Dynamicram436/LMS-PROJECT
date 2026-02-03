@@ -17,18 +17,8 @@ import {
   FaChartBar,
   FaGlobe,
   FaBuilding,
-  FaGraduationCap,
-  FaHome,
-  FaCertificate,
-  FaHistory,
-  FaChalkboardTeacher,
-  FaUserFriends,
-  FaBell,
-  FaCog,
-  FaSignOutAlt,
   FaPlay,
   FaClock,
-  FaLock,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import ProgressService from "../utils/ProgressService";
@@ -90,10 +80,10 @@ const Profile = () => {
           try {
             console.log(
               "Fetching fresh progress data for user:",
-              userData.userid,
+              userData.userid
             );
             const progressData = await ProgressService.getUserProgress(
-              userData.userid,
+              userData.userid
             );
             console.log("Progress data received:", progressData);
 
@@ -108,7 +98,7 @@ const Profile = () => {
               console.log("Updated user with exam results:", progressData.data);
             } else {
               console.log(
-                "No valid progress data received, using existing data",
+                "No valid progress data received, using existing data"
               );
               // Use existing examResults if available
               const existingResults = Array.isArray(userData.examResults)
@@ -156,7 +146,7 @@ const Profile = () => {
       if (String(currentUser?.userid) === String(event.detail.userId)) {
         console.log(
           "Profile: Exam submission detected, refreshing data...",
-          event.detail,
+          event.detail
         );
 
         // Update local user data with the new exam result
@@ -171,7 +161,7 @@ const Profile = () => {
           const existingCourseIndex = userData.examResults.findIndex(
             (course) =>
               String(course.courseId).trim().toLowerCase() ===
-              String(event.detail.courseId).trim().toLowerCase(),
+              String(event.detail.courseId).trim().toLowerCase()
           );
 
           const newExamAttempt = {
@@ -191,7 +181,7 @@ const Profile = () => {
             const courseEntry = userData.examResults[existingCourseIndex];
             const existingAttempts = courseEntry.examAttempts || [];
             const alreadyExists = existingAttempts.some(
-              (a) => a.attemptDate === newExamAttempt.attemptDate,
+              (a) => a.attemptDate === newExamAttempt.attemptDate
             );
             if (!alreadyExists) {
               courseEntry.examAttempts = existingAttempts.concat([
@@ -206,7 +196,7 @@ const Profile = () => {
             const exists = userData.examResults.find(
               (c) =>
                 String(c.courseId).trim().toLowerCase() ===
-                String(event.detail.courseId).trim().toLowerCase(),
+                String(event.detail.courseId).trim().toLowerCase()
             );
             if (!exists) {
               userData.examResults.push({
@@ -281,7 +271,7 @@ const Profile = () => {
         courseId,
         `exam_${courseId}`, // Using exam video ID to represent course completion
         true,
-        100, // Set completion percentage to 100%
+        100 // Set completion percentage to 100%
       );
 
       if (result.success) {
@@ -293,7 +283,7 @@ const Profile = () => {
           examResults: (user.examResults || []).map((course) =>
             course.courseId === courseId
               ? { ...course, completionPercentage: 100 }
-              : course,
+              : course
           ),
         };
 
@@ -308,7 +298,7 @@ const Profile = () => {
               courseId: courseId,
               completionPercentage: 100,
             },
-          }),
+          })
         );
 
         // Force refresh progress data from server
@@ -326,17 +316,15 @@ const Profile = () => {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-rose-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="relative w-24 h-24 mx-auto mb-8">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full animate-pulse opacity-20"></div>
-            <div className="absolute inset-2 bg-white rounded-full flex items-center justify-center shadow-lg">
-              <FaUserGraduate className="text-4xl text-purple-600 animate-bounce" />
+          <div className="relative w-16 h-16 mx-auto mb-6">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <FaUserGraduate className="text-xl text-blue-600" />
             </div>
           </div>
-          <p className="text-gray-600 animate-pulse font-medium text-lg">
-            Loading your Profile...
-          </p>
+          <p className="text-gray-600 font-medium">Loading your Profile...</p>
         </div>
       </div>
     );
@@ -352,11 +340,11 @@ const Profile = () => {
   console.log("Is examResults array?", Array.isArray(user.examResults));
   const totalAttempts = examResults.reduce(
     (sum, course) => sum + (course.examAttempts?.length || 0),
-    0,
+    0
   );
   const coursesStarted = examResults.length;
   const completedCourses = examResults.filter(
-    (course) => (course.completionPercentage || 0) >= 100,
+    (course) => (course.completionPercentage || 0) >= 100
   ).length;
   const overallScore =
     totalAttempts > 0
@@ -368,7 +356,7 @@ const Profile = () => {
               return sum + (latestAttempt.score || 0);
             }
             return sum;
-          }, 0) / totalAttempts,
+          }, 0) / totalAttempts
         )
       : 0;
 
@@ -378,8 +366,8 @@ const Profile = () => {
       ? Math.round(
           examResults.reduce(
             (sum, course) => sum + (course.completionPercentage || 0),
-            0,
-          ) / coursesStarted,
+            0
+          ) / coursesStarted
         )
       : 0;
 
@@ -417,26 +405,28 @@ const Profile = () => {
   const achievement = getAchievementLevel();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-rose-100">
+    <div className="min-h-screen bg-gray-50">
       {/* Professional College Header */}
-      <div className="bg-gradient-to-r from-purple-800 to-pink-900 shadow-lg">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6 flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <div className="bg-rose-400 p-3 rounded-xl">
-                <FaUserGraduate className="text-purple-900 text-2xl" />
+          <div className="py-5 flex items-center justify-between">
+            <div className="flex items-center gap-5">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-md">
+                <FaUserGraduate className="text-white text-xl" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">LMS-Platform</h1>
-                <p className="text-rose-200 mt-1">
-                  Welcome back, {user.name} 👋
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Student Profile
+                </h1>
+                <p className="text-gray-600 text-sm mt-1">
+                  Welcome back, {user.name}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => setEditing(!editing)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-rose-400 text-purple-900 rounded-lg hover:bg-rose-500 transition-all duration-200 font-medium"
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium text-sm"
               >
                 <FaEdit className="text-sm" />
                 {editing ? "Cancel" : "Edit Profile"}
@@ -451,78 +441,80 @@ const Profile = () => {
           {/* Left Column - Profile Card */}
           <div className="lg:col-span-1 space-y-6">
             {/* Profile Card */}
-            <div className="bg-white rounded-xl shadow-lg border border-purple-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-purple-700 to-pink-800 p-6 text-white">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white">
                 <div className="flex flex-col items-center">
                   <div className="relative mb-4">
-                    <div className="w-24 h-24 bg-rose-100 rounded-full flex items-center justify-center border-4 border-rose-300">
-                      <FaUserGraduate className="text-4xl text-purple-800" />
+                    <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center border-4 border-white/30">
+                      <FaUserGraduate className="text-4xl text-white" />
                     </div>
-                    <div className="absolute bottom-0 right-2 bg-green-500 w-6 h-6 rounded-full border-2 border-white"></div>
+                    <div className="absolute bottom-0 right-2 bg-green-500 w-6 h-6 rounded-full border-2 border-white flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
                   </div>
                   <h2 className="text-2xl font-bold mb-1">{user.name}</h2>
-                  <div className="flex items-center gap-2 text-rose-200 text-sm">
+                  <div className="flex items-center gap-2 text-blue-100 text-sm">
                     <FaIdCard className="text-xs" />
-                    <span>ID: {user.userid}</span>
+                    <span>Student ID: {user.userid}</span>
                   </div>
 
                   {/* Achievement Badge */}
-                  <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-rose-400 text-purple-900 rounded-full text-sm font-medium">
+                  <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-medium border border-white/30">
                     {achievement.icon}
-                    <span>{achievement.level} Student</span>
+                    <span>{achievement.level} Learner</span>
                   </div>
                 </div>
               </div>
 
               <div className="p-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4 pb-4 border-b border-purple-200">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                      <FaCalendarAlt className="text-purple-700 text-sm" />
+                <div className="space-y-5">
+                  <div className="flex items-center gap-4 pb-5 border-b border-gray-100">
+                    <div className="p-2.5 bg-blue-50 rounded-lg">
+                      <FaCalendarAlt className="text-blue-600 text-base" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">
                         Member Since
                       </p>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 mt-1">
                         {user.createdAt
                           ? new Date(user.createdAt).toLocaleDateString(
                               "en-US",
                               {
                                 year: "numeric",
-                                month: "short",
+                                month: "long",
                                 day: "numeric",
-                              },
+                              }
                             )
-                          : "N/A"}
+                          : "Not available"}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 pb-4 border-b border-purple-200">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                      <FaBuilding className="text-purple-700 text-sm" />
+                  <div className="flex items-center gap-4 pb-5 border-b border-gray-100">
+                    <div className="p-2.5 bg-indigo-50 rounded-lg">
+                      <FaBuilding className="text-indigo-600 text-base" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">
                         Institution
                       </p>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 mt-1">
                         {import.meta.env.VITE_REACT_APP_INSTITUTION_NAME ||
-                          "College University"}
+                          "Academic Institution"}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-4">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                      <FaGlobe className="text-purple-700 text-sm" />
+                    <div className="p-2.5 bg-green-50 rounded-lg">
+                      <FaGlobe className="text-green-600 text-base" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">
                         Status
                       </p>
-                      <p className="text-sm font-medium text-green-600">
+                      <p className="text-sm font-medium text-green-600 mt-1">
                         Active Student
                       </p>
                     </div>
@@ -532,62 +524,62 @@ const Profile = () => {
             </div>
 
             {/* Progress Summary Card */}
-            <div className="bg-white rounded-xl shadow-lg border border-purple-200 p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <FaChartBar className="text-purple-700 text-lg" />
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <FaChartBar className="text-blue-600 text-lg" />
                 </div>
                 Academic Progress
               </h3>
               <div className="space-y-6">
                 <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-gray-600 font-medium">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-sm text-gray-600 font-semibold">
                       Average Progress
                     </span>
                     <span className="text-lg font-bold text-gray-900">
                       {averageProgress}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div className="w-full bg-gray-100 rounded-full h-2.5">
                     <div
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 h-3 rounded-full transition-all duration-700 ease-out"
+                      className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2.5 rounded-full transition-all duration-700 ease-out"
                       style={{ width: `${averageProgress}%` }}
                     ></div>
                   </div>
                 </div>
 
                 <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-gray-600 font-medium">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-sm text-gray-600 font-semibold">
                       Overall Performance
                     </span>
                     <span className="text-lg font-bold text-gray-900">
                       {overallScore}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div className="w-full bg-gray-100 rounded-full h-2.5">
                     <div
-                      className="bg-gradient-to-r from-rose-500 to-pink-600 h-3 rounded-full transition-all duration-700 ease-out"
+                      className="bg-gradient-to-r from-green-500 to-emerald-600 h-2.5 rounded-full transition-all duration-700 ease-out"
                       style={{ width: `${overallScore}%` }}
                     ></div>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-purple-200 grid grid-cols-2 gap-4">
-                  <div className="bg-purple-50 rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-purple-700">
+                <div className="pt-5 border-t border-gray-100 grid grid-cols-2 gap-4">
+                  <div className="bg-blue-50 rounded-lg p-4 text-center border border-blue-100">
+                    <p className="text-2xl font-bold text-blue-700">
                       {completedCourses}
                     </p>
-                    <p className="text-xs text-purple-600 font-medium">
+                    <p className="text-xs text-blue-600 font-semibold mt-1">
                       Completed
                     </p>
                   </div>
-                  <div className="bg-rose-50 rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-rose-700">
+                  <div className="bg-indigo-50 rounded-lg p-4 text-center border border-indigo-100">
+                    <p className="text-2xl font-bold text-indigo-700">
                       {coursesStarted - completedCourses}
                     </p>
-                    <p className="text-xs text-rose-600 font-medium">
+                    <p className="text-xs text-indigo-600 font-semibold mt-1">
                       In Progress
                     </p>
                   </div>
@@ -600,60 +592,60 @@ const Profile = () => {
           <div className="lg:col-span-2 space-y-8">
             {/* Stats Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gradient-to-br from-purple-700 to-pink-800 rounded-xl shadow-lg p-6 text-white">
+              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-sm p-6 text-white border border-blue-500/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-purple-200 text-sm font-medium">
+                    <p className="text-blue-100 text-sm font-semibold">
                       Courses Enrolled
                     </p>
                     <p className="text-3xl font-bold mt-1">{coursesStarted}</p>
                   </div>
-                  <div className="p-4 bg-rose-400 rounded-lg">
-                    <FaBookOpen className="text-purple-900 text-2xl" />
+                  <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <FaBookOpen className="text-white text-xl" />
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-600 to-pink-700 rounded-xl shadow-lg p-6 text-white">
+              <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl shadow-sm p-6 text-white border border-indigo-500/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-purple-200 text-sm font-medium">
+                    <p className="text-indigo-100 text-sm font-semibold">
                       Exams Taken
                     </p>
                     <p className="text-3xl font-bold mt-1">{totalAttempts}</p>
                   </div>
-                  <div className="p-4 bg-rose-400 rounded-lg">
-                    <FaTasks className="text-purple-900 text-2xl" />
+                  <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <FaTasks className="text-white text-xl" />
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl shadow-lg p-6 text-white">
+              <div className="bg-gradient-to-br from-green-600 to-emerald-700 rounded-xl shadow-sm p-6 text-white border border-green-500/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-rose-100 text-sm font-medium">
+                    <p className="text-green-100 text-sm font-semibold">
                       Courses Completed
                     </p>
                     <p className="text-3xl font-bold mt-1">
                       {completedCourses}
                     </p>
                   </div>
-                  <div className="p-4 bg-white rounded-lg">
-                    <FaCheckCircle className="text-rose-600 text-2xl" />
+                  <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <FaCheckCircle className="text-white text-xl" />
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-400 to-rose-500 rounded-xl shadow-lg p-6 text-white">
+              <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-sm p-6 text-white border border-amber-400/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-purple-100 text-sm font-medium">
+                    <p className="text-amber-100 text-sm font-semibold">
                       Average Score
                     </p>
                     <p className="text-3xl font-bold mt-1">{overallScore}%</p>
                   </div>
-                  <div className="p-4 bg-white rounded-lg">
-                    <FaChartLine className="text-purple-500 text-2xl" />
+                  <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <FaChartLine className="text-white text-xl" />
                   </div>
                 </div>
               </div>
@@ -661,16 +653,16 @@ const Profile = () => {
 
             {/* Edit Profile Form */}
             {editing && (
-              <div className="bg-white rounded-xl shadow-lg border border-purple-200 p-8">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
                 <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <FaEdit className="text-purple-700 text-lg" />
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <FaEdit className="text-blue-600 text-lg" />
                   </div>
                   Update Profile Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Full Name
                     </label>
                     <input
@@ -678,32 +670,32 @@ const Profile = () => {
                       name="name"
                       value={editForm.name}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors bg-purple-50 focus:bg-white"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-gray-50 focus:bg-white text-gray-900"
                       placeholder="Enter your full name"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Student ID
                     </label>
                     <input
                       type="text"
                       value={user.userid}
                       disabled
-                      className="w-full px-4 py-3 border border-purple-300 rounded-lg bg-purple-100 text-gray-600"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100 text-gray-500 font-medium"
                     />
                   </div>
                 </div>
                 <div className="flex justify-end gap-4 mt-8">
                   <button
                     onClick={() => setEditing(false)}
-                    className="px-6 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                    className="px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors border border-gray-200"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSave}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-700 text-white font-medium rounded-lg hover:from-purple-700 hover:to-pink-800 transition-all duration-200 shadow-md"
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-800 transition-all duration-200 shadow-sm"
                   >
                     Save Changes
                   </button>
@@ -712,17 +704,17 @@ const Profile = () => {
             )}
 
             {/* Recent Activity */}
-            <div className="bg-white rounded-xl shadow-lg border border-purple-200 p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <FaRegClock className="text-purple-700 text-lg" />
+                  <div className="p-2 bg-indigo-100 rounded-lg">
+                    <FaRegClock className="text-indigo-600 text-lg" />
                   </div>
                   Recent Academic Activity
                 </h3>
                 <button
                   onClick={refreshProgressData}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 font-medium rounded-lg hover:bg-purple-200 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors border border-gray-200"
                 >
                   <FaClock className="text-sm" />
                   Refresh Data
@@ -737,40 +729,47 @@ const Profile = () => {
                       course.completionPercentage !== null
                         ? Math.max(
                             0,
-                            Math.min(100, course.completionPercentage),
+                            Math.min(100, course.completionPercentage)
                           )
                         : 0;
 
                     let completionStatus = "In Progress";
                     let statusColor = "bg-gray-100 text-gray-700";
+                    let statusBg = "bg-gray-50";
 
                     if (completionPercentage >= 100) {
                       completionStatus = "Completed";
                       statusColor = "bg-green-100 text-green-700";
+                      statusBg = "bg-green-50";
                     } else if (completionPercentage >= 75) {
                       completionStatus = "Almost Done";
                       statusColor = "bg-blue-100 text-blue-700";
+                      statusBg = "bg-blue-50";
                     } else if (completionPercentage >= 50) {
                       completionStatus = "Halfway There";
-                      statusColor = "bg-blue-100 text-blue-700";
+                      statusColor = "bg-indigo-100 text-indigo-700";
+                      statusBg = "bg-indigo-50";
                     } else if (completionPercentage >= 25) {
                       completionStatus = "Making Progress";
-                      statusColor = "bg-orange-100 text-orange-700";
+                      statusColor = "bg-amber-100 text-amber-700";
+                      statusBg = "bg-amber-50";
                     } else if (completionPercentage >= 1) {
                       completionStatus = "Just Started";
-                      statusColor = "bg-yellow-100 text-yellow-700";
+                      statusColor = "bg-orange-100 text-orange-700";
+                      statusBg = "bg-orange-50";
                     } else {
                       completionStatus = "Not Started";
                       statusColor = "bg-gray-100 text-gray-700";
+                      statusBg = "bg-gray-50";
                     }
 
                     return (
                       <div
                         key={index}
-                        className="flex items-center gap-4 p-4 bg-purple-50 rounded-lg border border-purple-200 hover:shadow-md transition-shadow"
+                        className={`flex items-center gap-4 p-4 ${statusBg} rounded-lg border border-gray-200 hover:shadow-sm transition-all duration-200`}
                       >
-                        <div className="p-3 bg-purple-100 rounded-lg">
-                          <FaBook className="text-purple-700 text-lg" />
+                        <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-200">
+                          <FaBook className="text-gray-700 text-lg" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-bold text-gray-900 truncate">
@@ -783,7 +782,7 @@ const Profile = () => {
                             {course.examAttempts &&
                               course.examAttempts.length > 0 && (
                                 <>
-                                  <span>•</span>
+                                  <span className="text-gray-300">•</span>
                                   <span>
                                     {course.examAttempts.length} attempt
                                     {course.examAttempts.length > 1 ? "s" : ""}
@@ -791,16 +790,16 @@ const Profile = () => {
                                 </>
                               )}
                           </div>
-                          <div className="mt-2 w-full bg-gray-200 rounded-full h-2.5">
+                          <div className="mt-3 w-full bg-gray-100 rounded-full h-2">
                             <div
-                              className={`h-2.5 rounded-full transition-all duration-700 ease-out ${
+                              className={`h-2 rounded-full transition-all duration-700 ease-out ${
                                 completionPercentage >= 100
-                                  ? "bg-gradient-to-r from-green-500 to-green-600"
+                                  ? "bg-gradient-to-r from-green-500 to-emerald-600"
                                   : completionPercentage >= 75
-                                    ? "bg-gradient-to-r from-purple-600 to-purple-700"
-                                    : completionPercentage >= 50
-                                      ? "bg-gradient-to-r from-rose-500 to-rose-600"
-                                      : "bg-gradient-to-r from-gray-400 to-gray-500"
+                                  ? "bg-gradient-to-r from-blue-500 to-indigo-600"
+                                  : completionPercentage >= 50
+                                  ? "bg-gradient-to-r from-amber-500 to-orange-500"
+                                  : "bg-gradient-to-r from-gray-300 to-gray-400"
                               }`}
                               style={{ width: `${completionPercentage}%` }}
                             ></div>
@@ -808,7 +807,7 @@ const Profile = () => {
                         </div>
                         <div className="text-right">
                           <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${statusColor} mb-2`}
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${statusColor} mb-2 border`}
                           >
                             {completionStatus}
                           </span>
@@ -818,7 +817,7 @@ const Profile = () => {
                                 onClick={() =>
                                   markCourseComplete(course.courseId)
                                 }
-                                className="block w-full px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-700 text-white rounded-lg text-xs font-bold hover:from-purple-700 hover:to-pink-800 transition-all duration-200"
+                                className="block w-full px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-lg text-xs font-semibold hover:from-blue-700 hover:to-indigo-800 transition-all duration-200 shadow-sm"
                               >
                                 Mark Complete
                               </button>
@@ -829,21 +828,21 @@ const Profile = () => {
                   })
                 ) : (
                   <div className="text-center py-12">
-                    <div className="text-gray-400 mb-4">
-                      <FaBook className="text-5xl mx-auto" />
+                    <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                      <FaBook className="text-2xl text-gray-400" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-700 mb-2">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">
                       No Academic Activity Yet
                     </h3>
-                    <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
                       Start your academic journey by enrolling in your first
                       course.
                     </p>
                     <button
                       onClick={() => (window.location.href = "/courses")}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-800 transition-all duration-200 shadow-sm"
                     >
-                      <FaPlay />
+                      <FaPlay className="text-sm" />
                       Browse Courses
                     </button>
                   </div>

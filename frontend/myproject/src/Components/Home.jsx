@@ -30,14 +30,23 @@ const Home = () => {
   console.log("Exam results state:", examResults);
   console.log("Is examResults array?", Array.isArray(examResults));
   console.log("Exam results length:", examResults.length);
-  console.log("Exam results content:", examResults.map(c => ({
-    courseId: c.courseId,
-    courseName: c.courseName,
-    attempts: c.examAttempts?.length || 0,
-    lastAttempt: c.lastAttempt,
-    latestScore: c.examAttempts?.length > 0 ? c.examAttempts[c.examAttempts.length - 1].score : 'N/A',
-    latestPassed: c.examAttempts?.length > 0 ? c.examAttempts[c.examAttempts.length - 1].passed : false
-  })));
+  console.log(
+    "Exam results content:",
+    examResults.map((c) => ({
+      courseId: c.courseId,
+      courseName: c.courseName,
+      attempts: c.examAttempts?.length || 0,
+      lastAttempt: c.lastAttempt,
+      latestScore:
+        c.examAttempts?.length > 0
+          ? c.examAttempts[c.examAttempts.length - 1].score
+          : "N/A",
+      latestPassed:
+        c.examAttempts?.length > 0
+          ? c.examAttempts[c.examAttempts.length - 1].passed
+          : false,
+    }))
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -64,7 +73,7 @@ const Home = () => {
         try {
           const userResponse = await apiClient.get(
             `/auth/user/${userData.userid}`,
-            { signal },
+            { signal }
           );
 
           if (userResponse?.data?.data) {
@@ -91,7 +100,7 @@ const Home = () => {
                 "Cache-Control": "no-cache",
                 Pragma: "no-cache",
               },
-            },
+            }
           );
 
           console.log("Home: Exam results response:", resultsResponse.data);
@@ -148,7 +157,9 @@ const Home = () => {
 
         // Find if this course already exists in the results
         const existingCourseIndex = updatedUser.examResults.findIndex(
-          (course) => String(course.courseId).trim().toLowerCase() === String(event.detail.courseId).trim().toLowerCase(),
+          (course) =>
+            String(course.courseId).trim().toLowerCase() ===
+            String(event.detail.courseId).trim().toLowerCase()
         );
 
         const newExamAttempt = {
@@ -158,7 +169,7 @@ const Home = () => {
           attemptNumber:
             (existingCourseIndex >= 0
               ? updatedUser.examResults[existingCourseIndex]?.examAttempts
-                ?.length || 0
+                  ?.length || 0
               : 0) + 1,
           answers: event.detail.result?.answers || [],
         };
@@ -168,7 +179,7 @@ const Home = () => {
           const courseEntry = updatedUser.examResults[existingCourseIndex];
           const existingAttempts = courseEntry.examAttempts || [];
           const alreadyExists = existingAttempts.some(
-            (a) => a.attemptDate === newExamAttempt.attemptDate,
+            (a) => a.attemptDate === newExamAttempt.attemptDate
           );
           if (!alreadyExists) {
             courseEntry.examAttempts = existingAttempts.concat([
@@ -181,7 +192,9 @@ const Home = () => {
         } else {
           // Add new course entry, but guard against accidental duplicates from multiple handlers
           const exists = updatedUser.examResults.find(
-            (c) => String(c.courseId).trim().toLowerCase() === String(event.detail.courseId).trim().toLowerCase(),
+            (c) =>
+              String(c.courseId).trim().toLowerCase() ===
+              String(event.detail.courseId).trim().toLowerCase()
           );
           if (!exists) {
             updatedUser.examResults.push({
@@ -249,7 +262,7 @@ const Home = () => {
             "Cache-Control": "no-cache",
             Pragma: "no-cache",
           },
-        },
+        }
       );
 
       if (resultsResponse?.data?.success) {
@@ -270,7 +283,7 @@ const Home = () => {
   const totalCourses = examResults.length;
   const totalAttempts = examResults.reduce(
     (sum, course) => sum + (course.examAttempts?.length || 0),
-    0,
+    0
   );
 
   // Count courses where latest attempt passed
@@ -291,15 +304,15 @@ const Home = () => {
   const averageScore =
     totalAttempts > 0
       ? Math.round(
-        examResults.reduce((sum, course) => {
-          if (course.examAttempts && course.examAttempts.length > 0) {
-            const latestAttempt =
-              course.examAttempts[course.examAttempts.length - 1];
-            return sum + (latestAttempt.score || 0);
-          }
-          return sum;
-        }, 0) / totalAttempts,
-      )
+          examResults.reduce((sum, course) => {
+            if (course.examAttempts && course.examAttempts.length > 0) {
+              const latestAttempt =
+                course.examAttempts[course.examAttempts.length - 1];
+              return sum + (latestAttempt.score || 0);
+            }
+            return sum;
+          }, 0) / totalAttempts
+        )
       : 0;
 
   // Prepare chart data - filter out courses with no valid names
@@ -470,10 +483,11 @@ const Home = () => {
                   <div
                     className="bg-yellow-600 h-2 rounded-full"
                     style={{
-                      width: `${totalCourses > 0
-                        ? (passedCourses / totalCourses) * 100
-                        : 0
-                        }%`,
+                      width: `${
+                        totalCourses > 0
+                          ? (passedCourses / totalCourses) * 100
+                          : 0
+                      }%`,
                     }}
                   ></div>
                 </div>
@@ -535,21 +549,25 @@ const Home = () => {
                   {chartData.length > 0 ? (
                     <BarChart
                       dataset={chartData}
-                      xAxis={[{
-                        scaleType: "band",
-                        dataKey: "course",
-                        tickLabelStyle: {
-                          angle: -45,
-                          textAnchor: "end",
-                          fontSize: 9,
+                      xAxis={[
+                        {
+                          scaleType: "band",
+                          dataKey: "course",
+                          tickLabelStyle: {
+                            angle: -45,
+                            textAnchor: "end",
+                            fontSize: 9,
+                          },
+                          label: "Course",
                         },
-                        label: "Course",
-                      }]}
-                      yAxis={[{
-                        min: 0,
-                        max: 100,
-                        label: "Score (%)",
-                      }]}
+                      ]}
+                      yAxis={[
+                        {
+                          min: 0,
+                          max: 100,
+                          label: "Score (%)",
+                        },
+                      ]}
                       series={[
                         {
                           dataKey: "score",
@@ -614,8 +632,8 @@ const Home = () => {
                           onClick={() =>
                             navigate(
                               `/performance/${encodeURIComponent(
-                                course.courseId,
-                              )}`,
+                                course.courseId
+                              )}`
                             )
                           }
                           className="p-4 border border-gray-100 rounded-lg hover:border-blue-200 hover:shadow-sm transition-all duration-200 flex items-center justify-between group cursor-pointer"
@@ -721,9 +739,10 @@ const Home = () => {
                           },
                           valueFormatter: (item) => {
                             const total = passedCourses + inProgressCourses;
-                            const percentage = total > 0
-                              ? Math.round((item.value / total) * 100)
-                              : 0;
+                            const percentage =
+                              total > 0
+                                ? Math.round((item.value / total) * 100)
+                                : 0;
                             return `${item.value} (${percentage}%)`;
                           },
                           color: ["#10b981", "#f59e0b"],
@@ -750,7 +769,13 @@ const Home = () => {
                       <span className="text-sm text-gray-600">Completed</span>
                     </div>
                     <span className="text-sm font-medium text-gray-900">
-                      {passedCourses} {(passedCourses + inProgressCourses) > 0 && `(${Math.round((passedCourses / (passedCourses + inProgressCourses)) * 100)}%)`}
+                      {passedCourses}{" "}
+                      {passedCourses + inProgressCourses > 0 &&
+                        `(${Math.round(
+                          (passedCourses /
+                            (passedCourses + inProgressCourses)) *
+                            100
+                        )}%)`}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -759,7 +784,13 @@ const Home = () => {
                       <span className="text-sm text-gray-600">In Progress</span>
                     </div>
                     <span className="text-sm font-medium text-gray-900">
-                      {inProgressCourses} {(passedCourses + inProgressCourses) > 0 && `(${Math.round((inProgressCourses / (passedCourses + inProgressCourses)) * 100)}%)`}
+                      {inProgressCourses}{" "}
+                      {passedCourses + inProgressCourses > 0 &&
+                        `(${Math.round(
+                          (inProgressCourses /
+                            (passedCourses + inProgressCourses)) *
+                            100
+                        )}%)`}
                     </span>
                   </div>
                 </div>
