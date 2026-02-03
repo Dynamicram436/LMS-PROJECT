@@ -26,10 +26,18 @@ const Home = () => {
   const [examResults, setExamResults] = useState([]);
 
   // Debug: Log exam data to understand structure
-  console.log("Home Component Debug:");
+  console.log("=============== Home Component Debug ===============");
   console.log("Exam results state:", examResults);
   console.log("Is examResults array?", Array.isArray(examResults));
   console.log("Exam results length:", examResults.length);
+  console.log("Exam results content:", examResults.map(c => ({
+    courseId: c.courseId,
+    courseName: c.courseName,
+    attempts: c.examAttempts?.length || 0,
+    lastAttempt: c.lastAttempt,
+    latestScore: c.examAttempts?.length > 0 ? c.examAttempts[c.examAttempts.length - 1].score : 'N/A',
+    latestPassed: c.examAttempts?.length > 0 ? c.examAttempts[c.examAttempts.length - 1].passed : false
+  })));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -264,9 +272,22 @@ const Home = () => {
     (sum, course) => sum + (course.examAttempts?.length || 0),
     0,
   );
-  const passedCourses = examResults.filter((course) =>
-    course.examAttempts?.some((attempt) => attempt.passed),
-  ).length;
+
+  // Count courses where latest attempt passed
+  const passedCourses = examResults.filter((course) => {
+    if (!course.examAttempts || course.examAttempts.length === 0) return false;
+    const latestAttempt = course.examAttempts[course.examAttempts.length - 1];
+    return latestAttempt.passed;
+  }).length;
+
+  // Count courses with attempts but latest not passed OR courses without attempts
+  const inProgressCourses = examResults.filter((course) => {
+    // If no attempts, consider it in progress
+    if (!course.examAttempts || course.examAttempts.length === 0) return true;
+    const latestAttempt = course.examAttempts[course.examAttempts.length - 1];
+    return !latestAttempt.passed;
+  }).length;
+
   const averageScore =
     totalAttempts > 0
       ? Math.round(
@@ -281,8 +302,9 @@ const Home = () => {
       )
       : 0;
 
-  // Prepare chart data
+  // Prepare chart data - filter out courses with no valid names
   const chartData = examResults
+    .filter((course) => course.courseName || course.courseId)
     .map((course) => {
       const latestAttempt =
         course.examAttempts && course.examAttempts.length > 0
@@ -292,14 +314,24 @@ const Home = () => {
         course: course.courseName || course.courseId,
         score: latestAttempt.score || 0,
       };
-    })
-    .slice(0, 5); // Show only top 5 for better visualization
+    });
 
   // Prepare pie chart data for performance breakdown
   const performanceData = [
-    { label: "Passed", value: passedCourses },
-    { label: "In Progress", value: totalCourses - passedCourses },
+    { label: "Completed", value: passedCourses },
+    { label: "In Progress", value: inProgressCourses },
   ];
+
+  // Debug logging for statistics
+  console.log("=============== Statistics Debug ===============");
+  console.log("Total Courses:", totalCourses);
+  console.log("Total Attempts:", totalAttempts);
+  console.log("Passed Courses:", passedCourses);
+  console.log("In Progress Courses:", inProgressCourses);
+  console.log("Average Score:", averageScore);
+  console.log("Chart Data:", chartData);
+  console.log("Performance Data:", performanceData);
+  console.log("===============================================");
 
   if (loading) {
     return (
@@ -439,8 +471,8 @@ const Home = () => {
                     className="bg-yellow-600 h-2 rounded-full"
                     style={{
                       width: `${totalCourses > 0
-                          ? (passedCourses / totalCourses) * 100
-                          : 0
+                        ? (passedCourses / totalCourses) * 100
+                        : 0
                         }%`,
                     }}
                   ></div>
@@ -499,19 +531,40 @@ const Home = () => {
                     <FaArrowRight className="text-xs" />
                   </button>
                 </div>
-                <div className="h-80">
+                <div className="h-96 overflow-hidden">
                   {chartData.length > 0 ? (
                     <BarChart
                       dataset={chartData}
-                      xAxis={[{ scaleType: "band", dataKey: "course" }]}
+                      xAxis={[{
+                        scaleType: "band",
+                        dataKey: "course",
+                        tickLabelStyle: {
+                          angle: -45,
+                          textAnchor: "end",
+                          fontSize: 9,
+                        },
+                        label: "Course",
+                      }]}
+                      yAxis={[{
+                        min: 0,
+                        max: 100,
+                        label: "Score (%)",
+                      }]}
                       series={[
                         {
                           dataKey: "score",
-                          label: "Score %",
+                          label: "Score",
                           color: "#3b82f6",
+                          valueFormatter: (value) => `${value}%`,
                         },
                       ]}
-                      margin={{ top: 20, bottom: 50, left: 60, right: 20 }}
+                      height={350}
+                      margin={{ top: 20, bottom: 90, left: 55, right: 20 }}
+                      slotProps={{
+                        legend: {
+                          hidden: true,
+                        },
+                      }}
                     />
                   ) : (
                     <div className="h-full flex flex-col items-center justify-center text-gray-400">
@@ -538,7 +591,7 @@ const Home = () => {
                       Your latest learning progress
                     </p>
                   </div>
-                  {examResults.length > 3 && (
+                  {examResults.length > 0 && (
                     <button
                       onClick={() => navigate("/performance/all")}
                       className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
@@ -549,18 +602,15 @@ const Home = () => {
                   )}
                 </div>
                 {examResults.length > 0 ? (
-                  <div className="space-y-4">
-                    {(examResults.length > 3
-                      ? examResults.slice(0, 3)
-                      : examResults
-                    ).map((course, idx) => {
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {examResults.map((course, idx) => {
                       const latestAttempt =
                         course.examAttempts?.length > 0
                           ? course.examAttempts[course.examAttempts.length - 1]
                           : null;
                       return (
                         <div
-                          key={idx}
+                          key={course.courseId || idx}
                           onClick={() =>
                             navigate(
                               `/performance/${encodeURIComponent(
@@ -602,9 +652,13 @@ const Home = () => {
                               <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-bold uppercase tracking-wider rounded-full">
                                 Completed
                               </span>
-                            ) : (
+                            ) : latestAttempt ? (
                               <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-bold uppercase tracking-wider rounded-full">
                                 In Progress
+                              </span>
+                            ) : (
+                              <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold uppercase tracking-wider rounded-full">
+                                Not Started
                               </span>
                             )}
                             <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all">
@@ -647,7 +701,7 @@ const Home = () => {
                   Learning Progress
                 </h3>
                 <div className="h-52 mb-4">
-                  {performanceData.some((d) => d.value > 0) ? (
+                  {totalCourses > 0 ? (
                     <PieChart
                       series={[
                         {
@@ -665,10 +719,22 @@ const Home = () => {
                             additionalRadius: -20,
                             color: "gray",
                           },
+                          valueFormatter: (item) => {
+                            const total = passedCourses + inProgressCourses;
+                            const percentage = total > 0
+                              ? Math.round((item.value / total) * 100)
+                              : 0;
+                            return `${item.value} (${percentage}%)`;
+                          },
                           color: ["#10b981", "#f59e0b"],
                         },
                       ]}
                       margin={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      slotProps={{
+                        legend: {
+                          hidden: true,
+                        },
+                      }}
                     />
                   ) : (
                     <div className="h-full flex flex-col items-center justify-center text-gray-400">
@@ -684,7 +750,7 @@ const Home = () => {
                       <span className="text-sm text-gray-600">Completed</span>
                     </div>
                     <span className="text-sm font-medium text-gray-900">
-                      {passedCourses}
+                      {passedCourses} {(passedCourses + inProgressCourses) > 0 && `(${Math.round((passedCourses / (passedCourses + inProgressCourses)) * 100)}%)`}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -693,7 +759,7 @@ const Home = () => {
                       <span className="text-sm text-gray-600">In Progress</span>
                     </div>
                     <span className="text-sm font-medium text-gray-900">
-                      {totalCourses - passedCourses}
+                      {inProgressCourses} {(passedCourses + inProgressCourses) > 0 && `(${Math.round((inProgressCourses / (passedCourses + inProgressCourses)) * 100)}%)`}
                     </span>
                   </div>
                 </div>

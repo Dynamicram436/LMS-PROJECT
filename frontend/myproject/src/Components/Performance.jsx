@@ -24,7 +24,14 @@ const Performance = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [examData, setExamData] = useState(null);
-  const [allExamData, setAllExamData] = useState([]);
+  const [allExamData, setAllExamData] = useState(() => {
+    try {
+      const savedUser = JSON.parse(localStorage.getItem("user"));
+      return Array.isArray(savedUser?.examResults) ? savedUser.examResults : [];
+    } catch {
+      return [];
+    }
+  });
   const [selectedAttempt, setSelectedAttempt] = useState(null);
   const user = JSON.parse(localStorage.getItem("user"));
   const isOverallView =
@@ -64,7 +71,11 @@ const Performance = () => {
         ? response.data.data.filter(Boolean)
         : [];
 
+      console.log("=============== Performance Refresh Debug ===============");
       console.log(`Received ${examResults.length} exam result entries`);
+      console.log("Exam results data:", examResults);
+      console.log("Is overall view:", isOverallView);
+      console.log("==========================================================");
 
       setAllExamData(examResults);
 
@@ -164,6 +175,12 @@ const Performance = () => {
         );
 
         console.log("Initial performance data response:", response.data);
+        console.log("=============== Initial Fetch Debug ===============");
+        console.log(`Fetching results for UserID: ${userData.userid}`);
+        console.log(`API Response Success: ${response?.data?.success}`);
+        console.log(`API Response Data Length: ${response?.data?.data?.length}`);
+        console.log("DEBUG QUESTION: Is API returning all courses? count=", response?.data?.data?.length);
+        console.log("=================================================");
 
         if (!response?.data?.success) {
           throw new Error(
@@ -178,6 +195,11 @@ const Performance = () => {
         console.log(
           `Loaded ${examResults.length} exam result entries initially`,
         );
+
+        console.log(
+          `Loaded ${examResults.length} exam result entries initially`,
+        );
+        console.log("Setting allExamData to:", examResults);
 
         setAllExamData(examResults);
 
@@ -258,16 +280,16 @@ const Performance = () => {
           "Performance: Detected exam submission for current user, refreshing data...",
           event.detail
         );
-        
+
         // Immediately update localStorage with the new exam result
         if (event.detail.result) {
           const updatedExamResults = Array.isArray(currentUser.examResults) ? [...currentUser.examResults] : [];
-          
+
           // Find if this course already exists in the results
           const existingCourseIndex = updatedExamResults.findIndex(
             course => course.courseId === event.detail.courseId
           );
-          
+
           const newExamAttempt = {
             score: event.detail.score,
             passed: event.detail.passed,
@@ -275,7 +297,7 @@ const Performance = () => {
             attemptNumber: (existingCourseIndex >= 0 ? (updatedExamResults[existingCourseIndex]?.examAttempts?.length || 0) : 0) + 1,
             answers: event.detail.result.answers || []
           };
-          
+
           if (existingCourseIndex >= 0) {
             // Update existing course with guard to avoid duplicates
             const courseEntry = updatedExamResults[existingCourseIndex];
@@ -302,13 +324,13 @@ const Performance = () => {
               });
             }
           }
-          
+
           currentUser.examResults = updatedExamResults;
           localStorage.setItem("user", JSON.stringify(currentUser));
-          
+
           // Update component state immediately for instant UI update
           setAllExamData(updatedExamResults);
-          
+
           // Update current exam data if viewing this course
           if (examData && examData.courseId === event.detail.courseId) {
             const updatedCourseData = updatedExamResults.find(course => course.courseId === event.detail.courseId);
@@ -320,7 +342,7 @@ const Performance = () => {
             }
           }
         }
-        
+
         // Then fetch fresh data from server with a small delay to ensure backend has processed
         setTimeout(async () => {
           await fetchPerformanceData();
@@ -458,7 +480,17 @@ const Performance = () => {
   };
 
   const globalStats = React.useMemo(() => {
-    if (!isOverallView || allExamData.length === 0) return null;
+    console.log("=============== Global Stats Calculation ===============");
+    console.log("isOverallView:", isOverallView);
+    console.log("allExamData.length:", allExamData.length);
+    console.log("allExamData:", allExamData);
+
+    if (!isOverallView || allExamData.length === 0) {
+      console.log("Skipping global stats - no data or not overall view");
+      console.log("========================================================");
+      return null;
+    }
+
     const allAttempts = allExamData
       .flatMap((course) =>
         (course.examAttempts || []).map((attempt) => ({
@@ -484,6 +516,16 @@ const Performance = () => {
     const subjectsCleared = new Set(
       allAttempts.filter((a) => a.passed).map((a) => a.courseId),
     ).size;
+
+    console.log("Global stats calculated:", {
+      totalAttempts,
+      avgScore,
+      passingRate,
+      subjectsCleared,
+      coursesCount: allExamData.length
+    });
+    console.log("========================================================");
+
     return {
       allAttempts,
       totalAttempts,
@@ -932,6 +974,14 @@ const Performance = () => {
                     </tr>
                   </thead>
                   <tbody>
+                    {(() => {
+                      console.log("=============== Table Rendering Debug ===============");
+                      console.log("Array.isArray(allExamData):", Array.isArray(allExamData));
+                      console.log("allExamData.length:", allExamData.length);
+                      console.log("allExamData content:", allExamData);
+                      console.log("=====================================================");
+                      return null;
+                    })()}
                     {Array.isArray(allExamData) && allExamData.length > 0 ? (
                       allExamData.map((course, idx) => {
                         if (!course) return null;
