@@ -286,11 +286,12 @@ const Home = () => {
     0
   );
 
-  // Count courses where latest attempt passed
+  // Count courses where latest attempt passed (70% threshold)
   const passedCourses = examResults.filter((course) => {
     if (!course.examAttempts || course.examAttempts.length === 0) return false;
     const latestAttempt = course.examAttempts[course.examAttempts.length - 1];
-    return latestAttempt.passed;
+    // Check both the passed property and score threshold (70%)
+    return latestAttempt.passed || latestAttempt.score >= 70;
   }).length;
 
   // Count courses with attempts but latest not passed OR courses without attempts
@@ -298,7 +299,8 @@ const Home = () => {
     // If no attempts, consider it in progress
     if (!course.examAttempts || course.examAttempts.length === 0) return true;
     const latestAttempt = course.examAttempts[course.examAttempts.length - 1];
-    return !latestAttempt.passed;
+    // Check both the passed property and score threshold (70%)
+    return !latestAttempt.passed && latestAttempt.score < 70;
   }).length;
 
   const averageScore =
@@ -315,23 +317,25 @@ const Home = () => {
         )
       : 0;
 
-  // Prepare chart data - filter out courses with no valid names
-  const chartData = examResults
-    .filter((course) => course.courseName || course.courseId)
-    .map((course) => {
-      const latestAttempt =
-        course.examAttempts && course.examAttempts.length > 0
-          ? course.examAttempts[course.examAttempts.length - 1]
-          : { score: 0 };
-      return {
-        course: course.courseName || course.courseId,
-        score: latestAttempt.score || 0,
-      };
-    });
+  // Prepare chart data - use courseId as fallback for course name
+  const chartData = examResults.map((course) => {
+    const latestAttempt =
+      course.examAttempts && course.examAttempts.length > 0
+        ? course.examAttempts[course.examAttempts.length - 1]
+        : { score: 0 };
+    return {
+      course:
+        course.courseName && course.courseName !== course.courseId
+          ? course.courseName
+          : course.courseId,
+      score: latestAttempt.score || 0,
+    };
+  });
 
   // Prepare pie chart data for performance breakdown
+  // Use totalAttempts (exams completed) and inProgressCourses
   const performanceData = [
-    { label: "Completed", value: passedCourses },
+    { label: "Completed", value: totalAttempts },
     { label: "In Progress", value: inProgressCourses },
   ];
 
@@ -646,7 +650,10 @@ const Home = () => {
                             </div>
                             <div>
                               <h4 className="font-semibold text-gray-900 truncate max-w-xs">
-                                {course.courseName || course.courseId}
+                                {course.courseName &&
+                                course.courseName !== course.courseId
+                                  ? course.courseName
+                                  : course.courseId}
                               </h4>
                               {latestAttempt ? (
                                 <div className="flex items-center gap-3 mt-1">
@@ -666,7 +673,8 @@ const Home = () => {
                           </div>
 
                           <div className="flex items-center gap-3">
-                            {latestAttempt?.passed ? (
+                            {latestAttempt?.passed ||
+                            latestAttempt?.score >= 70 ? (
                               <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-bold uppercase tracking-wider rounded-full">
                                 Completed
                               </span>
@@ -716,7 +724,7 @@ const Home = () => {
               {/* Progress Overview */}
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-6">
-                  Learning Progress
+                  Exam Progress
                 </h3>
                 <div className="h-52 mb-4">
                   {totalCourses > 0 ? (
@@ -745,7 +753,7 @@ const Home = () => {
                                 : 0;
                             return `${item.value} (${percentage}%)`;
                           },
-                          color: ["#10b981", "#f59e0b"],
+                          color: ["red", "green"],
                         },
                       ]}
                       margin={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -766,14 +774,16 @@ const Home = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-gray-600">Completed</span>
+                      <span className="text-sm text-gray-600">
+                        Exams Completed
+                      </span>
                     </div>
                     <span className="text-sm font-medium text-gray-900">
-                      {passedCourses}{" "}
-                      {passedCourses + inProgressCourses > 0 &&
+                      {totalAttempts}{" "}
+                      {totalAttempts + inProgressCourses > 0 &&
                         `(${Math.round(
-                          (passedCourses /
-                            (passedCourses + inProgressCourses)) *
+                          (totalAttempts /
+                            (totalAttempts + inProgressCourses)) *
                             100
                         )}%)`}
                     </span>
@@ -785,10 +795,10 @@ const Home = () => {
                     </div>
                     <span className="text-sm font-medium text-gray-900">
                       {inProgressCourses}{" "}
-                      {passedCourses + inProgressCourses > 0 &&
+                      {totalAttempts + inProgressCourses > 0 &&
                         `(${Math.round(
                           (inProgressCourses /
-                            (passedCourses + inProgressCourses)) *
+                            (totalAttempts + inProgressCourses)) *
                             100
                         )}%)`}
                     </span>
