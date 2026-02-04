@@ -18,6 +18,9 @@ import DebugExamResults from "./Components/DebugExamResults";
 import BackendTest from "./Components/BackendTest";
 import ManualExamTest from "./Components/ManualExamTest";
 import TeacherLogin from "./Login/TeacherLogin";
+import TeacherRegister from "./Register/TeacherRegister";
+import LandingPage from "./Components/LandingPage";
+import TeacherDashboard from "./Components/TeacherDashboard";
 
 const App = () => {
   return (
@@ -35,8 +38,9 @@ const App = () => {
         theme="light"
       />
       <Routes>
-        <Route path="/" element={<Register />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
         {/* Protected Dashboard Routes */}
         <Route path="/home" element={<DashboardLayout><Home /></DashboardLayout>} />
@@ -53,6 +57,8 @@ const App = () => {
         <Route path="/test-backend" element={<DashboardLayout><BackendTest /></DashboardLayout>} />
         <Route path="/manual-test" element={<DashboardLayout><ManualExamTest /></DashboardLayout>} />
         <Route path='/teacher-login' element={<TeacherLogin />} />
+        <Route path='/teacher-register' element={<TeacherRegister />} />
+        <Route path='/teacher-dashboard' element={<TeacherDashboard />} />
         
       </Routes>
     </>

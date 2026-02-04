@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import axios from "axios";
+import apiClient from "../utils/axiosConfig";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -37,11 +37,11 @@ const Login = () => {
   const handleForm = (data) => {
     setLoading(true);
 
-    axios
-      .post("http://localhost:8000/api/auth/login", data)
+    apiClient
+      .post("/auth/login", data)
       .then((res) => {
         toast.success("Login successful! Redirecting...");
-        localStorage.setItem("user", JSON.stringify(res.data.data));
+        localStorage.setItem("user", JSON.stringify(res.data.user));
         setLoading(false);
         setTimeout(() => {
           navigate("/home");
@@ -223,21 +223,17 @@ const Login = () => {
                       Or continue with
                     </span>
                   </div>
-
-                  {/* New Teacher Login Button */}
                   <Link
-                    to="/teacher-login"
-                    className="w-full mt-4 flex items-center justify-center px-4 py-2.5 bg-linear-to-r from-purple-500/10 to-indigo-500/10 border border-indigo-500/20 rounded-xl text-sm font-bold text-indigo-700 hover:text-indigo-900 hover:from-purple-500/20 hover:to-indigo-500/20 transition-all duration-200 space-x-2"
+                    to="/register"
+                    className="w-full mt-4 flex items-center justify-center px-4 py-2.5 bg-linear-to-r bg-linear-to-r from-gray-700 to-gray-900 hover:from-gray-600 hover:to-gray-800 text-white rounded-xl font-bold   transition-all duration-200 space-x-2"
                   >
-                    <FaUserCircle className="text-base" />
-                    <span>Teacher Login</span>
+                    Create an account
                   </Link>
-
                   <Link
                     to="/"
                     className="w-full mt-4 flex items-center justify-center px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 hover:border-gray-300 transition-all duration-200"
                   >
-                    Create an account
+                    Back to Home
                   </Link>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import apiClient from "../utils/axiosConfig";
 import { toast } from "react-toastify";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -44,7 +44,7 @@ const Register = () => {
   const handleForm = async (data) => {
     try {
       setLoading(true);
-      await axios.post("http://localhost:8000/api/auth/register", data);
+      await apiClient.post("/auth/register", data);
       toast.success("Registration successful! Redirecting to login...");
       reset();
       setTimeout(() => navigate("/login"), 2000);
@@ -298,15 +298,6 @@ const Register = () => {
                       {errors.root.message}
                     </div>
                   )}
-
-                  {/* New Teacher Login Button */}
-                  <Link
-                    to="/teacher-login"
-                    className="w-full mt-4 flex items-center justify-center px-4 py-2.5 bg-linear-to-r from-purple-500/10 to-indigo-500/10 border border-indigo-500/20 rounded-xl text-sm font-bold text-indigo-700 hover:text-indigo-900 hover:from-purple-500/20 hover:to-indigo-500/20 transition-all duration-200 space-x-2"
-                  >
-                    <FaUserCircle className="text-base" />
-                    <span>Teacher Login</span>
-                  </Link>
 
                   <p className="text-center text-sm text-gray-600 mt-6">
                     Already have an account?{" "}

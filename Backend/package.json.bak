@@ -15,8 +15,7 @@
   },
   "scripts": {
     "dev": "node index.js",
-    "start": "node index.js",
-    "seed-teachers": "node seedTeachers.js"
+    "start": "node index.js"
   },
   "type": "module"
 }

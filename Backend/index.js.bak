@@ -2,7 +2,6 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoute.js';
-import teacherAuthRoutes from './routes/teacherAuthRoute.js';
 import teacherRoutes from './routes/teacherRoute.js';
 import cors from 'cors';
 
@@ -22,9 +21,7 @@ mongoose.connect(process.env.MONGODB_URL)
 
 // Routes
 app.use('/auth', authRoutes);
-app.use('/teacher-auth', teacherAuthRoutes); // New teacher auth routes
 app.use('/teachers', teacherRoutes);
-
 
 // Error handling middleware
 app.use((err, req, res, next) => {
