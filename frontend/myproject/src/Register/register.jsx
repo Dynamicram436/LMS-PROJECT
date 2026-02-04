@@ -8,6 +8,7 @@ import { z } from "zod";
 import {
   FaUser,
   FaEnvelope,
+  FaUserCircle,
   FaLock,
   FaIdCard,
   FaGraduationCap,
@@ -15,7 +16,6 @@ import {
   FaEyeSlash,
   FaUserPlus,
 } from "react-icons/fa";
-
 import { Helmet } from "react-helmet-async";
 
 const registerSchema = z.object({
@@ -78,7 +78,7 @@ const Register = () => {
           <div className="bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden transition-all duration-500 hover:shadow-2xl">
             <div className="grid grid-cols-1 md:grid-cols-5">
               {/* Left Sidebar - Visual branding */}
-              <div className="md:col-span-2 bg-gradient-to-br from-gray-700 to-gray-900 p-8 flex flex-col justify-center items-center text-center">
+              <div className="md:col-span-2 bg-linear-to-br from-gray-700 to-gray-900 p-8 flex flex-col justify-center items-center text-center">
                 <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md shadow-inner">
                   <FaUserPlus className="text-3xl text-white" />
                 </div>
@@ -171,7 +171,6 @@ const Register = () => {
                       )}
                     </div>
                   </div>
-
 
                   {/* Password */}
                   <div className="space-y-1.5">
@@ -279,9 +278,9 @@ const Register = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className={`w-full mt-4 py-3 cursor-pointer px-4 rounded-xl font-bold text-white transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.98] ${loading
+                    className={`w-full mt-4 py-3 cursor-pointer px-4 rounded-xl font-bold text-white transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.98] shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg ${loading
                         ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-600 hover:to-gray-800 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg"
+                        : "bg-linear-to-r from-gray-700 to-gray-900 hover:from-gray-600 hover:to-gray-800"
                       }`}
                   >
                     {loading ? (
@@ -299,6 +298,15 @@ const Register = () => {
                       {errors.root.message}
                     </div>
                   )}
+
+                  {/* New Teacher Login Button */}
+                  <Link
+                    to="/teacher-login"
+                    className="w-full mt-4 flex items-center justify-center px-4 py-2.5 bg-linear-to-r from-purple-500/10 to-indigo-500/10 border border-indigo-500/20 rounded-xl text-sm font-bold text-indigo-700 hover:text-indigo-900 hover:from-purple-500/20 hover:to-indigo-500/20 transition-all duration-200 space-x-2"
+                  >
+                    <FaUserCircle className="text-base" />
+                    <span>Teacher Login</span>
+                  </Link>
 
                   <p className="text-center text-sm text-gray-600 mt-6">
                     Already have an account?{" "}

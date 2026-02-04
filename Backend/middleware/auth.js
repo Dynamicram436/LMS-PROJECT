@@ -1,18 +1,39 @@
 import jwt from 'jsonwebtoken';
 
-export const verifyToken = (req, res, next) => {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    
+// Protect routes by requiring authentication
+export const protect = (req, res, next) => {
+    // Get token from header
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+
     if (!token) {
-        return res.status(401).json({ success: false, message: 'No token, authorization denied' });
+        return res.status(401).json({
+            success: false,
+            message: 'Not authorized, no token'
+        });
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // Verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        // Add user to request object
         req.user = decoded;
         next();
-    } catch (err) {
-        console.error('Token verification failed:', err);
-        return res.status(401).json({ success: false, message: 'Token is not valid' });
+    } catch (error) {
+        return res.status(401).json({
+            success: false,
+            message: 'Not authorized, invalid token'
+        });
     }
+};
+
+// Ensure user is teacher
+export const teacherOnly = (req, res, next) => {
+    if (req.user.role !== 'teacher') {
+        return res.status(403).json({
+            success: false,
+            message: 'Not authorized as teacher'
+        });
+    }
+    next();
 };

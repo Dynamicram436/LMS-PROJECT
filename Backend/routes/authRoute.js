@@ -1,19 +1,12 @@
-import express from "express";
-import { register, login, getUser, uploadProfilePic, getProfilePic, uploadProfilePicture } from "../controllers/authControllers.js";
-import { verifyToken as protect } from "../middleware/auth.js";
+import express from 'express';
+import { loginUser, teacherLogin } from '../controllers/authControllers.js';
 
 const router = express.Router();
 
-router.post("/register", register);
-router.post("/login", login);
-router.get("/user/:userid", getUser);
+// Existing user login route
+router.post('/login', loginUser);
 
-// Profile picture routes
-router.post("/upload-profile-pic", protect, uploadProfilePicture, uploadProfilePic);
-router.get("/profile-pic/:userid", getProfilePic);
-
-// router.post("/courses", createCourse);
-// router.get("/courses/category/:category", getCourseByCategory);
-
+// New teacher login route
+router.post('/teacher-login', teacherLogin);
 
 export default router;

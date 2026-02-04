@@ -17,6 +17,7 @@ import DebugExamData from "./Components/DebugExamData";
 import DebugExamResults from "./Components/DebugExamResults";
 import BackendTest from "./Components/BackendTest";
 import ManualExamTest from "./Components/ManualExamTest";
+import TeacherLogin from "./Login/TeacherLogin";
 
 const App = () => {
   return (
@@ -51,6 +52,8 @@ const App = () => {
         <Route path="/debug-results" element={<DashboardLayout><DebugExamResults /></DashboardLayout>} />
         <Route path="/test-backend" element={<DashboardLayout><BackendTest /></DashboardLayout>} />
         <Route path="/manual-test" element={<DashboardLayout><ManualExamTest /></DashboardLayout>} />
+        <Route path='/teacher-login' element={<TeacherLogin />} />
+        
       </Routes>
     </>
   );
