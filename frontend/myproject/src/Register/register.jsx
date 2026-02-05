@@ -23,7 +23,7 @@ const registerSchema = z.object({
   userid: z.string().min(3, "User ID must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   rollno: z.string().min(1, "Roll number is required"),
-  courseName: z.string().min(1, "Class name is required"),
+  courseName: z.string().optional(),
 });
 
 const Register = () => {
@@ -55,6 +55,15 @@ const Register = () => {
       toast.error(errorMessage);
       setError("root", { message: errorMessage });
       console.error("Registration error:", error);
+      if (!error.response) {
+        console.error("Network or no response error:", {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+          config: error.config, // Axios request config
+          code: error.code, // Error code like 'ECONNABORTED'
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -117,7 +126,7 @@ const Register = () => {
                         htmlFor="name"
                         className="text-xs font-semibold text-gray-600 uppercase tracking-wider ml-1"
                       >
-                        Full Name
+                        Full Name *
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-500">
@@ -127,11 +136,13 @@ const Register = () => {
                           {...register("name")}
                           id="name"
                           type="text"
-                          className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${errors.name
+                          className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${
+                            errors.name
                               ? "border-red-500/50"
                               : "border-gray-200"
-                            }`}
+                          }`}
                           placeholder="John Doe"
+                          required
                         />
                       </div>
                       {errors.name && (
@@ -147,7 +158,7 @@ const Register = () => {
                         htmlFor="userid"
                         className="text-xs font-semibold text-gray-600 uppercase tracking-wider ml-1"
                       >
-                        User ID
+                        User ID *
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-500">
@@ -157,11 +168,13 @@ const Register = () => {
                           {...register("userid")}
                           id="userid"
                           type="text"
-                          className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${errors.userid
+                          className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${
+                            errors.userid
                               ? "border-red-500/50"
                               : "border-gray-200"
-                            }`}
+                          }`}
                           placeholder="johndoe123"
+                          required
                         />
                       </div>
                       {errors.userid && (
@@ -178,7 +191,7 @@ const Register = () => {
                       htmlFor="password"
                       className="text-xs font-semibold text-gray-600 uppercase tracking-wider ml-1"
                     >
-                      Password
+                      Password *
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-500">
@@ -188,11 +201,13 @@ const Register = () => {
                         {...register("password")}
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        className={`w-full bg-gray-50 border pl-10 pr-10 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${errors.password
+                        className={`w-full bg-gray-50 border pl-10 pr-10 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${
+                          errors.password
                             ? "border-red-500/50"
                             : "border-gray-200"
-                          }`}
+                        }`}
                         placeholder="••••••••"
+                        required
                       />
                       <button
                         type="button"
@@ -220,7 +235,7 @@ const Register = () => {
                         htmlFor="rollno"
                         className="text-xs font-semibold text-gray-600 uppercase tracking-wider ml-1"
                       >
-                        Roll Number
+                        Roll Number *
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-500">
@@ -230,11 +245,13 @@ const Register = () => {
                           {...register("rollno")}
                           id="rollno"
                           type="text"
-                          className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${errors.rollno
+                          className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${
+                            errors.rollno
                               ? "border-red-500/50"
                               : "border-gray-200"
-                            }`}
+                          }`}
                           placeholder="21BCE1234"
+                          required
                         />
                       </div>
                       {errors.rollno && (
@@ -260,10 +277,11 @@ const Register = () => {
                           {...register("courseName")}
                           id="courseName"
                           type="text"
-                          className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${errors.courseName
+                          className={`w-full bg-gray-50 border pl-10 pr-4 py-2.5 rounded-xl text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition duration-200 outline-none ${
+                            errors.courseName
                               ? "border-red-500/50"
                               : "border-gray-200"
-                            }`}
+                          }`}
                           placeholder="B.Tech CSE"
                         />
                       </div>
@@ -278,10 +296,11 @@ const Register = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className={`w-full mt-4 py-3 cursor-pointer px-4 rounded-xl font-bold text-white transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.98] shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg ${loading
+                    className={`w-full mt-4 py-3 cursor-pointer px-4 rounded-xl font-bold text-white transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.98] shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg ${
+                      loading
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-linear-to-r from-gray-700 to-gray-900 hover:from-gray-600 hover:to-gray-800"
-                      }`}
+                    }`}
                   >
                     {loading ? (
                       <div className="flex items-center justify-center space-x-2">

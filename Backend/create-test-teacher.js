@@ -18,7 +18,7 @@ const Teacher = mongoose.model('Teacher', teacherSchema);
 
 const createTestTeacher = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URL);
+    await mongoose.connect(process.env.MONGO_URL);
     console.log('Connected to MongoDB');
     
     // Clear existing teachers

@@ -43,23 +43,113 @@ const App = () => {
         <Route path="/register" element={<Register />} />
 
         {/* Protected Dashboard Routes */}
-        <Route path="/home" element={<DashboardLayout><Home /></DashboardLayout>} />
-        <Route path="/viewcourses" element={<DashboardLayout><Viewcourses /></DashboardLayout>} />
-        <Route path="/profile" element={<DashboardLayout><Profile /></DashboardLayout>} />
-        <Route path="/exam-selection" element={<DashboardLayout><ExamSelection /></DashboardLayout>} />
-        <Route path="/course-exam" element={<DashboardLayout><CourseExamSystem /></DashboardLayout>} />
-        <Route path="/courses/:category/*" element={<DashboardLayout><CoursesWithExam /></DashboardLayout>} />
-        <Route path="/performance/overall" element={<DashboardLayout><Performance /></DashboardLayout>} />
-        <Route path="/performance/all" element={<DashboardLayout><Performance /></DashboardLayout>} />
-        <Route path="/performance/:category" element={<DashboardLayout><Performance /></DashboardLayout>} />
-        <Route path="/debug-exam" element={<DashboardLayout><DebugExamData /></DashboardLayout>} />
-        <Route path="/debug-results" element={<DashboardLayout><DebugExamResults /></DashboardLayout>} />
-        <Route path="/test-backend" element={<DashboardLayout><BackendTest /></DashboardLayout>} />
-        <Route path="/manual-test" element={<DashboardLayout><ManualExamTest /></DashboardLayout>} />
-        <Route path='/teacher-login' element={<TeacherLogin />} />
-        <Route path='/teacher-register' element={<TeacherRegister />} />
-        <Route path='/teacher-dashboard' element={<TeacherDashboard />} />
-        
+        <Route
+          path="/home"
+          element={
+            <DashboardLayout>
+              <Home />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/viewcourses"
+          element={
+            <DashboardLayout>
+              <Viewcourses />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <DashboardLayout>
+              <Profile />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/exam-selection"
+          element={
+            <DashboardLayout>
+              <ExamSelection />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/course-exam"
+          element={
+            <DashboardLayout>
+              <CourseExamSystem />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/courses/:category/*"
+          element={
+            <DashboardLayout>
+              <CoursesWithExam />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/performance/overall"
+          element={
+            <DashboardLayout>
+              <Performance />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/performance/all"
+          element={
+            <DashboardLayout>
+              <Performance />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/performance/:category"
+          element={
+            <DashboardLayout>
+              <Performance />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/debug-exam"
+          element={
+            <DashboardLayout>
+              <DebugExamData />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/debug-results"
+          element={
+            <DashboardLayout>
+              <DebugExamResults />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/test-backend"
+          element={
+            <DashboardLayout>
+              <BackendTest />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/manual-test"
+          element={
+            <DashboardLayout>
+              <ManualExamTest />
+            </DashboardLayout>
+          }
+        />
+        <Route path="/teacher-login" element={<TeacherLogin />} />
+        <Route path="/teacher-register" element={<TeacherRegister />} />
+        <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
       </Routes>
     </>
   );

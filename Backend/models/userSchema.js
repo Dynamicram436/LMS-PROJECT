@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { createInMemoryUserModel } from "../utils/inMemoryModel.js";
 
 const videoProgressSchema = new mongoose.Schema({
   videoId: {
@@ -113,10 +114,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    email: {
+      type: String,
+      required: false, // Email is optional
+    },
     rollno: {
       type: String,
       required: true,
       unique: true,
+    },
+    courseName: {
+      type: String,
+      required: false,
     },
     selectedCourses: [
       {
@@ -152,7 +161,15 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Create the real MongoDB model
-const User = mongoose.models.User || mongoose.model("User", userSchema);
+// Create the real MongoDB model or use in-memory fallback
+let User;
+if (mongoose.connection.readyState === 1) {
+  // MongoDB is connected
+  User = mongoose.models.User || mongoose.model("User", userSchema);
+} else {
+  // Use in-memory model for development
+  console.log("📦 Using in-memory User model for development");
+  User = createInMemoryUserModel();
+}
 
 export default User;

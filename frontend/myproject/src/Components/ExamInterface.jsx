@@ -28,9 +28,9 @@ const ExamInterface = ({ topicData, onExamComplete, onBack }) => {
   const fetchQuestions = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:8000/api/exam/questions?category=${topicData.branch.branchId}&subject=${topicData.subject.subjectName}&numQuestions=10`);
+const response = await fetch(`http://localhost:8000/api/exam/questions?courseId=${topicData.branch.branchId}&chapterId=201`);
       const data = await response.json();
-      
+
       if (data.success && data.data.questions) {
         setQuestions(data.data.questions);
         setAnswers(new Array(data.data.questions.length).fill(null));
@@ -73,7 +73,7 @@ const ExamInterface = ({ topicData, onExamComplete, onBack }) => {
     }
 
     setIsSubmitting(true);
-    
+
     try {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user) {
@@ -87,7 +87,7 @@ const ExamInterface = ({ topicData, onExamComplete, onBack }) => {
         const selectedOption = answers[index];
         const isCorrect = selectedOption === question.correctAnswer;
         if (isCorrect) correctAnswers++;
-        
+
         return {
           questionIndex: index,
           selectedOption: selectedOption,
@@ -116,7 +116,7 @@ const ExamInterface = ({ topicData, onExamComplete, onBack }) => {
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         // Dispatch event to notify other components of exam submission
         window.dispatchEvent(new CustomEvent('examSubmitted', {
@@ -170,7 +170,7 @@ const ExamInterface = ({ topicData, onExamComplete, onBack }) => {
                     <p><strong>Passing Score:</strong> 70%</p>
                   </div>
                 </div>
-                
+
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
                   <h3 className="font-semibold text-yellow-900 mb-4">Instructions:</h3>
                   <ul className="space-y-2 text-yellow-800 list-disc list-inside">
@@ -183,7 +183,7 @@ const ExamInterface = ({ topicData, onExamComplete, onBack }) => {
                   </ul>
                 </div>
               </div>
-              
+
               <div className="flex gap-4 justify-center">
                 <button
                   onClick={onBack}
@@ -228,9 +228,8 @@ const ExamInterface = ({ topicData, onExamComplete, onBack }) => {
               </h2>
               <p className="text-gray-600">Question {currentQuestion + 1} of {questions.length}</p>
             </div>
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-              timeLeft < 300 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
-            }`}>
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${timeLeft < 300 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+              }`}>
               <Clock className="w-5 h-5" />
               <span className="font-mono font-semibold">{formatTime(timeLeft)}</span>
             </div>
@@ -243,7 +242,7 @@ const ExamInterface = ({ topicData, onExamComplete, onBack }) => {
               <span>{Math.round(getProgressPercentage())}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
+              <div
                 className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${getProgressPercentage()}%` }}
               ></div>
@@ -260,11 +259,10 @@ const ExamInterface = ({ topicData, onExamComplete, onBack }) => {
                 {(questions[currentQuestion]?.choices || questions[currentQuestion]?.options || []).map((option, index) => (
                   <label
                     key={index}
-                    className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      answers[currentQuestion] === index
+                    className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${answers[currentQuestion] === index
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"
@@ -298,13 +296,12 @@ const ExamInterface = ({ topicData, onExamComplete, onBack }) => {
                 <button
                   key={index}
                   onClick={() => setCurrentQuestion(index)}
-                  className={`w-10 h-10 rounded-full text-sm font-medium transition-all ${
-                    index === currentQuestion
+                  className={`w-10 h-10 rounded-full text-sm font-medium transition-all ${index === currentQuestion
                       ? 'bg-blue-600 text-white'
                       : answers[index] !== null
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-600'
-                  }`}
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}
                 >
                   {index + 1}
                 </button>

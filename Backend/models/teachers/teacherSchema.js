@@ -85,9 +85,8 @@ teacherSchema.methods.comparePassword = async function(candidatePassword) {
   }
 };
 
-// Create indexes
-teacherSchema.index({ email: 1 });
-teacherSchema.index({ employeeId: 1 });
+// Indexes are automatically created by unique: true constraints
+// No need for explicit index creation
 
 // Create the model
 const Teacher = mongoose.models.Teacher || mongoose.model('Teacher', teacherSchema);

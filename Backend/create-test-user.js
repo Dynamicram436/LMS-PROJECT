@@ -8,7 +8,7 @@ dotenv.config();
 async function createTestUser() {
   try {
     console.log('Connecting to MongoDB...');
-    await mongoose.connect(process.env.MONGODB_URL, { dbName: 'userDB' });
+    await mongoose.connect(process.env.MONGO_URL, { dbName: 'userDB' });
     console.log('✓ Connected to MongoDB');
 
     // Check if user already exists

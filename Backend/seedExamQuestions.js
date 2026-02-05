@@ -524,7 +524,7 @@ const sampleQuestions = [
 
 const seedDatabase = async () => {
   try {
-    const mongoUrl = process.env.MONGODB_URL || "mongodb+srv://bhargavramgomatham_db_user:436465@cluster0.lc2qwz1.mongodb.net/";
+    const mongoUrl = process.env.MONGO_URL || "mongodb+srv://bhargavramgomatham_db_user:436465@cluster0.lc2qwz1.mongodb.net/";
     await mongoose.connect(mongoUrl, {
       serverSelectionTimeoutMS: 5000,
     });

@@ -16,7 +16,7 @@ import {
 import { Helmet } from "react-helmet-async";
 
 const loginSchema = z.object({
-  userid: z.string().min(1, "User ID is required"),
+  userid: z.string().min(1, "User ID is required"), // Keep original field name
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
@@ -37,8 +37,14 @@ const Login = () => {
   const handleForm = (data) => {
     setLoading(true);
 
+    // Transform the data to match backend expectations
+    const loginData = {
+      email: data.userid, // Send userid as email field to backend
+      password: data.password
+    };
+
     apiClient
-      .post("/auth/login", data)
+      .post("/auth/login", loginData) // Send transformed data
       .then((res) => {
         toast.success("Login successful! Redirecting...");
         localStorage.setItem("user", JSON.stringify(res.data.user));

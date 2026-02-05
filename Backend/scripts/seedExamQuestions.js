@@ -12,7 +12,7 @@ dotenv.config();
 const seedExamQuestions = async () => {
   try {
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URL);
+    await mongoose.connect(process.env.MONGO_URL);
     console.log("Connected to MongoDB");
 
     // Clear existing questions

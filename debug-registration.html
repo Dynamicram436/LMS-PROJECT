@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Registration Debug</title>
+</head>
+<body>
+    <h1>Registration Debug Test</h1>
+    <button onclick="testRegistration()">Test Registration</button>
+    <div id="result"></div>
+
+    <script>
+        async function testRegistration() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('http://localhost:5000/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: 'Debug User',
+                        userid: 'debug' + Date.now(),
+                        password: 'debugpass123',
+                        rollno: '21BCE' + Date.now().toString().slice(-4),
+                        courseName: 'B.Tech CSE'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = '<h2>✅ Success!</h2><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                } else {
+                    resultDiv.innerHTML = '<h2>❌ Error!</h2><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<h2>❌ Network Error!</h2><pre>' + error.message + '</pre>';
+            }
+        }
+    </script>
+</body>
+</html>
